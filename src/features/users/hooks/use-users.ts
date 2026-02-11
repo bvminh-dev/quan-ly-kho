@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import type {
   CreateUserDto,
   UpdateUserDto,
+  UpdatePasswordDto,
   PaginationParams,
   ResetPasswordDto,
 } from "@/types/api";
@@ -69,6 +70,18 @@ export function useDeleteUser() {
     },
     onError: () => {
       toast.error("Xóa người dùng thất bại");
+    },
+  });
+}
+
+export function useUpdatePassword() {
+  return useMutation({
+    mutationFn: (dto: UpdatePasswordDto) => userService.updatePassword(dto),
+    onSuccess: () => {
+      toast.success("Đổi mật khẩu thành công");
+    },
+    onError: () => {
+      toast.error("Đổi mật khẩu thất bại. Vui lòng kiểm tra mật khẩu hiện tại");
     },
   });
 }

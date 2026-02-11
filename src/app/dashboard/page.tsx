@@ -1,15 +1,25 @@
 "use client";
 
+import { useAccessControl } from "@/components/access-control";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuthStore } from "@/stores/auth-store";
-import { ArrowRight, KeyRound, Package, Shield, Users } from "lucide-react";
+import {
+  ArrowRight,
+  History,
+  KeyRound,
+  Package,
+  Receipt,
+  Shield,
+  ShoppingCart,
+  Tag,
+  Users,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
-  const { user } = useAuthStore();
+  const { isAdmin, user } = useAccessControl();
   const router = useRouter();
 
-  const cards = [
+  const adminCards = [
     {
       title: "Người dùng",
       description: "Quản lý tài khoản người dùng",
@@ -40,6 +50,9 @@ export default function DashboardPage() {
       iconColor: "text-violet-600 dark:text-violet-400",
       hoverBorder: "hover:border-violet-200 dark:hover:border-violet-800",
     },
+  ];
+
+  const commonCards = [
     {
       title: "Kho hàng",
       description: "Sắp ra mắt — quản lý kho",
@@ -50,7 +63,49 @@ export default function DashboardPage() {
       iconColor: "text-amber-600 dark:text-amber-400",
       hoverBorder: "hover:border-amber-200 dark:hover:border-amber-800",
     },
+    {
+      title: "Bảng giá",
+      description: "Sắp ra mắt — quản lý bảng giá",
+      icon: Tag,
+      href: "#",
+      gradient: "from-cyan-500 to-sky-600",
+      iconBg: "bg-cyan-500/10 dark:bg-cyan-400/10",
+      iconColor: "text-cyan-600 dark:text-cyan-400",
+      hoverBorder: "hover:border-cyan-200 dark:hover:border-cyan-800",
+    },
+    {
+      title: "Bán hàng",
+      description: "Sắp ra mắt — quản lý bán hàng",
+      icon: ShoppingCart,
+      href: "#",
+      gradient: "from-rose-500 to-pink-600",
+      iconBg: "bg-rose-500/10 dark:bg-rose-400/10",
+      iconColor: "text-rose-600 dark:text-rose-400",
+      hoverBorder: "hover:border-rose-200 dark:hover:border-rose-800",
+    },
+    {
+      title: "Hóa đơn",
+      description: "Sắp ra mắt — quản lý hóa đơn",
+      icon: Receipt,
+      href: "#",
+      gradient: "from-lime-500 to-green-600",
+      iconBg: "bg-lime-500/10 dark:bg-lime-400/10",
+      iconColor: "text-lime-600 dark:text-lime-400",
+      hoverBorder: "hover:border-lime-200 dark:hover:border-lime-800",
+    },
+    {
+      title: "Lịch sử",
+      description: "Sắp ra mắt — xem lịch sử hoạt động",
+      icon: History,
+      href: "#",
+      gradient: "from-slate-500 to-gray-600",
+      iconBg: "bg-slate-500/10 dark:bg-slate-400/10",
+      iconColor: "text-slate-600 dark:text-slate-400",
+      hoverBorder: "hover:border-slate-200 dark:hover:border-slate-800",
+    },
   ];
+
+  const cards = [...(isAdmin ? adminCards : []), ...commonCards];
 
   return (
     <div className="space-y-8">

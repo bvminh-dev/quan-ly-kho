@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Users,
   Shield,
@@ -7,6 +8,7 @@ import {
   LayoutDashboard,
   Package,
   LogOut,
+  Settings,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -26,6 +28,7 @@ import { authService } from "@/services/auth.service";
 import { ModuleGate } from "@/components/access-control";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import { UserProfileDialog } from "./user-profile-dialog";
 
 const menuItems = [
   {
@@ -33,24 +36,28 @@ const menuItems = [
     url: "/dashboard",
     icon: LayoutDashboard,
     module: null,
+    adminOnly: false,
   },
   {
     title: "Người dùng",
     url: "/dashboard/users",
     icon: Users,
     module: "users",
+    adminOnly: true,
   },
   {
     title: "Vai trò",
     url: "/dashboard/roles",
     icon: Shield,
     module: "roles",
+    adminOnly: true,
   },
   {
     title: "Quyền hạn",
     url: "/dashboard/permissions",
     icon: KeyRound,
     module: "permissions",
+    adminOnly: true,
   },
 ];
 
@@ -59,6 +66,7 @@ export function AppSidebar() {
   const router = useRouter();
   const { user, logout, hasRole } = useAuthStore();
   const isAdmin = hasRole("admin");
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -73,6 +81,8 @@ export function AppSidebar() {
   };
 
   const renderMenuItem = (item: (typeof menuItems)[0]) => {
+    if (item.adminOnly && !isAdmin) return null;
+
     const isActive = pathname === item.url;
     const menuButton = (
       <SidebarMenuItem key={item.title}>
@@ -127,9 +137,9 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-4">
+      <SidebarFooter className="border-t border-sidebar-border p-3">
         <div className="flex items-center gap-3">
-          <Avatar className="h-9 w-9 ring-2 ring-primary/20">
+          <Avatar className="h-9 w-9 ring-2 ring-primary/20 shrink-0">
             <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">
               {user?.name?.charAt(0)?.toUpperCase() || "U"}
             </AvatarFallback>
@@ -141,14 +151,23 @@ export function AppSidebar() {
             </span>
           </div>
           <button
+            onClick={() => setProfileOpen(true)}
+            className="rounded-lg p-2 text-muted-foreground hover:bg-sidebar-accent hover:text-primary transition-all duration-200 cursor-pointer shrink-0"
+            title="Cài đặt tài khoản"
+          >
+            <Settings className="h-4 w-4" />
+          </button>
+          <button
             onClick={handleLogout}
-            className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 cursor-pointer"
+            className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 cursor-pointer shrink-0"
             title="Đăng xuất"
           >
             <LogOut className="h-4 w-4" />
           </button>
         </div>
       </SidebarFooter>
+
+      <UserProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
     </Sidebar>
   );
 }

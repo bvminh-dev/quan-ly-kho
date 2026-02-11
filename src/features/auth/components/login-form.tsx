@@ -1,10 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
-import { z } from "zod/v4";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -20,7 +16,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Package, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2, Package } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { z } from "zod/v4";
 import { useSignin } from "../hooks/use-auth";
 
 const loginSchema = z.object({
@@ -46,15 +46,8 @@ export function LoginForm() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden p-4">
-      {/* Gradient background */}
-      <div className="absolute inset-0 bg-gradient-brand dark:bg-gradient-brand-dark" />
-      {/* Animated decorative blobs */}
-      <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-white/10 blur-3xl animate-pulse" />
-      <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-white/10 blur-3xl animate-pulse [animation-delay:1s]" />
-      <div className="absolute top-1/2 left-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/5 blur-2xl animate-pulse [animation-delay:2s]" />
-
-      <Card className="relative z-10 w-full max-w-md border-white/20 shadow-2xl glass dark:border-white/10">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden p-4 bg-white dark:bg-background">
+      <Card className="relative z-10 w-full max-w-md border shadow-lg">
         <CardHeader className="space-y-3 text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg glow-primary">
             <Package className="h-7 w-7" />

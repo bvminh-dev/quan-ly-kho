@@ -1,36 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-  KeyRound,
-} from "lucide-react";
 import { PermissionGate } from "@/components/access-control";
 import { DataTablePagination } from "@/components/layout/data-table-pagination";
-import { useDeleteUser } from "../hooks/use-users";
-import { UserFormDialog } from "./user-form-dialog";
-import { ResetPasswordDialog } from "./reset-password-dialog";
-import type { UserItem, PaginationMeta, RoleRef } from "@/types/api";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +12,33 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import type { PaginationMeta, RoleRef, UserItem } from "@/types/api";
+import {
+  KeyRound,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
+import { useDeleteUser } from "../hooks/use-users";
+import { ResetPasswordDialog } from "./reset-password-dialog";
+import { UserFormDialog } from "./user-form-dialog";
 
 interface UserTableProps {
   users: UserItem[];
