@@ -91,7 +91,7 @@ export function UserTable({
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="w-[50px] font-semibold">STT</TableHead>
+              <TableHead className="font-semibold">Id</TableHead>
               <TableHead className="font-semibold">Họ tên</TableHead>
               <TableHead className="font-semibold">Email</TableHead>
               <TableHead className="font-semibold">Vai trò</TableHead>
@@ -110,8 +110,8 @@ export function UserTable({
             ) : (
               users.map((user, index) => (
                 <TableRow key={user._id}>
-                  <TableCell className="font-medium">
-                    {(meta.current - 1) * meta.pageSize + index + 1}
+                  <TableCell className="font-mono font-medium">
+                    {user._id.slice(-5).toUpperCase()}
                   </TableCell>
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>

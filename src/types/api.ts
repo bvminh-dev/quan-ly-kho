@@ -156,3 +156,168 @@ export interface UpdatePermissionDto {
   description?: string;
   isActive?: boolean;
 }
+
+export interface WarehouseItem {
+  _id: string;
+  inches: number;
+  item: string;
+  quality: string;
+  style: string;
+  color: string;
+  totalAmount: number;
+  amountOccupied: number;
+  amountAvailable: number;
+  unitOfCalculation: string;
+  priceHigh: number;
+  priceLow: number;
+  sale: number;
+  createdBy: string;
+  updatedBy: string;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateWarehouseDto {
+  inches: number;
+  item: string;
+  quality: string;
+  style: string;
+  color: string;
+  totalAmount: number;
+  unitOfCalculation: string;
+  priceHigh?: number;
+  priceLow?: number;
+  sale?: number;
+}
+
+export interface UpdateWarehouseDto {
+  inches?: number;
+  item?: string;
+  quality?: string;
+  style?: string;
+  color?: string;
+  totalAmount?: number;
+  amountOccupied?: number;
+  amountAvailable?: number;
+  unitOfCalculation?: string;
+  priceHigh?: number;
+  priceLow?: number;
+  sale?: number;
+}
+
+export interface CustomerItem {
+  _id: string;
+  name: string;
+  payment: number;
+  note: string;
+  createdBy: string;
+  updatedBy: string;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCustomerDto {
+  name: string;
+  payment?: number;
+  note?: string;
+}
+
+export interface UpdateCustomerDto {
+  name?: string;
+  payment?: number;
+  note?: string;
+}
+
+export interface OrderItemDto {
+  id: string;
+  quantity: number;
+  price: number;
+  sale: number;
+  customPrice: boolean;
+  customSale: boolean;
+}
+
+export interface OrderProductDto {
+  nameSet: string;
+  priceSet: number;
+  quantitySet: number;
+  saleSet: number;
+  isCalcSet: boolean;
+  items: OrderItemDto[];
+}
+
+export interface OrderHistoryDto {
+  type: string;
+  exchangeRate: number;
+  moneyPaidNGN: number;
+  moneyPaidDolar: number;
+  paymentMethod: string;
+  datePaid: string;
+  note: string;
+}
+
+export interface OrderCustomerRef {
+  _id: string;
+  name: string;
+}
+
+export interface OrderDetail {
+  _id: string;
+  state: string;
+  exchangeRate: number;
+  customer: OrderCustomerRef;
+  totalPrice: number;
+  payment: number;
+  note: string;
+  products: OrderProductDto[];
+  history: OrderHistoryDto[];
+  createdBy: string;
+  updatedBy: string;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateOrderItemDto {
+  id: string;
+  quantity: number;
+  price: number;
+  sale?: number;
+  customPrice?: boolean;
+  customSale?: boolean;
+}
+
+export interface CreateOrderProductDto {
+  nameSet?: string;
+  priceSet?: number;
+  quantitySet?: number;
+  saleSet?: number;
+  isCalcSet?: boolean;
+  items: CreateOrderItemDto[];
+}
+
+export interface CreateOrderDto {
+  exchangeRate: number;
+  customer: string;
+  note?: string;
+  products: CreateOrderProductDto[];
+}
+
+export interface UpdateOrderDto {
+  exchangeRate?: number;
+  customer?: string;
+  note?: string;
+  products?: CreateOrderProductDto[];
+}
+
+export interface AddHistoryDto {
+  type: "khách trả" | "hoàn tiền";
+  exchangeRate: number;
+  moneyPaidNGN: number;
+  moneyPaidDolar: number;
+  paymentMethod: string;
+  datePaid: string;
+  note?: string;
+}

@@ -55,9 +55,9 @@ export default function DashboardPage() {
   const commonCards = [
     {
       title: "Kho hàng",
-      description: "Sắp ra mắt — quản lý kho",
+      description: "Quản lý kho hàng",
       icon: Package,
-      href: "#",
+      href: "/dashboard/warehouse",
       gradient: "from-amber-500 to-orange-600",
       iconBg: "bg-amber-500/10 dark:bg-amber-400/10",
       iconColor: "text-amber-600 dark:text-amber-400",
@@ -65,9 +65,9 @@ export default function DashboardPage() {
     },
     {
       title: "Bảng giá",
-      description: "Sắp ra mắt — quản lý bảng giá",
+      description: "Quản lý bảng giá",
       icon: Tag,
-      href: "#",
+      href: "/dashboard/price-list",
       gradient: "from-cyan-500 to-sky-600",
       iconBg: "bg-cyan-500/10 dark:bg-cyan-400/10",
       iconColor: "text-cyan-600 dark:text-cyan-400",
@@ -75,9 +75,9 @@ export default function DashboardPage() {
     },
     {
       title: "Bán hàng",
-      description: "Sắp ra mắt — quản lý bán hàng",
+      description: "Quản lý bán hàng",
       icon: ShoppingCart,
-      href: "#",
+      href: "/dashboard/sales",
       gradient: "from-rose-500 to-pink-600",
       iconBg: "bg-rose-500/10 dark:bg-rose-400/10",
       iconColor: "text-rose-600 dark:text-rose-400",
@@ -85,9 +85,9 @@ export default function DashboardPage() {
     },
     {
       title: "Hóa đơn",
-      description: "Sắp ra mắt — quản lý hóa đơn",
+      description: "Quản lý hóa đơn",
       icon: Receipt,
-      href: "#",
+      href: "/dashboard/invoices",
       gradient: "from-lime-500 to-green-600",
       iconBg: "bg-lime-500/10 dark:bg-lime-400/10",
       iconColor: "text-lime-600 dark:text-lime-400",
@@ -95,9 +95,9 @@ export default function DashboardPage() {
     },
     {
       title: "Lịch sử",
-      description: "Sắp ra mắt — xem lịch sử hoạt động",
+      description: "Xem lịch sử hoạt động",
       icon: History,
-      href: "#",
+      href: "/dashboard/history",
       gradient: "from-slate-500 to-gray-600",
       iconBg: "bg-slate-500/10 dark:bg-slate-400/10",
       iconColor: "text-slate-600 dark:text-slate-400",
@@ -132,16 +132,16 @@ export default function DashboardPage() {
           {cards.map((card) => (
             <Card
               key={card.title}
-              className={`group cursor-pointer border transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${card.hoverBorder} ${card.href === "#" ? "opacity-70" : ""}`}
+              className={`group cursor-pointer border transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${card.hoverBorder} ${card.href === "/dashboard/history" ? "opacity-70" : ""}`}
               onClick={() => {
-                if (card.href !== "#") router.push(card.href);
+                if (card.href !== "/dashboard/history") router.push(card.href);
               }}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <div className={`rounded-xl p-2.5 ${card.iconBg}`}>
                   <card.icon className={`h-5 w-5 ${card.iconColor}`} />
                 </div>
-                {card.href !== "#" && (
+                {card.href !== "/dashboard/history" && (
                   <ArrowRight className="h-4 w-4 text-muted-foreground/50 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-primary" />
                 )}
               </CardHeader>

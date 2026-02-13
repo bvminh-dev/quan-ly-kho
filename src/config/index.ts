@@ -27,6 +27,24 @@ export const PERMISSION_ROUTES = {
   BY_ID: (id: string) => `${API_PREFIX}/permissions/${id}`,
 } as const;
 
+export const WAREHOUSE_ROUTES = {
+  BASE: `${API_PREFIX}/warehouses`,
+  BY_ID: (id: string) => `${API_PREFIX}/warehouses/${id}`,
+} as const;
+
+export const CUSTOMER_ROUTES = {
+  BASE: `${API_PREFIX}/customers`,
+  BY_ID: (id: string) => `${API_PREFIX}/customers/${id}`,
+} as const;
+
+export const ORDER_ROUTES = {
+  BASE: `${API_PREFIX}/orders`,
+  BY_ID: (id: string) => `${API_PREFIX}/orders/${id}`,
+  HISTORY: (id: string) => `${API_PREFIX}/orders/${id}/history`,
+  CONFIRM: (id: string) => `${API_PREFIX}/orders/${id}/confirm`,
+  REVERT: (id: string) => `${API_PREFIX}/orders/${id}/revert`,
+} as const;
+
 export const QUERY_KEYS = {
   ACCOUNT: ["account"] as const,
   USERS: ["users"] as const,
@@ -35,4 +53,10 @@ export const QUERY_KEYS = {
   ROLE: (id: string) => ["roles", id] as const,
   PERMISSIONS: ["permissions"] as const,
   PERMISSION: (id: string) => ["permissions", id] as const,
+  WAREHOUSES: ["warehouses"] as const,
+  WAREHOUSE: (id: string) => ["warehouses", id] as const,
+  CUSTOMERS: ["customers"] as const,
+  CUSTOMER: (id: string) => ["customers", id] as const,
+  ORDERS: ["orders"] as const,
+  ORDER: (id: string) => ["orders", id] as const,
 } as const;

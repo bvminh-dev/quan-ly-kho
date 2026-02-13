@@ -9,6 +9,11 @@ import {
   Package,
   LogOut,
   Settings,
+  Warehouse,
+  DollarSign,
+  ShoppingCart,
+  ClipboardList,
+  UserCheck,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -36,6 +41,41 @@ const menuItems = [
     url: "/dashboard",
     icon: LayoutDashboard,
     module: null,
+    adminOnly: false,
+  },
+  {
+    title: "Kho hàng",
+    url: "/dashboard/warehouse",
+    icon: Warehouse,
+    module: "warehouses",
+    adminOnly: false,
+  },
+  {
+    title: "Bảng giá",
+    url: "/dashboard/price-list",
+    icon: DollarSign,
+    module: "warehouses",
+    adminOnly: false,
+  },
+  {
+    title: "Bán hàng",
+    url: "/dashboard/sales",
+    icon: ShoppingCart,
+    module: "orders",
+    adminOnly: false,
+  },
+  {
+    title: "Đơn hàng",
+    url: "/dashboard/orders",
+    icon: ClipboardList,
+    module: "orders",
+    adminOnly: false,
+  },
+  {
+    title: "Khách hàng",
+    url: "/dashboard/customers",
+    icon: UserCheck,
+    module: "customers",
     adminOnly: false,
   },
   {

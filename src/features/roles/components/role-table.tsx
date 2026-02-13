@@ -77,7 +77,7 @@ export function RoleTable({
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="w-[50px] font-semibold">STT</TableHead>
+              <TableHead className="font-semibold">Id</TableHead>
               <TableHead className="font-semibold">Tên vai trò</TableHead>
               <TableHead className="font-semibold">Mô tả</TableHead>
               <TableHead className="font-semibold">Số quyền</TableHead>
@@ -96,8 +96,8 @@ export function RoleTable({
             ) : (
               roles.map((role, index) => (
                 <TableRow key={role._id}>
-                  <TableCell className="font-medium">
-                    {(meta.current - 1) * meta.pageSize + index + 1}
+                  <TableCell className="font-mono font-medium">
+                    {role._id.slice(-5).toUpperCase()}
                   </TableCell>
                   <TableCell className="font-medium">{role.name}</TableCell>
                   <TableCell className="max-w-[200px] truncate">

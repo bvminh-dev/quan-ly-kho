@@ -88,7 +88,7 @@ export function PermissionTable({
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="w-[50px] font-semibold">STT</TableHead>
+              <TableHead className="font-semibold">Id</TableHead>
               <TableHead className="font-semibold">Tên quyền</TableHead>
               <TableHead className="font-semibold">API Path</TableHead>
               <TableHead className="font-semibold">Method</TableHead>
@@ -107,8 +107,8 @@ export function PermissionTable({
             ) : (
               permissions.map((perm, index) => (
                 <TableRow key={perm._id}>
-                  <TableCell className="font-medium">
-                    {(meta.current - 1) * meta.pageSize + index + 1}
+                  <TableCell className="font-mono font-medium">
+                    {perm._id.slice(-5).toUpperCase()}
                   </TableCell>
                   <TableCell className="font-medium">{perm.name}</TableCell>
                   <TableCell>

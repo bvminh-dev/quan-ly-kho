@@ -303,3 +303,39 @@ Giống:
 * Modern SaaS dashboards
 
 ---
+
+- Ở api get do BE đang dùng thư viện: "api-query-params" trong NestJS, vd:
+```
+async findAll(
+    @Query('current') currentPage: string,
+    @Query('pageSize') pageSize: string,
+    @Query() queryString: string,
+  ) {
+    return this.getWarehousesUseCase.execute(
+      queryString as any,
+      +currentPage || 1,
+      +pageSize || 10,
+    );
+  }
+
+  const { filter, sort, population } = aqp(queryString);
+    delete filter.current;
+    delete filter.pageSize;
+
+    const offset = (currentPage - 1) * pageSize;
+    const total = await this.warehouseModel.countDocuments({
+      ...filter,
+      isDeleted: false,
+    });
+    const pages = Math.ceil(total / pageSize);
+
+    const docs = await this.warehouseModel
+      .find({ ...filter, isDeleted: false })
+      .skip(offset)
+      .limit(pageSize)
+      .sort(sort as any)
+      .populate([...(Array.isArray(population) ? population : [])])
+      .lean();
+  ``` 
+
+  nên là bộ fillter, sort hãy truyền đúng theo yêu cầu

@@ -1,11 +1,5 @@
 "use client";
 
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -14,6 +8,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
 
 interface DataTablePaginationProps {
   current: number;
@@ -33,19 +33,18 @@ export function DataTablePagination({
   onPageSizeChange,
 }: DataTablePaginationProps) {
   return (
-    <div className="flex items-center justify-between px-2 py-4">
-      <div className="text-sm text-muted-foreground">
-        Tổng: <span className="font-medium text-foreground">{total}</span> bản
-        ghi
-      </div>
-      <div className="flex items-center space-x-6 lg:space-x-8">
-        <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium">Hiển thị</p>
+    <div className="flex flex-col gap-3 px-2 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center justify-between gap-4 sm:justify-start">
+        <div className="text-sm text-muted-foreground">
+          Tổng: <span className="font-medium text-foreground">{total}</span> bản ghi
+        </div>
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium whitespace-nowrap">Hiển thị</p>
           <Select
             value={`${pageSize}`}
             onValueChange={(value) => onPageSizeChange(Number(value))}
           >
-            <SelectTrigger className="h-8 w-[70px]">
+            <SelectTrigger className="h-8 w-[80px]">
               <SelectValue placeholder={pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
@@ -57,13 +56,16 @@ export function DataTablePagination({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+      </div>
+
+      <div className="flex items-center justify-between gap-2 sm:justify-end sm:gap-4">
+        <div className="text-sm font-medium whitespace-nowrap">
           Trang {current} / {pages}
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1">
           <Button
             variant="outline"
-            className="hidden h-8 w-8 p-0 lg:flex"
+            className="hidden h-8 w-8 p-0 sm:flex"
             onClick={() => onPageChange(1)}
             disabled={current <= 1}
           >
@@ -90,7 +92,7 @@ export function DataTablePagination({
           </Button>
           <Button
             variant="outline"
-            className="hidden h-8 w-8 p-0 lg:flex"
+            className="hidden h-8 w-8 p-0 sm:flex"
             onClick={() => onPageChange(pages)}
             disabled={current >= pages}
           >
