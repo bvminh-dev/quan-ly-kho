@@ -18,9 +18,21 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://yourdomain.com";
 export const metadata: Metadata = {
   title: "Quản Lý Kho - Warehouse Management",
   description: "Hệ thống quản lý kho hàng hiện đại",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Quản Lý Kho",
+  },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/favicon.ico",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icon-192.png", sizes: "180x180", type: "image/png" },
+    ],
   },
   metadataBase: new URL(siteUrl),
   openGraph: {
@@ -40,6 +52,15 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+};
+
+export const viewport = {
+  themeColor: '#000000',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({

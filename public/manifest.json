@@ -1,0 +1,25 @@
+{
+    "name": "Quản Lý Kho - Warehouse Management",
+    "short_name": "Quản Lý Kho",
+    "description": "Hệ thống quản lý kho hàng hiện đại",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#000000",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/warehouse.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "business",
+        "productivity"
+    ],
+    "lang": "vi",
+    "dir": "ltr"
+}
