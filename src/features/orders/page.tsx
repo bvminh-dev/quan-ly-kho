@@ -10,7 +10,11 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
-  const { data, isLoading } = useOrders({ current: page, pageSize });
+  const { data, isLoading } = useOrders({ 
+    current: page, 
+    pageSize,
+    sort: "-createdAt"
+  });
   const { data: whData } = useAllWarehouses();
 
   const orders = data?.data?.items ?? [];

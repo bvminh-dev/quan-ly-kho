@@ -206,6 +206,12 @@ export interface UpdateWarehouseDto {
   sale?: number;
 }
 
+export interface AddStockBodyDto {
+  id: string;
+  quantity: number;
+  note?: string;
+}
+
 export interface CustomerItem {
   _id: string;
   name: string;
@@ -265,6 +271,7 @@ export interface OrderCustomerRef {
 
 export interface OrderDetail {
   _id: string;
+  type: "cao" | "thấp";
   state: string;
   exchangeRate: number;
   customer: OrderCustomerRef;
@@ -299,6 +306,7 @@ export interface CreateOrderProductDto {
 }
 
 export interface CreateOrderDto {
+  type: "cao" | "thấp";
   exchangeRate: number;
   customer: string;
   note?: string;
@@ -306,6 +314,7 @@ export interface CreateOrderDto {
 }
 
 export interface UpdateOrderDto {
+  type?: "cao" | "thấp";
   exchangeRate?: number;
   customer?: string;
   note?: string;
@@ -320,4 +329,8 @@ export interface AddHistoryDto {
   paymentMethod: string;
   datePaid: string;
   note?: string;
+}
+
+export interface RevertOrderDto {
+  note: string;
 }

@@ -1,21 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Users,
-  Shield,
-  KeyRound,
-  LayoutDashboard,
-  Package,
-  LogOut,
-  Settings,
-  Warehouse,
-  DollarSign,
-  ShoppingCart,
-  ClipboardList,
-  UserCheck,
-} from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { ModuleGate } from "@/components/access-control";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Sidebar,
   SidebarContent,
@@ -28,78 +14,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { useAuthStore } from "@/stores/auth-store";
+import { getMenuItems } from "@/config/navigation.config";
 import { authService } from "@/services/auth.service";
-import { ModuleGate } from "@/components/access-control";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuthStore } from "@/stores/auth-store";
+import { LogOut, Package, Settings } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { UserProfileDialog } from "./user-profile-dialog";
-
-const menuItems = [
-  {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: LayoutDashboard,
-    module: null,
-    adminOnly: false,
-  },
-  {
-    title: "Kho hàng",
-    url: "/dashboard/warehouse",
-    icon: Warehouse,
-    module: "warehouses",
-    adminOnly: false,
-  },
-  {
-    title: "Bảng giá",
-    url: "/dashboard/price-list",
-    icon: DollarSign,
-    module: "warehouses",
-    adminOnly: false,
-  },
-  {
-    title: "Bán hàng",
-    url: "/dashboard/sales",
-    icon: ShoppingCart,
-    module: "orders",
-    adminOnly: false,
-  },
-  {
-    title: "Đơn hàng",
-    url: "/dashboard/orders",
-    icon: ClipboardList,
-    module: "orders",
-    adminOnly: false,
-  },
-  {
-    title: "Khách hàng",
-    url: "/dashboard/customers",
-    icon: UserCheck,
-    module: "customers",
-    adminOnly: false,
-  },
-  {
-    title: "Người dùng",
-    url: "/dashboard/users",
-    icon: Users,
-    module: "users",
-    adminOnly: true,
-  },
-  {
-    title: "Vai trò",
-    url: "/dashboard/roles",
-    icon: Shield,
-    module: "roles",
-    adminOnly: true,
-  },
-  {
-    title: "Quyền hạn",
-    url: "/dashboard/permissions",
-    icon: KeyRound,
-    module: "permissions",
-    adminOnly: true,
-  },
-];
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -120,27 +42,123 @@ export function AppSidebar() {
     }
   };
 
-  const renderMenuItem = (item: (typeof menuItems)[0]) => {
-    if (item.adminOnly && !isAdmin) return null;
+  const ActiveIcon = ({ 
+    Icon, 
+    isActive 
+  }: { 
+    Icon: React.ComponentType<{ className?: string }>; 
+    isActive: boolean;
+  }) => {
+    const [shouldAnimate, setShouldAnimate] = useState(false);
+    const prevActiveRef = useRef(false);
+    const isMountedRef = useRef(false);
+    const containerRef = useRef<HTMLDivElement>(null);
 
+    useEffect(() => {
+      // Khi component mount lần đầu và đã active (refresh trang)
+      if (!isMountedRef.current && isActive) {
+        isMountedRef.current = true;
+        // Delay nhỏ để đảm bảo DOM đã render
+        const timer = setTimeout(() => {
+          setShouldAnimate(true);
+          animatePaths();
+          setTimeout(() => setShouldAnimate(false), 1000);
+        }, 50);
+        return () => clearTimeout(timer);
+      }
+      
+      isMountedRef.current = true;
+      
+      // Khi click và chuyển sang active
+      if (isActive && !prevActiveRef.current) {
+        setShouldAnimate(true);
+        animatePaths();
+        const timer = setTimeout(() => setShouldAnimate(false), 1000);
+        return () => clearTimeout(timer);
+      }
+      prevActiveRef.current = isActive;
+    }, [isActive]);
+
+    const animatePaths = () => {
+      // Tìm SVG element trong DOM
+      setTimeout(() => {
+        const svgElement = containerRef.current?.querySelector('svg');
+        
+        if (!svgElement) return;
+
+        // Lấy tất cả các path elements
+        const paths = svgElement.querySelectorAll('path, circle, rect, line, polyline, polygon');
+        
+        paths.forEach((path, index) => {
+          const element = path as SVGPathElement | SVGCircleElement | SVGRectElement | SVGLineElement | SVGPolylineElement | SVGPolygonElement;
+          
+          // Tính toán path length
+          let length = 0;
+          if (element instanceof SVGPathElement) {
+            length = element.getTotalLength();
+          } else if (element instanceof SVGCircleElement) {
+            const r = parseFloat(element.getAttribute('r') || '0');
+            length = 2 * Math.PI * r;
+          } else if (element instanceof SVGRectElement) {
+            const w = parseFloat(element.getAttribute('width') || '0');
+            const h = parseFloat(element.getAttribute('height') || '0');
+            length = 2 * (w + h);
+          } else {
+            // Fallback cho line, polyline, polygon
+            length = element.getTotalLength ? element.getTotalLength() : 200;
+          }
+
+          // Set stroke-dasharray và stroke-dashoffset
+          element.style.setProperty('--path-length', `${length}`);
+          element.style.strokeDasharray = `${length}`;
+          element.style.strokeDashoffset = `${length}`;
+          
+          // Animation delay cho từng path (tổng thời gian ≤ 1s)
+          const delay = index * 0.1;
+          element.style.animationDelay = `${delay}s`;
+          element.style.animation = `icon-stroke-draw 0.5s ease-out ${delay}s forwards`;
+        });
+      }, 10);
+    };
+
+    return (
+      <div ref={containerRef}>
+        <Icon 
+          className={`h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 group-active:scale-95 ${
+            shouldAnimate ? "icon-active-animate" : ""
+          }`} 
+        />
+      </div>
+    );
+  };
+
+  const menuItems = getMenuItems(isAdmin);
+
+  const renderMenuItem = (item: (typeof menuItems)[0]) => {
     const isActive = pathname === item.url;
     const menuButton = (
       <SidebarMenuItem key={item.title}>
         <SidebarMenuButton
           isActive={isActive}
           onClick={() => router.push(item.url)}
-          className="cursor-pointer"
+          className="cursor-pointer group"
         >
-          <item.icon className="h-4 w-4" />
+          <ActiveIcon Icon={item.icon} isActive={isActive} />
           <span>{item.title}</span>
         </SidebarMenuButton>
       </SidebarMenuItem>
     );
 
+    // If no module required, show directly
     if (!item.module) return menuButton;
 
+    // If admin, show directly (admin has access to everything)
     if (isAdmin) return menuButton;
 
+    // If adminOnly is false, show directly (available to all users regardless of module permissions)
+    // if (!item.adminOnly) return menuButton;
+
+    // For adminOnly items, check module access
     return (
       <ModuleGate key={item.title} module={item.module}>
         {menuButton}
@@ -192,17 +210,17 @@ export function AppSidebar() {
           </div>
           <button
             onClick={() => setProfileOpen(true)}
-            className="rounded-lg p-2 text-muted-foreground hover:bg-sidebar-accent hover:text-primary transition-all duration-200 cursor-pointer shrink-0"
+            className="rounded-lg p-2 text-muted-foreground hover:bg-sidebar-accent hover:text-primary transition-all duration-200 cursor-pointer shrink-0 group"
             title="Cài đặt tài khoản"
           >
-            <Settings className="h-4 w-4" />
+            <Settings className="h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-90" />
           </button>
           <button
             onClick={handleLogout}
-            className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 cursor-pointer shrink-0"
+            className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 cursor-pointer shrink-0 group"
             title="Đăng xuất"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:-translate-x-1" />
           </button>
         </div>
       </SidebarFooter>

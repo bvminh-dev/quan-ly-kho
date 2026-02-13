@@ -226,13 +226,37 @@ export default function SalesPage() {
           const wh = warehouseMap[item.warehouseId];
           if (!wh) return item;
           const price = type === "high" ? wh.priceHigh : wh.priceLow;
-          const sale = type === "high" ? wh.sale : 0;
+          // Giữ lại giá trị sale nếu đã được tùy chỉnh, nếu không thì chỉ cập nhật khi chọn giá cao
+          const sale = item.customSale 
+            ? item.sale 
+            : (type === "high" ? wh.sale : item.sale);
           return {
             ...item,
             price,
-            sale: item.customSale ? item.sale : sale,
+            sale,
           };
         })
+      );
+      // Cập nhật items trong sets
+      setSets((prev) =>
+        prev.map((set) => ({
+          ...set,
+          items: set.items.map((item) => {
+            if (item.customPrice) return item;
+            const wh = warehouseMap[item.warehouseId];
+            if (!wh) return item;
+            const price = type === "high" ? wh.priceHigh : wh.priceLow;
+            // Giữ lại giá trị sale nếu đã được tùy chỉnh, nếu không thì chỉ cập nhật khi chọn giá cao
+            const sale = item.customSale 
+              ? item.sale 
+              : (type === "high" ? wh.sale : item.sale);
+            return {
+              ...item,
+              price,
+              sale,
+            };
+          }),
+        }))
       );
     },
     [warehouseMap]
@@ -310,6 +334,7 @@ export default function SalesPage() {
     });
 
     return {
+      type: priceType === "high" ? "cao" : "thấp",
       exchangeRate,
       customer: selectedCustomerId,
       note,
@@ -434,7 +459,6 @@ export default function SalesPage() {
         open={invoiceOpen}
         onClose={handleInvoiceClose}
         order={createdOrder}
-        priceType={priceType}
         warehouseMap={warehouseMap}
       />
 

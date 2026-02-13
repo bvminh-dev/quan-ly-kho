@@ -7,6 +7,7 @@ import type {
   WarehouseItem,
   CreateWarehouseDto,
   UpdateWarehouseDto,
+  AddStockBodyDto,
 } from "@/types/api";
 
 export const warehouseService = {
@@ -43,6 +44,14 @@ export const warehouseService = {
   delete: async (id: string) => {
     const { data } = await axiosInstance.delete<ApiResponse<null>>(
       WAREHOUSE_ROUTES.BY_ID(id)
+    );
+    return data;
+  },
+
+  addStock: async (dto: AddStockBodyDto) => {
+    const { data } = await axiosInstance.post<ApiResponse<WarehouseItem>>(
+      WAREHOUSE_ROUTES.ADD_STOCK,
+      dto
     );
     return data;
   },

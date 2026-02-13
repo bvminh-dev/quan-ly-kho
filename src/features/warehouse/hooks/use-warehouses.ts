@@ -8,6 +8,7 @@ import type {
   PaginationParams,
   CreateWarehouseDto,
   UpdateWarehouseDto,
+  AddStockBodyDto,
 } from "@/types/api";
 
 export function useWarehouses(params: PaginationParams) {
@@ -60,6 +61,36 @@ export function useUpdateWarehouse() {
     },
     onError: () => {
       toast.error("Cập nhật kho thất bại");
+    },
+  });
+}
+
+export function useAddStock() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (dto: AddStockBodyDto) => warehouseService.addStock(dto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WAREHOUSES });
+      toast.success("Bổ sung hàng hóa thành công");
+    },
+    onError: () => {
+      toast.error("Bổ sung hàng hóa thất bại");
+    },
+  });
+}
+
+export function useDeleteWarehouse() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => warehouseService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WAREHOUSES });
+      toast.success("Xóa sản phẩm kho thành công");
+    },
+    onError: () => {
+      toast.error("Xóa sản phẩm kho thất bại");
     },
   });
 }

@@ -19,7 +19,6 @@ interface InvoiceDialogProps {
   open: boolean;
   onClose: () => void;
   order: OrderDetail | null;
-  priceType: "high" | "low";
   warehouseMap: Record<string, WarehouseItem>;
 }
 
@@ -27,7 +26,6 @@ export function InvoiceDialog({
   open,
   onClose,
   order,
-  priceType,
   warehouseMap,
 }: InvoiceDialogProps) {
   const invoiceRef = useRef<HTMLDivElement>(null);
@@ -83,6 +81,7 @@ export function InvoiceDialog({
 
   if (!order) return null;
 
+  const priceType = order.type === "cao" ? "high" : "low";
   const invoiceLabel = priceType === "high" ? "C" : "T";
   const now = new Date(order.createdAt);
   const dateStr = now.toLocaleDateString("en-US", {

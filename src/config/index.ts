@@ -30,6 +30,7 @@ export const PERMISSION_ROUTES = {
 export const WAREHOUSE_ROUTES = {
   BASE: `${API_PREFIX}/warehouses`,
   BY_ID: (id: string) => `${API_PREFIX}/warehouses/${id}`,
+  ADD_STOCK: `${API_PREFIX}/warehouses/add-stock`,
 } as const;
 
 export const CUSTOMER_ROUTES = {

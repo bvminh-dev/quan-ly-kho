@@ -8,6 +8,7 @@ import type {
   CreateOrderDto,
   UpdateOrderDto,
   AddHistoryDto,
+  RevertOrderDto,
 } from "@/types/api";
 
 export const orderService = {
@@ -63,9 +64,10 @@ export const orderService = {
     return data;
   },
 
-  revert: async (id: string) => {
+  revert: async (id: string, dto: RevertOrderDto) => {
     const { data } = await axiosInstance.patch<ApiResponse<OrderDetail>>(
-      ORDER_ROUTES.REVERT(id)
+      ORDER_ROUTES.REVERT(id),
+      dto
     );
     return data;
   },

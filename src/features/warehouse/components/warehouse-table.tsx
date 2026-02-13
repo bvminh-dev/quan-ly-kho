@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -10,8 +10,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DataTablePagination } from "@/components/layout/data-table-pagination";
+import { RoleGate } from "@/components/access-control";
+import { MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import { sortWarehouseItems } from "../utils/sort-warehouse";
+import { AddStockDialog } from "./add-stock-dialog";
+import { useDeleteWarehouse } from "../hooks/use-warehouses";
 import type { WarehouseItem, PaginationMeta } from "@/types/api";
 
 interface WarehouseTableProps {
@@ -30,6 +41,8 @@ export function WarehouseTable({
   onPageSizeChange,
 }: WarehouseTableProps) {
   const sortedItems = useMemo(() => sortWarehouseItems(items), [items]);
+  const deleteWarehouse = useDeleteWarehouse();
+  const [addStockWarehouse, setAddStockWarehouse] = useState<WarehouseItem | null>(null);
 
   if (isLoading) {
     return (
@@ -56,12 +69,13 @@ export function WarehouseTable({
             <TableHead className="font-semibold text-right">Khả dụng</TableHead>
             <TableHead className="font-semibold text-right">Chiếm dụng</TableHead>
             <TableHead className="font-semibold">Đơn vị</TableHead>
+            <TableHead className="font-semibold text-center">Thao tác</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {sortedItems.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
+              <TableCell colSpan={11} className="h-24 text-center text-muted-foreground">
                 Không có dữ liệu
               </TableCell>
             </TableRow>
@@ -82,11 +96,44 @@ export function WarehouseTable({
                   {item.amountOccupied}
                 </TableCell>
                 <TableCell>{item.unitOfCalculation}</TableCell>
+                <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => setAddStockWarehouse(item)}
+                        className="cursor-pointer"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Thêm hàng hóa
+                      </DropdownMenuItem>
+                      <RoleGate role="admin">
+                        <DropdownMenuItem
+                          onClick={() => deleteWarehouse.mutate(item._id)}
+                          className="cursor-pointer text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Xóa
+                        </DropdownMenuItem>
+                      </RoleGate>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
               </TableRow>
             ))
           )}
         </TableBody>
       </Table>
+
+      <AddStockDialog
+        open={!!addStockWarehouse}
+        onOpenChange={(open) => !open && setAddStockWarehouse(null)}
+        warehouse={addStockWarehouse}
+      />
 
       <DataTablePagination
         current={meta.current}

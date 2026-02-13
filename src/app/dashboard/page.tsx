@@ -2,110 +2,15 @@
 
 import { useAccessControl } from "@/components/access-control";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  ArrowRight,
-  History,
-  KeyRound,
-  Package,
-  Receipt,
-  Shield,
-  ShoppingCart,
-  Tag,
-  Users,
-} from "lucide-react";
+import { getDashboardCards } from "@/config/navigation.config";
+import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
   const { isAdmin, user } = useAccessControl();
   const router = useRouter();
 
-  const adminCards = [
-    {
-      title: "Người dùng",
-      description: "Quản lý tài khoản người dùng",
-      icon: Users,
-      href: "/dashboard/users",
-      gradient: "from-blue-500 to-indigo-600",
-      iconBg: "bg-blue-500/10 dark:bg-blue-400/10",
-      iconColor: "text-blue-600 dark:text-blue-400",
-      hoverBorder: "hover:border-blue-200 dark:hover:border-blue-800",
-    },
-    {
-      title: "Vai trò",
-      description: "Quản lý phân quyền vai trò",
-      icon: Shield,
-      href: "/dashboard/roles",
-      gradient: "from-emerald-500 to-teal-600",
-      iconBg: "bg-emerald-500/10 dark:bg-emerald-400/10",
-      iconColor: "text-emerald-600 dark:text-emerald-400",
-      hoverBorder: "hover:border-emerald-200 dark:hover:border-emerald-800",
-    },
-    {
-      title: "Quyền hạn",
-      description: "Quản lý quyền truy cập hệ thống",
-      icon: KeyRound,
-      href: "/dashboard/permissions",
-      gradient: "from-violet-500 to-purple-600",
-      iconBg: "bg-violet-500/10 dark:bg-violet-400/10",
-      iconColor: "text-violet-600 dark:text-violet-400",
-      hoverBorder: "hover:border-violet-200 dark:hover:border-violet-800",
-    },
-  ];
-
-  const commonCards = [
-    {
-      title: "Kho hàng",
-      description: "Quản lý kho hàng",
-      icon: Package,
-      href: "/dashboard/warehouse",
-      gradient: "from-amber-500 to-orange-600",
-      iconBg: "bg-amber-500/10 dark:bg-amber-400/10",
-      iconColor: "text-amber-600 dark:text-amber-400",
-      hoverBorder: "hover:border-amber-200 dark:hover:border-amber-800",
-    },
-    {
-      title: "Bảng giá",
-      description: "Quản lý bảng giá",
-      icon: Tag,
-      href: "/dashboard/price-list",
-      gradient: "from-cyan-500 to-sky-600",
-      iconBg: "bg-cyan-500/10 dark:bg-cyan-400/10",
-      iconColor: "text-cyan-600 dark:text-cyan-400",
-      hoverBorder: "hover:border-cyan-200 dark:hover:border-cyan-800",
-    },
-    {
-      title: "Bán hàng",
-      description: "Quản lý bán hàng",
-      icon: ShoppingCart,
-      href: "/dashboard/sales",
-      gradient: "from-rose-500 to-pink-600",
-      iconBg: "bg-rose-500/10 dark:bg-rose-400/10",
-      iconColor: "text-rose-600 dark:text-rose-400",
-      hoverBorder: "hover:border-rose-200 dark:hover:border-rose-800",
-    },
-    {
-      title: "Hóa đơn",
-      description: "Quản lý hóa đơn",
-      icon: Receipt,
-      href: "/dashboard/invoices",
-      gradient: "from-lime-500 to-green-600",
-      iconBg: "bg-lime-500/10 dark:bg-lime-400/10",
-      iconColor: "text-lime-600 dark:text-lime-400",
-      hoverBorder: "hover:border-lime-200 dark:hover:border-lime-800",
-    },
-    {
-      title: "Lịch sử",
-      description: "Xem lịch sử hoạt động",
-      icon: History,
-      href: "/dashboard/history",
-      gradient: "from-slate-500 to-gray-600",
-      iconBg: "bg-slate-500/10 dark:bg-slate-400/10",
-      iconColor: "text-slate-600 dark:text-slate-400",
-      hoverBorder: "hover:border-slate-200 dark:hover:border-slate-800",
-    },
-  ];
-
-  const cards = [...(isAdmin ? adminCards : []), ...commonCards];
+  const cards = getDashboardCards(isAdmin);
 
   return (
     <div className="space-y-8">
@@ -132,16 +37,16 @@ export default function DashboardPage() {
           {cards.map((card) => (
             <Card
               key={card.title}
-              className={`group cursor-pointer border transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${card.hoverBorder} ${card.href === "/dashboard/history" ? "opacity-70" : ""}`}
+              className={`group cursor-pointer border transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 ${card.hoverBorder || ""} ${card.comingSoon ? "opacity-70" : ""}`}
               onClick={() => {
-                if (card.href !== "/dashboard/history") router.push(card.href);
+                if (!card.comingSoon && card.url !== "#") router.push(card.url);
               }}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <div className={`rounded-xl p-2.5 ${card.iconBg}`}>
-                  <card.icon className={`h-5 w-5 ${card.iconColor}`} />
+                <div className={`rounded-xl p-2.5 ${card.iconBg} transition-all duration-300 group-hover:scale-110`}>
+                  <card.icon className={`h-5 w-5 ${card.iconColor} transition-all duration-300 group-hover:rotate-6 group-hover:scale-110`} />
                 </div>
-                {card.href !== "/dashboard/history" && (
+                {!card.comingSoon && card.url !== "#" && (
                   <ArrowRight className="h-4 w-4 text-muted-foreground/50 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-primary" />
                 )}
               </CardHeader>
@@ -152,7 +57,7 @@ export default function DashboardPage() {
                 <p className="text-sm text-muted-foreground">
                   {card.description}
                 </p>
-                {card.href === "#" && (
+                {card.comingSoon && (
                   <span className="inline-block mt-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
                     Coming soon
                   </span>

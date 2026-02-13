@@ -184,4 +184,44 @@
   .dark .glow-primary {
     box-shadow: 0 0 25px oklch(0.68 0.19 264 / 30%);
   }
+  
+  /* Icon path stroke animation - vẽ từng path tuần tự */
+  @keyframes icon-stroke-draw {
+    0% {
+      stroke-dashoffset: var(--path-length, 1000);
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.4;
+    }
+    50% {
+      opacity: 0.8;
+    }
+    100% {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+  }
+  
+  .icon-active-animate svg {
+    overflow: visible;
+  }
+  
+  /* Áp dụng animation cho tất cả các path elements */
+  .icon-active-animate svg path,
+  .icon-active-animate svg circle,
+  .icon-active-animate svg rect,
+  .icon-active-animate svg line,
+  .icon-active-animate svg polyline,
+  .icon-active-animate svg polygon {
+    stroke-dasharray: var(--path-length, 1000);
+    stroke-dashoffset: var(--path-length, 1000);
+  }
+  
+  /* Giữ fill nếu có, chỉ animate stroke */
+  .icon-active-animate svg path[fill],
+  .icon-active-animate svg circle[fill],
+  .icon-active-animate svg rect[fill] {
+    fill: currentColor;
+  }
 }

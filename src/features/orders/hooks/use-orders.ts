@@ -9,6 +9,7 @@ import type {
   CreateOrderDto,
   UpdateOrderDto,
   AddHistoryDto,
+  RevertOrderDto,
 } from "@/types/api";
 
 export function useOrders(params: PaginationParams) {
@@ -94,7 +95,8 @@ export function useRevertOrder() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => orderService.revert(id),
+    mutationFn: ({ id, dto }: { id: string; dto: RevertOrderDto }) =>
+      orderService.revert(id, dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ORDERS });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WAREHOUSES });
