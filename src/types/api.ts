@@ -19,6 +19,7 @@ export interface PaginatedData<T> {
 export interface PaginationParams {
   current: number;
   pageSize: number;
+  sort?: string;
 }
 
 export interface PermissionItem {

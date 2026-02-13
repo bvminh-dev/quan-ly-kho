@@ -1,13 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -16,8 +13,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useCustomer } from "../hooks/use-customers";
 import { useOrders } from "@/features/orders/hooks/use-orders";
+import { ArrowLeft, Pencil } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { useCustomer } from "../hooks/use-customers";
 import { CustomerFormDialog } from "./customer-form-dialog";
 
 interface CustomerDetailProps {
@@ -34,7 +34,7 @@ const stateColors: Record<string, string> = {
 export function CustomerDetail({ customerId }: CustomerDetailProps) {
   const router = useRouter();
   const { data: custData, isLoading: custLoading } = useCustomer(customerId);
-  const { data: ordersData } = useOrders({ current: 1, pageSize: 100 });
+  const { data: ordersData } = useOrders({ current: 1, pageSize: 100, sort: "-createdAt" });
   const [editOpen, setEditOpen] = useState(false);
 
   const customer = custData?.data;
