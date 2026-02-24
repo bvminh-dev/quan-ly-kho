@@ -216,7 +216,7 @@ function Sidebar({
               <div
                 data-sidebar="sidebar"
                 data-slot="sidebar-inner"
-                className="bg-sidebar flex h-full w-full flex-col border-r overflow-hidden pt-[env(safe-area-inset-top)]"
+                className="bg-sidebar flex h-full w-full flex-col border-r overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
               >
                 {children}
               </div>
