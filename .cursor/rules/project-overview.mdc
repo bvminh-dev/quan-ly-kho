@@ -4,15 +4,12 @@ description: This is a new rule
 ---
 
 - Luôn nói “Xin chào anh Minh” trước khi trả lời câu hỏi
-- Câu trả lời không chứa bình luận
+- Câu trả lời không chứa comment code
 - Trước khi hoàn thành nhiệm vụ, xóa đoạn code thừa và tóm tắt: Việc gì đã làm được, việc gì chưa làm được
-
 
 # 🚀 MODERN NEXT.JS FRONTEND PRODUCTION BLUEPRINT
 
 (Frontend only – App Router)
-
-
 
 ---
 
@@ -24,10 +21,10 @@ description: This is a new rule
 
 Mỗi feature = 1 mini app độc lập:
 
-* UI
-* hooks
-* services
-* types
+- UI
+- hooks
+- services
+- types
 
 tập trung trong 1 folder.
 
@@ -297,14 +294,15 @@ Bạn đang build:
 
 Giống:
 
-* Vercel
-* Linear
-* Cal.com
-* Modern SaaS dashboards
+- Vercel
+- Linear
+- Cal.com
+- Modern SaaS dashboards
 
 ---
 
 - Ở api get do BE đang dùng thư viện: "api-query-params" trong NestJS, vd:
+
 ```
 async findAll(
     @Query('current') currentPage: string,
@@ -336,6 +334,6 @@ async findAll(
       .sort(sort as any)
       .populate([...(Array.isArray(population) ? population : [])])
       .lean();
-  ``` 
+```
 
-  nên là bộ fillter, sort hãy truyền đúng theo yêu cầu
+nên là bộ fillter, sort hãy truyền đúng theo yêu cầu

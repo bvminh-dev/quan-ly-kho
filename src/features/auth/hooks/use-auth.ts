@@ -20,7 +20,9 @@ export function useSignin() {
       toast.success("Đăng nhập thành công");
       router.push("/dashboard");
     },
-    onError: () => {
+    onError: (error) => {
+      console.log(error);
+      console.log("DDeen day chua");
       toast.error("Email hoặc mật khẩu không đúng");
     },
   });

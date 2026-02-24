@@ -9,30 +9,31 @@ import type {
 
 export const authService = {
   signin: async (dto: SigninDto) => {
+    console.log(dto);
     const { data } = await axiosInstance.post<ApiResponse<SigninData>>(
       AUTH_ROUTES.SIGNIN,
-      dto
+      dto,
     );
     return data;
   },
 
   refreshToken: async () => {
     const { data } = await axiosInstance.get<ApiResponse<SigninData>>(
-      AUTH_ROUTES.REFRESH
+      AUTH_ROUTES.REFRESH,
     );
     return data;
   },
 
   logout: async () => {
     const { data } = await axiosInstance.post<ApiResponse<string>>(
-      AUTH_ROUTES.LOGOUT
+      AUTH_ROUTES.LOGOUT,
     );
     return data;
   },
 
   getAccount: async () => {
     const { data } = await axiosInstance.get<ApiResponse<AccountData>>(
-      AUTH_ROUTES.ACCOUNT
+      AUTH_ROUTES.ACCOUNT,
     );
     return data;
   },

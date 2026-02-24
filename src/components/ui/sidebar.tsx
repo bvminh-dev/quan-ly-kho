@@ -181,6 +181,51 @@ function Sidebar({
   }
 
   if (isMobile) {
+    if (collapsible === "icon") {
+      return (
+        <>
+          {openMobile && (
+            <div
+              className="fixed inset-0 z-40 bg-black/60 animate-in fade-in duration-200"
+              onClick={() => setOpenMobile(false)}
+            />
+          )}
+          <div
+            className="group peer text-sidebar-foreground"
+            data-state={openMobile ? "expanded" : "collapsed"}
+            data-collapsible={!openMobile ? collapsible : ""}
+            data-variant={variant}
+            data-side={side}
+            data-slot="sidebar"
+            data-mobile="true"
+          >
+            <div
+              data-slot="sidebar-gap"
+              className="w-(--sidebar-width-icon) shrink-0"
+            />
+            <div
+              data-slot="sidebar-container"
+              className={cn(
+                "fixed inset-y-0 left-0 z-50 flex h-svh transition-[width] duration-200 ease-linear",
+                openMobile
+                  ? "w-(--sidebar-width)"
+                  : "w-(--sidebar-width-icon)",
+                className
+              )}
+            >
+              <div
+                data-sidebar="sidebar"
+                data-slot="sidebar-inner"
+                className="bg-sidebar flex h-full w-full flex-col border-r overflow-hidden pt-[env(safe-area-inset-top)]"
+              >
+                {children}
+              </div>
+            </div>
+          </div>
+        </>
+      )
+    }
+
     return (
       <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
         <SheetContent
