@@ -335,3 +335,127 @@ export interface AddHistoryDto {
 export interface RevertOrderDto {
   note: string;
 }
+
+export interface HistoryEnterMetadata {
+  totalAmount?: number;
+  priceHigh?: number;
+  priceLow?: number;
+  sale?: number;
+  quantity?: number;
+  quantityRevert?: number;
+  orderId?: string | { _id: string };
+  priceHighNew?: number;
+  priceHighOld?: number;
+  priceLowNew?: number;
+  priceLowOld?: number;
+  saleNew?: number;
+  saleOld?: number;
+}
+
+export interface HistoryEnterItem {
+  _id: string;
+  warehouseId: string | { _id: string };
+  item: string;
+  inches: number;
+  quality: string;
+  style: string;
+  color: string;
+  type: "Tạo mới" | "Nhập thêm hàng" | "Hoàn đơn" | "Sửa giá" | "Xóa";
+  metadata: HistoryEnterMetadata;
+  note?: string;
+  createdBy: string;
+  updatedBy: string;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateHistoryEnterDto {
+  warehouseId: string;
+  item: string;
+  inches: number;
+  quality: string;
+  style: string;
+  color: string;
+  type: "Tạo mới" | "Nhập thêm hàng" | "Hoàn đơn" | "Sửa giá" | "Xóa";
+  metadata: HistoryEnterMetadata;
+  note?: string;
+}
+
+export interface UpdateHistoryEnterDto {
+  warehouseId?: string;
+  item?: string;
+  inches?: number;
+  quality?: string;
+  style?: string;
+  color?: string;
+  type?: "Tạo mới" | "Nhập thêm hàng" | "Hoàn đơn" | "Sửa giá" | "Xóa";
+  metadata?: HistoryEnterMetadata;
+  note?: string;
+}
+
+export interface HistoryExportItem {
+  _id: string;
+  warehouseId: string | { _id: string };
+  item: string;
+  inches: number;
+  quality: string;
+  style: string;
+  color: string;
+  priceHigh: number;
+  priceLow: number;
+  sale: number;
+  orderId: string | { _id: string };
+  type: "cao" | "thấp";
+  priceOrder: number;
+  saleOrder: number;
+  quantityOrder: number;
+  stateOrder: "Khách trả" | "Hoàn đơn";
+  paymentOrder: number;
+  note?: string;
+  createdBy: string;
+  updatedBy: string;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateHistoryExportDto {
+  warehouseId: string;
+  item: string;
+  inches: number;
+  quality: string;
+  style: string;
+  color: string;
+  priceHigh: number;
+  priceLow: number;
+  sale: number;
+  orderId: string;
+  type: "cao" | "thấp";
+  priceOrder: number;
+  saleOrder: number;
+  quantityOrder: number;
+  stateOrder: "Khách trả" | "Hoàn đơn";
+  paymentOrder: number;
+  note?: string;
+}
+
+export interface UpdateHistoryExportDto {
+  warehouseId?: string;
+  item?: string;
+  inches?: number;
+  quality?: string;
+  style?: string;
+  color?: string;
+  priceHigh?: number;
+  priceLow?: number;
+  sale?: number;
+  orderId?: string;
+  type?: "cao" | "thấp";
+  priceOrder?: number;
+  saleOrder?: number;
+  quantityOrder?: number;
+  stateOrder?: "Khách trả" | "Hoàn đơn";
+  paymentOrder?: number;
+  note?: string;
+}

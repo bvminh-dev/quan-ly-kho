@@ -46,6 +46,13 @@ export const ORDER_ROUTES = {
   REVERT: (id: string) => `${API_PREFIX}/orders/${id}/revert`,
 } as const;
 
+export const HISTORY_WAREHOUSE_ROUTES = {
+  ENTER_BASE: `${API_PREFIX}/history-warehouse/enter`,
+  ENTER_BY_ID: (id: string) => `${API_PREFIX}/history-warehouse/enter/${id}`,
+  EXPORT_BASE: `${API_PREFIX}/history-warehouse/export`,
+  EXPORT_BY_ID: (id: string) => `${API_PREFIX}/history-warehouse/export/${id}`,
+} as const;
+
 export const QUERY_KEYS = {
   ACCOUNT: ["account"] as const,
   USERS: ["users"] as const,
@@ -60,4 +67,8 @@ export const QUERY_KEYS = {
   CUSTOMER: (id: string) => ["customers", id] as const,
   ORDERS: ["orders"] as const,
   ORDER: (id: string) => ["orders", id] as const,
+  HISTORY_ENTER: ["history-enter"] as const,
+  HISTORY_ENTER_ITEM: (id: string) => ["history-enter", id] as const,
+  HISTORY_EXPORT: ["history-export"] as const,
+  HISTORY_EXPORT_ITEM: (id: string) => ["history-export", id] as const,
 } as const;

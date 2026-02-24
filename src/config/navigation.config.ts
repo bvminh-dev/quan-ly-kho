@@ -93,7 +93,7 @@ export const navigationConfig: NavigationItem[] = [
   },
   {
     title: "Lịch sử",
-    url: "#",
+    url: "/dashboard/history-warehouse",
     icon: History,
     module: null,
     adminOnly: true,
@@ -102,9 +102,7 @@ export const navigationConfig: NavigationItem[] = [
     gradient: "from-slate-500 to-gray-600",
     iconBg: "bg-slate-500/10 dark:bg-slate-400/10",
     iconColor: "text-slate-600 dark:text-slate-400",
-    hoverBorder:
-      "hover:border-slate-200 dark:hover:border-slate-800 opacity-70",
-    comingSoon: true,
+    hoverBorder: "hover:border-slate-200 dark:hover:border-slate-800",
   },
   {
     title: "Khách hàng",
