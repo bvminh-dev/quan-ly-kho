@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useExchangeRate } from "@/hooks/use-exchange-rate";
-import { useAddHistory } from "../hooks/use-orders";
+import { useAddHistory, useConfirmOrder } from "../hooks/use-orders";
 import type { OrderDetail } from "@/types/api";
 
 const schema = z.object({
@@ -44,6 +44,7 @@ interface PaymentDialogProps {
 
 export function PaymentDialog({ open, onOpenChange, order }: PaymentDialogProps) {
   const addHistory = useAddHistory();
+  const confirmOrder = useConfirmOrder();
   const { data: liveRate } = useExchangeRate();
 
   const form = useForm<FormValues>({
@@ -61,6 +62,11 @@ export function PaymentDialog({ open, onOpenChange, order }: PaymentDialogProps)
 
   const onSubmit = async (values: FormValues) => {
     if (!order) return;
+
+    if (order.state?.toLowerCase() === "báo giá") {
+      await confirmOrder.mutateAsync(order._id);
+    }
+
     await addHistory.mutateAsync({
       id: order._id,
       dto: {
@@ -80,11 +86,6 @@ export function PaymentDialog({ open, onOpenChange, order }: PaymentDialogProps)
     if (watchRate > 0) {
       form.setValue("moneyPaidDolar", parseFloat((ngn / watchRate).toFixed(2)));
     }
-  };
-
-  const handleDolarChange = (dolar: number) => {
-    form.setValue("moneyPaidDolar", dolar);
-    form.setValue("moneyPaidNGN", Math.round(dolar * watchRate));
   };
 
   return (
@@ -155,8 +156,8 @@ export function PaymentDialog({ open, onOpenChange, order }: PaymentDialogProps)
               <Input
                 type="number"
                 value={form.watch("moneyPaidDolar") || ""}
-                onChange={(e) => handleDolarChange(Number(e.target.value))}
-                className="h-9"
+                disabled
+                className="h-9 bg-muted cursor-not-allowed"
               />
             </div>
           </div>

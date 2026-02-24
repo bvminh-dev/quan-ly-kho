@@ -9,7 +9,7 @@ import {
   ShoppingCart,
   Tag,
   UserCheck,
-  Users
+  Users,
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -19,7 +19,7 @@ export interface NavigationItem {
   icon: LucideIcon;
   module: string | null; // Module for access control
   adminOnly: boolean; // Whether this item is admin-only
-  
+
   // Dashboard card properties (optional - only for items shown on dashboard)
   showInDashboard?: boolean; // Whether to show as card on dashboard
   description?: string; // Card description
@@ -92,6 +92,21 @@ export const navigationConfig: NavigationItem[] = [
     hoverBorder: "hover:border-lime-200 dark:hover:border-lime-800",
   },
   {
+    title: "Lịch sử",
+    url: "#",
+    icon: History,
+    module: null,
+    adminOnly: true,
+    showInDashboard: true,
+    description: "Quản lý lịch sử xuất/nhập kho",
+    gradient: "from-slate-500 to-gray-600",
+    iconBg: "bg-slate-500/10 dark:bg-slate-400/10",
+    iconColor: "text-slate-600 dark:text-slate-400",
+    hoverBorder:
+      "hover:border-slate-200 dark:hover:border-slate-800 opacity-70",
+    comingSoon: true,
+  },
+  {
     title: "Khách hàng",
     url: "/dashboard/customers",
     icon: UserCheck,
@@ -143,29 +158,13 @@ export const navigationConfig: NavigationItem[] = [
     iconColor: "text-violet-600 dark:text-violet-400",
     hoverBorder: "hover:border-violet-200 dark:hover:border-violet-800",
   },
-  {
-    title: "Lịch sử",
-    url: "#",
-    icon: History,
-    module: null,
-    adminOnly: true,
-    showInDashboard: true,
-    description: "Quản lý lịch sử xuất/nhập kho",
-    gradient: "from-slate-500 to-gray-600",
-    iconBg: "bg-slate-500/10 dark:bg-slate-400/10",
-    iconColor: "text-slate-600 dark:text-slate-400",
-    hoverBorder: "hover:border-slate-200 dark:hover:border-slate-800 opacity-70",
-    comingSoon: true,
-  },
 ];
 
 /**
  * Get menu items filtered by role
  */
 export function getMenuItems(isAdmin: boolean): NavigationItem[] {
-  return navigationConfig.filter(
-    (item) => !item.adminOnly || isAdmin
-  );
+  return navigationConfig.filter((item) => !item.adminOnly || isAdmin);
 }
 
 /**
@@ -173,7 +172,6 @@ export function getMenuItems(isAdmin: boolean): NavigationItem[] {
  */
 export function getDashboardCards(isAdmin: boolean): NavigationItem[] {
   return navigationConfig.filter(
-    (item) =>
-      item.showInDashboard === true && (!item.adminOnly || isAdmin)
+    (item) => item.showInDashboard === true && (!item.adminOnly || isAdmin),
   );
 }
