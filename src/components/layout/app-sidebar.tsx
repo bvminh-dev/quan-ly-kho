@@ -201,7 +201,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-3 group-data-[collapsible=icon]:p-2">
+      <SidebarFooter className="border-t border-sidebar-border px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] group-data-[collapsible=icon]:p-2">
         <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
           <Avatar className="h-9 w-9 ring-2 ring-primary/20 shrink-0 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
             <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">
