@@ -38,6 +38,7 @@ export function useCreateOrder() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ORDERS });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WAREHOUSES });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HISTORY_EXPORT });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CUSTOMERS });
     },
     onError: (error) => {
       toast.error(getApiErrorMessage(error, "Tạo đơn hàng thất bại"));
@@ -55,6 +56,7 @@ export function useUpdateOrder() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ORDERS });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WAREHOUSES });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HISTORY_EXPORT });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CUSTOMERS });
       toast.success("Cập nhật đơn hàng thành công");
     },
     onError: (error) => {
@@ -72,6 +74,7 @@ export function useDeleteOrder() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ORDERS });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WAREHOUSES });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HISTORY_EXPORT });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CUSTOMERS });
       toast.success("Xóa đơn hàng thành công");
     },
     onError: (error) => {
@@ -89,6 +92,7 @@ export function useConfirmOrder() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ORDERS });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WAREHOUSES });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HISTORY_EXPORT });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CUSTOMERS });
     },
     onError: (error) => {
       toast.error(getApiErrorMessage(error, "Chốt đơn hàng thất bại"));
@@ -106,6 +110,7 @@ export function useRevertOrder() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ORDERS });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WAREHOUSES });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HISTORY_EXPORT });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CUSTOMERS });
       toast.success("Hoàn tác đơn hàng thành công");
     },
     onError: (error) => {
