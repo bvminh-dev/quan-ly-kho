@@ -70,6 +70,9 @@ export function HistoryExportFormDialog({
 
   if (!item) return null;
 
+  const orderIdString =
+    typeof item.orderId === "string" ? item.orderId : item.orderId?._id ?? "";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
@@ -102,7 +105,7 @@ export function HistoryExportFormDialog({
             <div>
               <span className="text-muted-foreground">Đơn hàng:</span>{" "}
               <span className="font-medium font-mono">
-                {item.orderId.slice(-5).toUpperCase()}
+                {orderIdString.slice(-5).toUpperCase()}
               </span>
             </div>
             <div>
