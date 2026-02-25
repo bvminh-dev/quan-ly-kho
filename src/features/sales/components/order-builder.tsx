@@ -208,30 +208,30 @@ export function OrderBuilder({
 
           <div className="space-y-1.5">
             <Label className="text-xs">Loại giá</Label>
-            <div className="inline-flex h-9 rounded-md border bg-muted p-0.5">
+            <div className="inline-flex h-8 rounded-md border bg-muted p-0.5">
               <button
                 type="button"
                 onClick={() => onPriceTypeChange("low")}
                 className={cn(
-                  "inline-flex items-center justify-center rounded-sm px-3 text-sm font-medium transition-all cursor-pointer",
+                  "inline-flex items-center justify-center rounded-sm px-2 text-xs font-medium transition-all cursor-pointer",
                   priceType === "low"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                Giá thấp (T)
+                Giá thấp
               </button>
               <button
                 type="button"
                 onClick={() => onPriceTypeChange("high")}
                 className={cn(
-                  "inline-flex items-center justify-center rounded-sm px-3 text-sm font-medium transition-all cursor-pointer",
+                  "inline-flex items-center justify-center rounded-sm px-2 text-xs font-medium transition-all cursor-pointer",
                   priceType === "high"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                Giá cao (C)
+                Giá cao
               </button>
             </div>
           </div>
