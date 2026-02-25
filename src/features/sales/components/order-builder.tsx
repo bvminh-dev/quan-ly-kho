@@ -47,6 +47,10 @@ interface OrderBuilderProps {
   onRemoveSetItem: (setId: string, tempId: string) => void;
   note: string;
   onNoteChange: (note: string) => void;
+  debt: number;
+  onDebtChange: (value: number) => void;
+  paid: number;
+  onPaidChange: (value: number) => void;
   onSaveQuote: () => void;
   onConfirm: () => void;
   isSaving: boolean;
@@ -74,6 +78,10 @@ export function OrderBuilder({
   onRemoveSetItem,
   note,
   onNoteChange,
+  debt,
+  onDebtChange,
+  paid,
+  onPaidChange,
   onSaveQuote,
   onConfirm,
   isSaving,
@@ -141,8 +149,8 @@ export function OrderBuilder({
       <div className="p-4 border-b space-y-4">
         <h2 className="text-lg font-semibold">{title}</h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="space-y-1.5">
+        <div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
+          <div className="space-y-1.5 sm:col-span-2">
             <Label className="text-xs">Khách hàng</Label>
             <div className="flex gap-2">
               <Select value={selectedCustomerId} onValueChange={onCustomerChange}>
@@ -166,6 +174,26 @@ export function OrderBuilder({
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">Debt (USD)</Label>
+            <Input
+              type="number"
+              value={debt || ""}
+              onChange={(e) => onDebtChange(Number(e.target.value) || 0)}
+              className="h-9"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">Paid (USD)</Label>
+            <Input
+              type="number"
+              value={paid || ""}
+              onChange={(e) => onPaidChange(Number(e.target.value) || 0)}
+              className="h-9"
+            />
           </div>
 
           <div className="space-y-1.5">

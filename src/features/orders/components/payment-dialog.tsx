@@ -42,7 +42,11 @@ interface PaymentDialogProps {
   order: OrderDetail | null;
 }
 
-export function PaymentDialog({ open, onOpenChange, order }: PaymentDialogProps) {
+export function PaymentDialog({
+  open,
+  onOpenChange,
+  order,
+}: PaymentDialogProps) {
   const addHistory = useAddHistory();
   const confirmOrder = useConfirmOrder();
   const { data: liveRate } = useExchangeRate();
@@ -51,7 +55,8 @@ export function PaymentDialog({ open, onOpenChange, order }: PaymentDialogProps)
     resolver: zodResolver(schema),
     defaultValues: {
       type: "khách trả",
-      exchangeRate: order?.exchangeRate || (liveRate ? Math.round(liveRate) : 1550),
+      exchangeRate:
+        order?.exchangeRate || (liveRate ? Math.round(liveRate) : 1550),
       moneyPaidNGN: 0,
       moneyPaidDolar: 0,
       paymentMethod: "Chuyển khoản",
@@ -88,6 +93,17 @@ export function PaymentDialog({ open, onOpenChange, order }: PaymentDialogProps)
     }
   };
 
+  const handleQuickFill = (percent: number) => {
+    if (!order) return;
+    const type = form.getValues("type");
+    const remaining = Math.max(0, Math.abs(order.payment));
+    const refundable = Math.max(0, order.totalPrice - Math.abs(order.payment));
+    const baseAmount =
+      type.toLowerCase() === "khách trả" ? remaining : refundable;
+    const value = Math.round((baseAmount * percent) / 100);
+    handleNGNChange(value);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -101,7 +117,10 @@ export function PaymentDialog({ open, onOpenChange, order }: PaymentDialogProps)
               <Label className="text-xs">Loại</Label>
               <Select
                 value={form.watch("type")}
-                onValueChange={(v) => form.setValue("type", v as "khách trả" | "hoàn tiền")}
+                onValueChange={(v) => {
+                  form.setValue("type", v as "khách trả" | "hoàn tiền");
+                  handleNGNChange(0);
+                }}
               >
                 <SelectTrigger className="h-9">
                   <SelectValue />
@@ -150,6 +169,46 @@ export function PaymentDialog({ open, onOpenChange, order }: PaymentDialogProps)
                 onChange={(e) => handleNGNChange(Number(e.target.value))}
                 className="h-9"
               />
+              {order && (
+                <div className="flex gap-2 mt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs cursor-pointer"
+                    onClick={() => handleQuickFill(25)}
+                  >
+                    25%
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs cursor-pointer"
+                    onClick={() => handleQuickFill(50)}
+                  >
+                    50%
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs cursor-pointer"
+                    onClick={() => handleQuickFill(75)}
+                  >
+                    75%
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs cursor-pointer"
+                    onClick={() => handleQuickFill(100)}
+                  >
+                    100%
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Số tiền (USD)</Label>
@@ -189,7 +248,11 @@ export function PaymentDialog({ open, onOpenChange, order }: PaymentDialogProps)
             >
               Hủy
             </Button>
-            <Button type="submit" disabled={addHistory.isPending} className="cursor-pointer">
+            <Button
+              type="submit"
+              disabled={addHistory.isPending}
+              className="cursor-pointer"
+            >
               Lưu
             </Button>
           </div>

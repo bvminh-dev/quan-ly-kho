@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type { OrderDetail, WarehouseItem } from "@/types/api";
 import { getWarehouseDisplayName } from "@/features/warehouse/utils/sort-warehouse";
 import { formatNGN } from "@/utils/currency";
+import { ORDER_STATE_CONFIG } from "../constants/order-state-config";
 
 interface OrderDetailDialogProps {
   open: boolean;
@@ -19,21 +20,6 @@ interface OrderDetailDialogProps {
   order: OrderDetail | null;
   warehouseMap: Record<string, WarehouseItem>;
 }
-
-const stateColors: Record<string, string> = {
-  "Báo giá":
-    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  "Đã chốt":
-    "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  "Chỉnh sửa":
-    "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  "Hoàn tác":
-    "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-  "Đã hoàn":
-    "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  "Đã xong":
-    "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
-};
 
 export function OrderDetailDialog({
   open,
@@ -45,6 +31,8 @@ export function OrderDetailDialog({
 
   const remaining = Math.max(0, -order.payment);
   const paid = order.totalPrice - remaining;
+  const lowerState = order.state?.toLowerCase() as keyof typeof ORDER_STATE_CONFIG | undefined;
+  const stateCfg = lowerState ? ORDER_STATE_CONFIG[lowerState] : undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -52,7 +40,15 @@ export function OrderDetailDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             Chi tiết đơn hàng
-            <Badge className={stateColors[order.state] || ""}>
+            <Badge
+              className={
+                stateCfg?.className ||
+                "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800"
+              }
+            >
+              <span
+                className={`size-2 rounded-full shrink-0 mr-2 ${stateCfg?.dot || "bg-gray-500"}`}
+              />
               {order.state}
             </Badge>
           </DialogTitle>
@@ -160,10 +156,12 @@ export function OrderDetailDialog({
                       >
                         <div>
                           <Badge
-                            variant={
-                              h.type === "khách trả" ? "default" : "destructive"
-                            }
-                            className="text-xs mr-2"
+                            variant="outline"
+                            className={`text-xs mr-2 ${
+                              h.type === "khách trả"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
+                                : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-800"
+                            }`}
                           >
                             {h.type}
                           </Badge>

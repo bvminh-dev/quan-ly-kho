@@ -1,7 +1,8 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { HistoryEnterTable } from "./components/history-enter-table";
 import { HistoryExportTable } from "./components/history-export-table";
 import {
@@ -9,11 +10,58 @@ import {
   useHistoryExport,
 } from "./hooks/use-history-warehouse";
 
+const TAB_ENTER = "enter";
+const TAB_EXPORT = "export";
+const TAB_PARAM = "tab";
+const TAB_STORAGE_KEY = "history-warehouse-tab";
+
+function getStoredTab(): string {
+  if (typeof window === "undefined") return TAB_ENTER;
+  const stored = window.localStorage.getItem(TAB_STORAGE_KEY);
+  return stored === TAB_EXPORT ? TAB_EXPORT : TAB_ENTER;
+}
+
 export default function HistoryWarehousePage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams.get(TAB_PARAM);
+  const [lastUsedTab, setLastUsedTab] = useState(TAB_ENTER);
+
+  useEffect(() => {
+    const stored = getStoredTab();
+    setLastUsedTab(stored);
+    if (tabFromUrl !== TAB_ENTER && tabFromUrl !== TAB_EXPORT && stored === TAB_EXPORT) {
+      router.replace(`${pathname}?${TAB_PARAM}=${TAB_EXPORT}`, { scroll: false });
+    }
+  }, [pathname, router, tabFromUrl]);
+
+  const activeTab =
+    tabFromUrl === TAB_EXPORT || tabFromUrl === TAB_ENTER
+      ? tabFromUrl
+      : lastUsedTab;
+
   const [enterPage, setEnterPage] = useState(1);
   const [enterPageSize, setEnterPageSize] = useState(20);
   const [exportPage, setExportPage] = useState(1);
   const [exportPageSize, setExportPageSize] = useState(20);
+
+  const setTab = useCallback(
+    (value: string) => {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(TAB_STORAGE_KEY, value);
+      }
+      const params = new URLSearchParams(searchParams.toString());
+      if (value === TAB_ENTER) {
+        params.delete(TAB_PARAM);
+      } else {
+        params.set(TAB_PARAM, value);
+      }
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [router, pathname, searchParams]
+  );
 
   const { data: enterData, isLoading: enterLoading } = useHistoryEnter({
     current: enterPage,
@@ -52,13 +100,17 @@ export default function HistoryWarehousePage() {
         </p>
       </div>
 
-      <Tabs defaultValue="enter" className="space-y-4 w-full min-w-0">
+      <Tabs
+        value={activeTab}
+        onValueChange={setTab}
+        className="space-y-4 w-full min-w-0"
+      >
         <TabsList>
-          <TabsTrigger value="enter">Lịch sử nhập kho</TabsTrigger>
-          <TabsTrigger value="export">Lịch sử xuất kho</TabsTrigger>
+          <TabsTrigger value={TAB_ENTER}>Lịch sử nhập kho</TabsTrigger>
+          <TabsTrigger value={TAB_EXPORT}>Lịch sử xuất kho</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="enter" className="space-y-4 w-full min-w-0">
+        <TabsContent value={TAB_ENTER} className="space-y-4 w-full min-w-0">
           <HistoryEnterTable
             items={enterItems}
             meta={enterMeta}
@@ -71,7 +123,7 @@ export default function HistoryWarehousePage() {
           />
         </TabsContent>
 
-        <TabsContent value="export" className="space-y-4 w-full min-w-0">
+        <TabsContent value={TAB_EXPORT} className="space-y-4 w-full min-w-0">
           <HistoryExportTable
             items={exportItems}
             meta={exportMeta}

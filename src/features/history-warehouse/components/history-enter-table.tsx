@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -20,7 +21,8 @@ import {
 } from "@/components/ui/table";
 import type { HistoryEnterItem, PaginationMeta } from "@/types/api";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { quickSearchFilter } from "@/utils/search";
 import { useDeleteHistoryEnter } from "../hooks/use-history-warehouse";
 import { HistoryEnterDetailDialog } from "./history-enter-detail-dialog";
 import { HistoryEnterFormDialog } from "./history-enter-form-dialog";
@@ -34,11 +36,15 @@ interface HistoryEnterTableProps {
 }
 
 const typeConfig: Record<string, string> = {
-  "Tạo mới": "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800",
-  "Nhập thêm hàng": "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800",
-  "Hoàn đơn": "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800",
-  "Sửa giá": "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800",
-  "Xóa": "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
+  "Tạo mới":
+    "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800",
+  "Nhập thêm hàng":
+    "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800",
+  "Hoàn đơn":
+    "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-800",
+  "Sửa giá":
+    "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800",
+  Xóa: "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
 };
 
 export function HistoryEnterTable({
@@ -51,6 +57,7 @@ export function HistoryEnterTable({
   const deleteHistory = useDeleteHistoryEnter();
   const [editItem, setEditItem] = useState<HistoryEnterItem | null>(null);
   const [detailItemId, setDetailItemId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const formatMetadata = (item: HistoryEnterItem) => {
     const { type, metadata } = item;
@@ -68,11 +75,27 @@ export function HistoryEnterTable({
       case "Sửa giá":
         return `${metadata.priceHighOld !== metadata.priceHighNew ? `Giá cao: ${metadata.priceHighOld || 0} → ${metadata.priceHighNew || 0}` : ""} ${metadata.priceLowOld !== metadata.priceLowNew ? `Giá thấp: ${metadata.priceLowOld || 0} → ${metadata.priceLowNew || 0}` : ""} ${metadata.saleOld !== metadata.saleNew ? `sale: ${metadata.saleOld || 0} → ${metadata.saleNew || 0}` : ""}`.trim();
       case "Xóa":
-        return "Đã xóa";
+        return `SL: ${metadata.totalAmount || 0}, khả dụng: ${metadata.amountAvailable || 0}, chiếm dụng: ${metadata.amountOccupied || 0}`;
       default:
         return "-";
     }
   };
+
+  const filteredItems = useMemo(
+    () =>
+      quickSearchFilter(items, search, (item) => [
+        item.createdAt,
+        item.item,
+        item.inches,
+        item.quality,
+        item.style,
+        item.color,
+        item.type,
+        formatMetadata(item),
+        item.note,
+      ]),
+    [items, search],
+  );
 
   if (isLoading) {
     return (
@@ -87,6 +110,14 @@ export function HistoryEnterTable({
   return (
     <>
       <div className="rounded-lg border bg-card shadow-sm overflow-hidden w-full min-w-0">
+        <div className="p-3 border-b bg-muted/40">
+          <Input
+            placeholder="Tìm nhanh theo mọi cột..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-xs"
+          />
+        </div>
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
@@ -99,18 +130,23 @@ export function HistoryEnterTable({
               <TableHead className="font-semibold">Loại</TableHead>
               <TableHead className="font-semibold">Chi tiết</TableHead>
               <TableHead className="font-semibold">Ghi chú</TableHead>
-              <TableHead className="font-semibold text-center">Thao tác</TableHead>
+              <TableHead className="font-semibold text-center">
+                Thao tác
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.length === 0 ? (
+            {filteredItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={10}
+                  className="h-24 text-center text-muted-foreground"
+                >
                   Không có dữ liệu
                 </TableCell>
               </TableRow>
             ) : (
-              items.map((item) => (
+              filteredItems.map((item) => (
                 <TableRow
                   key={item._id}
                   className="hover:bg-muted/30 cursor-pointer"
@@ -120,10 +156,16 @@ export function HistoryEnterTable({
                     {(() => {
                       const date = new Date(item.createdAt);
                       const day = String(date.getDate()).padStart(2, "0");
-                      const month = String(date.getMonth() + 1).padStart(2, "0");
+                      const month = String(date.getMonth() + 1).padStart(
+                        2,
+                        "0",
+                      );
                       const year = date.getFullYear();
                       const hours = String(date.getHours()).padStart(2, "0");
-                      const minutes = String(date.getMinutes()).padStart(2, "0");
+                      const minutes = String(date.getMinutes()).padStart(
+                        2,
+                        "0",
+                      );
                       return `${day}/${month}/${year} ${hours}:${minutes}`;
                     })()}
                   </TableCell>
@@ -133,19 +175,30 @@ export function HistoryEnterTable({
                   <TableCell>{item.style}</TableCell>
                   <TableCell>{item.color}</TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${typeConfig[item.type] || "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800"}`}>
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${typeConfig[item.type] || "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800"}`}
+                    >
                       {item.type}
                     </span>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
                     {formatMetadata(item)}
                   </TableCell>
-                  <TableCell className="max-w-xs truncate">{item.note || "-"}</TableCell>
-                  <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                  <TableCell className="max-w-xs truncate">
+                    {item.note || "-"}
+                  </TableCell>
+                  <TableCell
+                    className="text-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <RoleGate role="admin">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                          >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>

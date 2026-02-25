@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,8 @@ import { useDeleteHistoryExport } from "../hooks/use-history-warehouse";
 import type { HistoryExportItem, PaginationMeta } from "@/types/api";
 import { HistoryExportFormDialog } from "./history-export-form-dialog";
 import { HistoryExportDetailDialog } from "./history-export-detail-dialog";
+import { ORDER_STATE_CONFIG } from "@/features/orders/constants/order-state-config";
+import { quickSearchFilter } from "@/utils/search";
 
 interface HistoryExportTableProps {
   items: HistoryExportItem[];
@@ -43,6 +46,27 @@ export function HistoryExportTable({
   const deleteHistory = useDeleteHistoryExport();
   const [editItem, setEditItem] = useState<HistoryExportItem | null>(null);
   const [detailItemId, setDetailItemId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+
+  const filteredItems = useMemo(
+    () =>
+      quickSearchFilter(items, search, (item) => [
+        item.createdAt,
+        item.item,
+        item.inches,
+        item.quality,
+        item.style,
+        item.color,
+        typeof item.orderId === "string"
+          ? item.orderId
+          : item.orderId._id,
+        item.type,
+        item.quantityOrder,
+        item.stateOrder,
+        item.note,
+      ]),
+    [items, search],
+  );
 
   if (isLoading) {
     return (
@@ -57,6 +81,14 @@ export function HistoryExportTable({
   return (
     <>
       <div className="rounded-lg border bg-card shadow-sm overflow-hidden w-full min-w-0">
+        <div className="p-3 border-b bg-muted/40">
+          <Input
+            placeholder="Tìm nhanh theo mọi cột..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-xs"
+          />
+        </div>
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
@@ -70,20 +102,24 @@ export function HistoryExportTable({
               <TableHead className="font-semibold">Loại</TableHead>
               <TableHead className="font-semibold text-right">SL</TableHead>
               <TableHead className="font-semibold">Trạng thái</TableHead>
-              <TableHead className="font-semibold text-right">Thanh toán</TableHead>
               <TableHead className="font-semibold">Ghi chú</TableHead>
-              <TableHead className="font-semibold text-center">Thao tác</TableHead>
+              <TableHead className="font-semibold text-center">
+                Thao tác
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.length === 0 ? (
+            {filteredItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={13} className="h-24 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={12}
+                  className="h-24 text-center text-muted-foreground"
+                >
                   Không có dữ liệu
                 </TableCell>
               </TableRow>
             ) : (
-              items.map((item) => (
+              filteredItems.map((item) => (
                 <TableRow
                   key={item._id}
                   className="hover:bg-muted/30 cursor-pointer"
@@ -93,10 +129,16 @@ export function HistoryExportTable({
                     {(() => {
                       const date = new Date(item.createdAt);
                       const day = String(date.getDate()).padStart(2, "0");
-                      const month = String(date.getMonth() + 1).padStart(2, "0");
+                      const month = String(date.getMonth() + 1).padStart(
+                        2,
+                        "0",
+                      );
                       const year = date.getFullYear();
                       const hours = String(date.getHours()).padStart(2, "0");
-                      const minutes = String(date.getMinutes()).padStart(2, "0");
+                      const minutes = String(date.getMinutes()).padStart(
+                        2,
+                        "0",
+                      );
                       return `${day}/${month}/${year} ${hours}:${minutes}`;
                     })()}
                   </TableCell>
@@ -115,22 +157,36 @@ export function HistoryExportTable({
                       {item.type}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right">{item.quantityOrder}</TableCell>
+                  <TableCell className="text-right">
+                    {item.quantityOrder}
+                  </TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+                        ORDER_STATE_CONFIG[
+                          item.stateOrder?.toLowerCase() as keyof typeof ORDER_STATE_CONFIG
+                        ]?.className ||
+                        "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800"
+                      }`}
+                    >
                       {item.stateOrder}
                     </span>
                   </TableCell>
-                  <TableCell className={`text-right font-medium ${item.paymentOrder >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    {item.paymentOrder >= 0 ? "+" : ""}
-                    {item.paymentOrder.toLocaleString()}
+                  <TableCell className="max-w-xs truncate">
+                    {item.note || "-"}
                   </TableCell>
-                  <TableCell className="max-w-xs truncate">{item.note || "-"}</TableCell>
-                  <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                  <TableCell
+                    className="text-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <RoleGate role="admin">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                          >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>

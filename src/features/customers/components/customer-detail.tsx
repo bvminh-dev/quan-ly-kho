@@ -19,17 +19,14 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useCustomer } from "../hooks/use-customers";
 import { CustomerFormDialog } from "./customer-form-dialog";
+import { ORDER_STATE_CONFIG } from "@/features/orders/constants/order-state-config";
+import { formatNGN } from "@/utils/currency";
 
 interface CustomerDetailProps {
   customerId: string;
 }
 
-const stateColors: Record<string, string> = {
-  "Báo giá": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  "Đã chốt": "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  "Chỉnh sửa": "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  "Đã hoàn": "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-};
+const formatUSD = (v: number) => `$${v.toFixed(2)}`;
 
 export function CustomerDetail({ customerId }: CustomerDetailProps) {
   const router = useRouter();
@@ -97,7 +94,7 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                   : ""
               }`}
             >
-              ${customer.payment.toFixed(2)}
+              {formatUSD(customer.payment)}
             </span>
             <p className="text-xs text-muted-foreground mt-1">
               {customer.payment < 0 ? "Nợ" : customer.payment > 0 ? "Trả thừa" : "Không nợ"}
@@ -134,23 +131,68 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
               <TableRow className="bg-muted/50">
                 <TableHead className="font-semibold">ID</TableHead>
                 <TableHead className="font-semibold">Trạng thái</TableHead>
-                <TableHead className="font-semibold text-right">Tổng tiền</TableHead>
-                <TableHead className="font-semibold text-right">Đã trả</TableHead>
-                <TableHead className="font-semibold text-right">Còn lại</TableHead>
+                <TableHead className="font-semibold text-right">
+                  Tổng tiền (USD / NGN)
+                </TableHead>
+                <TableHead className="font-semibold text-right">
+                  Đã trả (USD / NGN)
+                </TableHead>
+                <TableHead className="font-semibold text-right">
+                  Còn lại (USD / NGN)
+                </TableHead>
+                <TableHead className="font-semibold text-right">Tỷ giá</TableHead>
                 <TableHead className="font-semibold">Ngày tạo</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {customerOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                     Chưa có đơn hàng
                   </TableCell>
                 </TableRow>
               ) : (
                 customerOrders.map((order) => {
-                  const remaining = Math.max(0, -order.payment);
-                  const paid = order.totalPrice - remaining;
+                  const totalUSD =
+                    order.exchangeRate > 0 ? order.totalPrice / order.exchangeRate : 0;
+                  const { paidUSD, paidNGN } = (order.history || []).reduce(
+                    (acc, h) => {
+                      const type = h.type?.toLowerCase();
+                      const sign = type === "hoàn tiền" ? -1 : 1;
+                      return {
+                        paidUSD: acc.paidUSD + sign * (h.moneyPaidDolar || 0),
+                        paidNGN: acc.paidNGN + sign * (h.moneyPaidNGN || 0),
+                      };
+                    },
+                    { paidUSD: 0, paidNGN: 0 },
+                  );
+
+                  const rawRemainingUSD = totalUSD - paidUSD;
+                  const rawRemainingNGN = order.totalPrice - paidNGN;
+
+                  const remainingUSDSign =
+                    rawRemainingUSD === 0 ? "" : rawRemainingUSD > 0 ? "-" : "+";
+                  const remainingNGNSign =
+                    rawRemainingNGN === 0 ? "" : rawRemainingNGN > 0 ? "-" : "+";
+
+                  const remainingUSDClass =
+                    rawRemainingUSD === 0
+                      ? "text-muted-foreground"
+                      : rawRemainingUSD > 0
+                      ? "text-red-600"
+                      : "text-green-600";
+                  const remainingNGNClass =
+                    rawRemainingNGN === 0
+                      ? "text-muted-foreground"
+                      : rawRemainingNGN > 0
+                      ? "text-red-600"
+                      : "text-green-600";
+
+                  const remainingUSD = Math.abs(rawRemainingUSD);
+                  const remainingNGN = Math.abs(rawRemainingNGN);
+                  const lowerState =
+                    order.state?.toLowerCase() as keyof typeof ORDER_STATE_CONFIG | undefined;
+                  const stateCfg = lowerState ? ORDER_STATE_CONFIG[lowerState] : undefined;
                   return (
                     <TableRow
                       key={order._id}
@@ -161,18 +203,55 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                         {order._id.slice(-5).toUpperCase()}
                       </TableCell>
                       <TableCell>
-                        <Badge className={stateColors[order.state] || ""}>
+                        <Badge
+                          variant="outline"
+                          className={
+                            stateCfg?.className ||
+                            "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800"
+                          }
+                        >
+                          <span
+                            className={`size-2 rounded-full shrink-0 ${stateCfg?.dot || "bg-gray-500"}`}
+                          />
                           {order.state}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right font-medium">
-                        ${order.totalPrice.toFixed(2)}
+                      <TableCell className="text-right">
+                        <div className="flex flex-col items-end">
+                          <span className="font-medium">
+                            {formatUSD(totalUSD)}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatNGN(order.totalPrice)}
+                          </span>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right text-green-600">
-                        ${paid.toFixed(2)}
+                      <TableCell className="text-right">
+                        <div className="flex flex-col items-end">
+                          <span className="font-medium text-green-600">
+                            {formatUSD(paidUSD)}
+                          </span>
+                          <span className="text-xs text-green-600">
+                          {formatNGN(paidNGN)}
+                          </span>
+                        </div>
                       </TableCell>
-                      <TableCell className="text-right text-red-600">
-                        ${remaining.toFixed(2)}
+                      <TableCell className="text-right">
+                        <div className="flex flex-col items-end">
+                          <span className={`font-medium ${remainingUSDClass}`}>
+                            {remainingUSDSign}
+                            {formatUSD(remainingUSD)}
+                          </span>
+                          <span className={`text-xs ${remainingNGNClass}`}>
+                            {remainingNGNSign}
+                            {formatNGN(remainingNGN)}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className="font-medium">
+                          1 USD = {order.exchangeRate.toLocaleString()} NGN
+                        </span>
                       </TableCell>
                       <TableCell>
                         {new Date(order.createdAt).toLocaleDateString("vi-VN")}

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { warehouseService } from "@/services/warehouse.service";
 import { QUERY_KEYS } from "@/config";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/utils/api-error";
 import type {
   PaginationParams,
   CreateWarehouseDto,
@@ -41,10 +42,11 @@ export function useCreateWarehouse() {
     mutationFn: (dto: CreateWarehouseDto) => warehouseService.create(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WAREHOUSES });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HISTORY_ENTER });
       toast.success("Tạo sản phẩm kho thành công");
     },
-    onError: () => {
-      toast.error("Tạo sản phẩm kho thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Tạo sản phẩm kho thất bại"));
     },
   });
 }
@@ -57,10 +59,11 @@ export function useUpdateWarehouse() {
       warehouseService.update(id, dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WAREHOUSES });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HISTORY_ENTER });
       toast.success("Cập nhật kho thành công");
     },
-    onError: () => {
-      toast.error("Cập nhật kho thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Cập nhật kho thất bại"));
     },
   });
 }
@@ -72,10 +75,11 @@ export function useAddStock() {
     mutationFn: (dto: AddStockBodyDto) => warehouseService.addStock(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WAREHOUSES });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HISTORY_ENTER });
       toast.success("Bổ sung hàng hóa thành công");
     },
-    onError: () => {
-      toast.error("Bổ sung hàng hóa thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Bổ sung hàng hóa thất bại"));
     },
   });
 }
@@ -87,10 +91,11 @@ export function useDeleteWarehouse() {
     mutationFn: (id: string) => warehouseService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WAREHOUSES });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HISTORY_ENTER });
       toast.success("Xóa sản phẩm kho thành công");
     },
-    onError: () => {
-      toast.error("Xóa sản phẩm kho thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Xóa sản phẩm kho thất bại"));
     },
   });
 }

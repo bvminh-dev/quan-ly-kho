@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { userService } from "@/services/user.service";
 import { QUERY_KEYS } from "@/config";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/utils/api-error";
 import type {
   CreateUserDto,
   UpdateUserDto,
@@ -37,8 +38,8 @@ export function useCreateUser() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USERS });
       toast.success("Tạo người dùng thành công");
     },
-    onError: () => {
-      toast.error("Tạo người dùng thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Tạo người dùng thất bại"));
     },
   });
 }
@@ -53,8 +54,8 @@ export function useUpdateUser() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USERS });
       toast.success("Cập nhật người dùng thành công");
     },
-    onError: () => {
-      toast.error("Cập nhật người dùng thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Cập nhật người dùng thất bại"));
     },
   });
 }
@@ -68,8 +69,8 @@ export function useDeleteUser() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USERS });
       toast.success("Xóa người dùng thành công");
     },
-    onError: () => {
-      toast.error("Xóa người dùng thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Xóa người dùng thất bại"));
     },
   });
 }
@@ -80,8 +81,13 @@ export function useUpdatePassword() {
     onSuccess: () => {
       toast.success("Đổi mật khẩu thành công");
     },
-    onError: () => {
-      toast.error("Đổi mật khẩu thất bại. Vui lòng kiểm tra mật khẩu hiện tại");
+    onError: (error) => {
+      toast.error(
+        getApiErrorMessage(
+          error,
+          "Đổi mật khẩu thất bại. Vui lòng kiểm tra mật khẩu hiện tại",
+        ),
+      );
     },
   });
 }
@@ -92,8 +98,8 @@ export function useResetPassword() {
     onSuccess: () => {
       toast.success("Reset mật khẩu thành công");
     },
-    onError: () => {
-      toast.error("Reset mật khẩu thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Reset mật khẩu thất bại"));
     },
   });
 }

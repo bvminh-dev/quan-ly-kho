@@ -59,6 +59,8 @@ export default function SalesPage() {
   const [standaloneItems, setStandaloneItems] = useState<SelectedItem[]>([]);
   const [sets, setSets] = useState<OrderSet[]>([]);
   const [note, setNote] = useState("");
+  const [debt, setDebt] = useState(0);
+  const [paid, setPaid] = useState(0);
 
   const [warehouseExpanded, setWarehouseExpanded] = useState(true);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
@@ -99,6 +101,26 @@ export default function SalesPage() {
     [priceType]
   );
 
+  const handleCustomerChange = useCallback(
+    (id: string) => {
+      setSelectedCustomerId(id);
+      const customer = customers.find((c) => c._id === id);
+      if (!customer) return;
+      const balance = customer.payment ?? 0;
+      if (balance < 0) {
+        setDebt(Math.abs(balance));
+        setPaid(0);
+      } else if (balance > 0) {
+        setDebt(0);
+        setPaid(balance);
+      } else {
+        setDebt(0);
+        setPaid(0);
+      }
+    },
+    [customers]
+  );
+
   const handleDeselectWarehouse = useCallback(
     (warehouseId: string) => {
       setStandaloneItems((prev) =>
@@ -112,13 +134,23 @@ export default function SalesPage() {
             (i) => i.warehouseId !== warehouseId
           );
           if (remaining.length < 2) {
-            returnedItems.push(...remaining);
+            returnedItems.push(
+              ...remaining.map((i) => ({
+                ...i,
+                tempId: genTempId(),
+                orderIndex: getNextOrder(),
+              }))
+            );
           } else {
             updatedSets.push({ ...set, items: remaining });
           }
         }
         if (returnedItems.length > 0) {
-          setStandaloneItems((items) => [...items, ...returnedItems]);
+          setStandaloneItems((items) => {
+            const merged = [...items, ...returnedItems];
+            merged.sort((a, b) => a.orderIndex - b.orderIndex);
+            return merged;
+          });
         }
         return updatedSets;
       });
@@ -167,11 +199,22 @@ export default function SalesPage() {
   );
 
   const handleUngroupSet = useCallback((setId: string) => {
-    setSets((prev) => {
-      const set = prev.find((s) => s.id === setId);
-      if (!set) return prev;
-      setStandaloneItems((items) => [...items, ...set.items]);
-      return prev.filter((s) => s.id !== setId);
+    setSets((prevSets) => {
+      const targetSet = prevSets.find((s) => s.id === setId);
+      if (!targetSet) return prevSets;
+
+      setStandaloneItems((prevItems) => {
+        const cloned = targetSet.items.map((i) => ({
+          ...i,
+          tempId: genTempId(),
+          orderIndex: getNextOrder(),
+        }));
+        const merged = [...prevItems, ...cloned];
+        merged.sort((a, b) => a.orderIndex - b.orderIndex);
+        return merged;
+      });
+
+      return prevSets.filter((s) => s.id !== setId);
     });
   }, []);
 
@@ -208,7 +251,16 @@ export default function SalesPage() {
       if (!set) return prev;
       const remaining = set.items.filter((i) => i.tempId !== tempId);
       if (remaining.length < 2) {
-        setStandaloneItems((items) => [...items, ...remaining]);
+        const cloned = remaining.map((i) => ({
+          ...i,
+          tempId: genTempId(),
+          orderIndex: getNextOrder(),
+        }));
+        setStandaloneItems((items) => {
+          const merged = [...items, ...cloned];
+          merged.sort((a, b) => a.orderIndex - b.orderIndex);
+          return merged;
+        });
         return prev.filter((s) => s.id !== setId);
       }
       return prev.map((s) =>
@@ -337,6 +389,8 @@ export default function SalesPage() {
       type: priceType === "high" ? "cao" : "thấp",
       exchangeRate,
       customer: selectedCustomerId,
+      debt,
+      paid,
       note,
       products,
     };
@@ -430,7 +484,7 @@ export default function SalesPage() {
           <OrderBuilder
             customers={customers}
             selectedCustomerId={selectedCustomerId}
-            onCustomerChange={setSelectedCustomerId}
+            onCustomerChange={handleCustomerChange}
             onCreateCustomer={() => setCreateCustOpen(true)}
             exchangeRate={exchangeRate}
             onExchangeRateChange={setExchangeRate}
@@ -447,6 +501,10 @@ export default function SalesPage() {
             onRemoveSetItem={handleRemoveSetItem}
             note={note}
             onNoteChange={setNote}
+            debt={debt}
+            onDebtChange={setDebt}
+            paid={paid}
+            onPaidChange={setPaid}
             onSaveQuote={handleSaveQuote}
             onConfirm={handleConfirm}
             isSaving={isSaving}

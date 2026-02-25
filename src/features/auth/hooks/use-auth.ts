@@ -7,6 +7,7 @@ import { QUERY_KEYS } from "@/config";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { SigninDto } from "@/types/api";
+import { getApiErrorMessage } from "@/utils/api-error";
 
 export function useSignin() {
   const { setAuth } = useAuthStore();
@@ -21,9 +22,9 @@ export function useSignin() {
       router.push("/dashboard");
     },
     onError: (error) => {
-      console.log(error);
-      console.log("DDeen day chua");
-      toast.error("Email hoặc mật khẩu không đúng");
+      toast.error(
+        getApiErrorMessage(error, "Email hoặc mật khẩu không đúng"),
+      );
     },
   });
 }

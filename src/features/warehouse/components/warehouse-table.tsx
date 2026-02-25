@@ -12,18 +12,28 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DataTablePagination } from "@/components/layout/data-table-pagination";
+import { Input } from "@/components/ui/input";
 import { RoleGate } from "@/components/access-control";
 import { MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import { sortWarehouseItems } from "../utils/sort-warehouse";
 import { AddStockDialog } from "./add-stock-dialog";
 import { useDeleteWarehouse } from "../hooks/use-warehouses";
 import type { WarehouseItem, PaginationMeta } from "@/types/api";
+import { quickSearchFilter } from "@/utils/search";
 
 interface WarehouseTableProps {
   items: WarehouseItem[];
@@ -40,9 +50,36 @@ export function WarehouseTable({
   onPageChange,
   onPageSizeChange,
 }: WarehouseTableProps) {
+  const [search, setSearch] = useState("");
+
   const sortedItems = useMemo(() => sortWarehouseItems(items), [items]);
+  const filteredItems = useMemo(
+    () =>
+      quickSearchFilter(sortedItems, search, (item) => [
+        item._id,
+        item.inches,
+        item.item,
+        item.quality,
+        item.style,
+        item.color,
+        item.totalAmount,
+        item.amountAvailable,
+        item.amountOccupied,
+        item.unitOfCalculation,
+      ]),
+    [sortedItems, search],
+  );
   const deleteWarehouse = useDeleteWarehouse();
   const [addStockWarehouse, setAddStockWarehouse] = useState<WarehouseItem | null>(null);
+  const [deleteWarehouseItem, setDeleteWarehouseItem] = useState<WarehouseItem | null>(null);
+
+  const handleDelete = () => {
+    if (deleteWarehouseItem) {
+      deleteWarehouse.mutate(deleteWarehouseItem._id, {
+        onSuccess: () => setDeleteWarehouseItem(null),
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -56,6 +93,14 @@ export function WarehouseTable({
 
   return (
     <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+      <div className="p-3 border-b bg-muted/40">
+        <Input
+          placeholder="Tìm nhanh theo mọi cột..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+      </div>
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
@@ -73,14 +118,14 @@ export function WarehouseTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedItems.length === 0 ? (
+          {filteredItems.length === 0 ? (
             <TableRow>
               <TableCell colSpan={11} className="h-24 text-center text-muted-foreground">
                 Không có dữ liệu
               </TableCell>
             </TableRow>
           ) : (
-            sortedItems.map((item) => (
+            filteredItems.map((item) => (
               <TableRow key={item._id} className="hover:bg-muted/30">
                 <TableCell className="font-mono font-medium">{item._id.slice(-5).toUpperCase()}</TableCell>
                 <TableCell className="font-medium">{item.inches}&quot;</TableCell>
@@ -113,7 +158,7 @@ export function WarehouseTable({
                       </DropdownMenuItem>
                       <RoleGate role="admin">
                         <DropdownMenuItem
-                          onClick={() => deleteWarehouse.mutate(item._id)}
+                          onClick={() => setDeleteWarehouseItem(item)}
                           className="cursor-pointer text-destructive"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
@@ -143,6 +188,34 @@ export function WarehouseTable({
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
       />
+
+      <Dialog
+        open={!!deleteWarehouseItem}
+        onOpenChange={(open) => !open && setDeleteWarehouseItem(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc muốn xóa lô hàng{" "}
+              <strong>{deleteWarehouseItem?._id.slice(-5).toUpperCase()}</strong>? Hành động
+              này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteWarehouseItem(null)}>
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteWarehouse.isPending}
+            >
+              Xóa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

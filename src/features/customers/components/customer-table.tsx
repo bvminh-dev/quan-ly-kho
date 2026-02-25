@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Table,
@@ -13,17 +13,27 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DataTablePagination } from "@/components/layout/data-table-pagination";
+import { Input } from "@/components/ui/input";
 import { MoreHorizontal, Pencil, Trash2, Eye } from "lucide-react";
 import { useAccessControl } from "@/components/access-control";
 import { useDeleteCustomer } from "../hooks/use-customers";
 import { CustomerFormDialog } from "./customer-form-dialog";
 import type { CustomerItem, PaginationMeta } from "@/types/api";
+import { quickSearchFilter } from "@/utils/search";
 
 interface CustomerTableProps {
   customers: CustomerItem[];
@@ -44,6 +54,28 @@ export function CustomerTable({
   const { isAdmin } = useAccessControl();
   const deleteCustomer = useDeleteCustomer();
   const [editCustomer, setEditCustomer] = useState<CustomerItem | null>(null);
+  const [deleteCustomerItem, setDeleteCustomerItem] = useState<CustomerItem | null>(null);
+  const [search, setSearch] = useState("");
+
+  const handleDelete = () => {
+    if (deleteCustomerItem) {
+      deleteCustomer.mutate(deleteCustomerItem._id, {
+        onSuccess: () => setDeleteCustomerItem(null),
+      });
+    }
+  };
+
+  const filteredCustomers = useMemo(
+    () =>
+      quickSearchFilter(customers, search, (customer) => [
+        customer._id,
+        customer.name,
+        customer.payment,
+        customer.note,
+        customer.createdAt,
+      ]),
+    [customers, search],
+  );
 
   if (isLoading) {
     return (
@@ -58,6 +90,14 @@ export function CustomerTable({
   return (
     <>
       <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+        <div className="p-3 border-b bg-muted/40">
+          <Input
+            placeholder="Tìm nhanh theo mọi cột..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-xs"
+          />
+        </div>
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
@@ -70,14 +110,14 @@ export function CustomerTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {customers.length === 0 ? (
+            {filteredCustomers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                   Không có dữ liệu
                 </TableCell>
               </TableRow>
             ) : (
-              customers.map((customer) => (
+              filteredCustomers.map((customer) => (
                 <TableRow
                   key={customer._id}
                   className="hover:bg-muted/30 cursor-pointer"
@@ -128,7 +168,7 @@ export function CustomerTable({
                         </DropdownMenuItem>
                         {isAdmin && (
                           <DropdownMenuItem
-                            onClick={() => deleteCustomer.mutate(customer._id)}
+                            onClick={() => setDeleteCustomerItem(customer)}
                             className="cursor-pointer text-destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
@@ -152,6 +192,34 @@ export function CustomerTable({
           onPageChange={onPageChange}
           onPageSizeChange={onPageSizeChange}
         />
+
+      <Dialog
+        open={!!deleteCustomerItem}
+        onOpenChange={(open) => !open && setDeleteCustomerItem(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xác nhận xóa</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc muốn xóa khách hàng{" "}
+              <strong>{deleteCustomerItem?.name}</strong>? Hành động này không thể hoàn
+              tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteCustomerItem(null)}>
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteCustomer.isPending}
+            >
+              Xóa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
 
       <CustomerFormDialog

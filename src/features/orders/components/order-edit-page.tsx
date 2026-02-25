@@ -62,6 +62,8 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
   const [standaloneItems, setStandaloneItems] = useState<SelectedItem[]>([]);
   const [sets, setSets] = useState<OrderSet[]>([]);
   const [note, setNote] = useState("");
+  const [debt, setDebt] = useState(0);
+  const [paid, setPaid] = useState(0);
   const [initialized, setInitialized] = useState(false);
 
   const [warehouseExpanded, setWarehouseExpanded] = useState(true);
@@ -75,6 +77,34 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
     setSelectedCustomerId(order.customer?._id || "");
     setExchangeRate(order.exchangeRate);
     setNote(order.note || "");
+
+    const lowerState = order.state?.toLowerCase();
+    const customer = customers.find((c) => c._id === order.customer?._id);
+
+    // Với đơn đang ở trạng thái "Báo giá" thì Debt/Paid nên bám theo
+    // công nợ hiện tại của khách (customer.payment), tránh trường hợp
+    // khách đã không còn nợ nhưng đơn cũ vẫn hiển thị Debt.
+    if (lowerState === "báo giá" && customer) {
+      const balance = customer.payment ?? 0;
+      if (balance < 0) {
+        setDebt(Math.abs(balance));
+        setPaid(0);
+      } else if (balance > 0) {
+        setDebt(0);
+        setPaid(balance);
+      } else {
+        setDebt(0);
+        setPaid(0);
+      }
+    } else {
+      setDebt(order.debt ?? 0);
+      setPaid(order.paid ?? 0);
+    }
+  }, [order, warehouseMap, initialized, customers]);
+
+  useEffect(() => {
+    if (!order || initialized || !warehouseMap) return;
+    if (Object.keys(warehouseMap).length === 0) return;
 
     const standalone: SelectedItem[] = [];
     const orderSets: OrderSet[] = [];
@@ -171,13 +201,23 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
             (i) => i.warehouseId !== warehouseId
           );
           if (remaining.length < 2) {
-            returnedItems.push(...remaining);
+            returnedItems.push(
+              ...remaining.map((i) => ({
+                ...i,
+                tempId: genTempId(),
+                orderIndex: getNextOrder(),
+              }))
+            );
           } else {
             updatedSets.push({ ...set, items: remaining });
           }
         }
         if (returnedItems.length > 0) {
-          setStandaloneItems((items) => [...items, ...returnedItems]);
+          setStandaloneItems((items) => {
+            const merged = [...items, ...returnedItems];
+            merged.sort((a, b) => a.orderIndex - b.orderIndex);
+            return merged;
+          });
         }
         return updatedSets;
       });
@@ -226,11 +266,22 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
   );
 
   const handleUngroupSet = useCallback((setId: string) => {
-    setSets((prev) => {
-      const set = prev.find((s) => s.id === setId);
-      if (!set) return prev;
-      setStandaloneItems((items) => [...items, ...set.items]);
-      return prev.filter((s) => s.id !== setId);
+    setSets((prevSets) => {
+      const targetSet = prevSets.find((s) => s.id === setId);
+      if (!targetSet) return prevSets;
+
+      setStandaloneItems((prevItems) => {
+        const cloned = targetSet.items.map((i) => ({
+          ...i,
+          tempId: genTempId(),
+          orderIndex: getNextOrder(),
+        }));
+        const merged = [...prevItems, ...cloned];
+        merged.sort((a, b) => a.orderIndex - b.orderIndex);
+        return merged;
+      });
+
+      return prevSets.filter((s) => s.id !== setId);
     });
   }, []);
 
@@ -267,7 +318,16 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
       if (!set) return prev;
       const remaining = set.items.filter((i) => i.tempId !== tempId);
       if (remaining.length < 2) {
-        setStandaloneItems((items) => [...items, ...remaining]);
+        const cloned = remaining.map((i) => ({
+          ...i,
+          tempId: genTempId(),
+          orderIndex: getNextOrder(),
+        }));
+        setStandaloneItems((items) => {
+          const merged = [...items, ...cloned];
+          merged.sort((a, b) => a.orderIndex - b.orderIndex);
+          return merged;
+        });
         return prev.filter((s) => s.id !== setId);
       }
       return prev.map((s) =>
@@ -319,6 +379,26 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
       );
     },
     [warehouseMap]
+  );
+
+  const handleCustomerChange = useCallback(
+    (id: string) => {
+      setSelectedCustomerId(id);
+      const customer = customers.find((c) => c._id === id);
+      if (!customer) return;
+      const balance = customer.payment ?? 0;
+      if (balance < 0) {
+        setDebt(Math.abs(balance));
+        setPaid(0);
+      } else if (balance > 0) {
+        setDebt(0);
+        setPaid(balance);
+      } else {
+        setDebt(0);
+        setPaid(0);
+      }
+    },
+    [customers]
   );
 
   const handleSave = async () => {
@@ -395,6 +475,8 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
         dto: {
           exchangeRate,
           customer: selectedCustomerId,
+          debt,
+          paid,
           note,
           products,
         },
@@ -467,7 +549,7 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
           <OrderBuilder
             customers={customers}
             selectedCustomerId={selectedCustomerId}
-            onCustomerChange={setSelectedCustomerId}
+            onCustomerChange={handleCustomerChange}
             onCreateCustomer={() => setCreateCustOpen(true)}
             exchangeRate={exchangeRate}
             onExchangeRateChange={setExchangeRate}
@@ -484,6 +566,10 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
             onRemoveSetItem={handleRemoveSetItem}
             note={note}
             onNoteChange={setNote}
+            debt={debt}
+            onDebtChange={setDebt}
+            paid={paid}
+            onPaidChange={setPaid}
             onSaveQuote={handleSave}
             onConfirm={handleSave}
             isSaving={updateOrder.isPending}

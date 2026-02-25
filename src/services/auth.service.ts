@@ -9,7 +9,6 @@ import type {
 
 export const authService = {
   signin: async (dto: SigninDto) => {
-    console.log(dto);
     const { data } = await axiosInstance.post<ApiResponse<SigninData>>(
       AUTH_ROUTES.SIGNIN,
       dto,

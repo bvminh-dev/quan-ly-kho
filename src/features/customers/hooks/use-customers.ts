@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { customerService } from "@/services/customer.service";
 import { QUERY_KEYS } from "@/config";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/utils/api-error";
 import type {
   PaginationParams,
   CreateCustomerDto,
@@ -42,8 +43,8 @@ export function useCreateCustomer() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CUSTOMERS });
       toast.success("Tạo khách hàng thành công");
     },
-    onError: () => {
-      toast.error("Tạo khách hàng thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Tạo khách hàng thất bại"));
     },
   });
 }
@@ -58,8 +59,8 @@ export function useUpdateCustomer() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CUSTOMERS });
       toast.success("Cập nhật khách hàng thành công");
     },
-    onError: () => {
-      toast.error("Cập nhật khách hàng thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Cập nhật khách hàng thất bại"));
     },
   });
 }
@@ -73,8 +74,8 @@ export function useDeleteCustomer() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CUSTOMERS });
       toast.success("Xóa khách hàng thành công");
     },
-    onError: () => {
-      toast.error("Xóa khách hàng thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Xóa khách hàng thất bại"));
     },
   });
 }

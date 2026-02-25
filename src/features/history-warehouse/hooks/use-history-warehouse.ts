@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { historyWarehouseService } from "@/services/history-warehouse.service";
 import { QUERY_KEYS } from "@/config";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/utils/api-error";
 import type {
   PaginationParams,
   CreateHistoryEnterDto,
@@ -38,8 +39,8 @@ export function useCreateHistoryEnter() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HISTORY_ENTER });
       toast.success("Tạo lịch sử nhập kho thành công");
     },
-    onError: () => {
-      toast.error("Tạo lịch sử nhập kho thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Tạo lịch sử nhập kho thất bại"));
     },
   });
 }
@@ -59,8 +60,10 @@ export function useUpdateHistoryEnter() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HISTORY_ENTER });
       toast.success("Cập nhật lịch sử nhập kho thành công");
     },
-    onError: () => {
-      toast.error("Cập nhật lịch sử nhập kho thất bại");
+    onError: (error) => {
+      toast.error(
+        getApiErrorMessage(error, "Cập nhật lịch sử nhập kho thất bại"),
+      );
     },
   });
 }
@@ -74,8 +77,8 @@ export function useDeleteHistoryEnter() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HISTORY_ENTER });
       toast.success("Xóa lịch sử nhập kho thành công");
     },
-    onError: () => {
-      toast.error("Xóa lịch sử nhập kho thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Xóa lịch sử nhập kho thất bại"));
     },
   });
 }
@@ -106,8 +109,8 @@ export function useCreateHistoryExport() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HISTORY_EXPORT });
       toast.success("Tạo lịch sử xuất kho thành công");
     },
-    onError: () => {
-      toast.error("Tạo lịch sử xuất kho thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Tạo lịch sử xuất kho thất bại"));
     },
   });
 }
@@ -127,8 +130,10 @@ export function useUpdateHistoryExport() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HISTORY_EXPORT });
       toast.success("Cập nhật lịch sử xuất kho thành công");
     },
-    onError: () => {
-      toast.error("Cập nhật lịch sử xuất kho thất bại");
+    onError: (error) => {
+      toast.error(
+        getApiErrorMessage(error, "Cập nhật lịch sử xuất kho thất bại"),
+      );
     },
   });
 }
@@ -142,8 +147,8 @@ export function useDeleteHistoryExport() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HISTORY_EXPORT });
       toast.success("Xóa lịch sử xuất kho thành công");
     },
-    onError: () => {
-      toast.error("Xóa lịch sử xuất kho thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Xóa lịch sử xuất kho thất bại"));
     },
   });
 }

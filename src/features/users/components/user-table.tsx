@@ -4,6 +4,7 @@ import { PermissionGate } from "@/components/access-control";
 import { DataTablePagination } from "@/components/layout/data-table-pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -35,10 +36,11 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useDeleteUser } from "../hooks/use-users";
 import { ResetPasswordDialog } from "./reset-password-dialog";
 import { UserFormDialog } from "./user-form-dialog";
+import { quickSearchFilter } from "@/utils/search";
 
 interface UserTableProps {
   users: UserItem[];
@@ -61,6 +63,7 @@ export function UserTable({
     null
   );
   const deleteUserMutation = useDeleteUser();
+  const [search, setSearch] = useState("");
 
   const handleDelete = () => {
     if (deleteUser) {
@@ -75,6 +78,19 @@ export function UserTable({
     return role?.name || "N/A";
   };
 
+  const filteredUsers = useMemo(
+    () =>
+      quickSearchFilter(users, search, (user) => [
+        user._id,
+        user.name,
+        user.email,
+        getRoleName(user.role),
+        user.isActive ? "active" : "inactive",
+        user.createdAt,
+      ]),
+    [users, search],
+  );
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -88,6 +104,14 @@ export function UserTable({
   return (
     <>
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+        <div className="p-3 border-b bg-muted/40">
+          <Input
+            placeholder="Tìm nhanh theo mọi cột..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-xs"
+          />
+        </div>
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -101,14 +125,14 @@ export function UserTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.length === 0 ? (
+            {filteredUsers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   Không có dữ liệu
                 </TableCell>
               </TableRow>
             ) : (
-              users.map((user, index) => (
+              filteredUsers.map((user, index) => (
                 <TableRow key={user._id}>
                   <TableCell className="font-mono font-medium">
                     {user._id.slice(-5).toUpperCase()}

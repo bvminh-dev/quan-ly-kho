@@ -1,8 +1,18 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { DataTablePagination } from "@/components/layout/data-table-pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +30,7 @@ import {
 } from "@/components/ui/table";
 import { InvoiceDialog } from "@/features/sales/components/invoice-dialog";
 import type { OrderDetail, PaginationMeta, WarehouseItem } from "@/types/api";
+import { ORDER_STATE_CONFIG } from "../constants/order-state-config";
 import {
   CreditCard,
   Eye,
@@ -27,13 +38,15 @@ import {
   MoreHorizontal,
   Pencil,
   RotateCcw,
+  CheckCircle2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { formatNGN } from "@/utils/currency";
 import { OrderDetailDialog } from "./order-detail-dialog";
 import { PaymentDialog } from "./payment-dialog";
 import { RevertOrderDialog } from "./revert-order-dialog";
+import { quickSearchFilter } from "@/utils/search";
+import { useConfirmOrder } from "../hooks/use-orders";
 
 interface OrderTableProps {
   orders: OrderDetail[];
@@ -43,39 +56,6 @@ interface OrderTableProps {
   onPageSizeChange: (size: number) => void;
   warehouseMap: Record<string, WarehouseItem>;
 }
-
-const stateConfig: Record<string, { className: string; dot: string }> = {
-  "báo giá": {
-    className:
-      "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800",
-    dot: "bg-amber-500",
-  },
-  "đã chốt": {
-    className:
-      "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800",
-    dot: "bg-emerald-500",
-  },
-  "chỉnh sửa": {
-    className:
-      "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-900/20 dark:text-sky-400 dark:border-sky-800",
-    dot: "bg-sky-500",
-  },
-  "hoàn tác": {
-    className:
-      "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800",
-    dot: "bg-purple-500",
-  },
-  "đã hoàn": {
-    className:
-      "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-800",
-    dot: "bg-rose-500",
-  },
-  "đã xong": {
-    className:
-      "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800",
-    dot: "bg-emerald-500",
-  },
-};
 
 export function OrderTable({
   orders,
@@ -91,6 +71,57 @@ export function OrderTable({
   const [paymentOrder, setPaymentOrder] = useState<OrderDetail | null>(null);
   const [invoiceOrder, setInvoiceOrder] = useState<OrderDetail | null>(null);
   const [revertOrder, setRevertOrder] = useState<OrderDetail | null>(null);
+  const [editOrder, setEditOrder] = useState<OrderDetail | null>(null);
+  const [search, setSearch] = useState("");
+  const [confirmOrder, setConfirmOrder] = useState<OrderDetail | null>(null);
+  const confirmOrderMutation = useConfirmOrder();
+
+  const handleConfirmEdit = () => {
+    if (!editOrder) return;
+    const id = editOrder._id;
+    setEditOrder(null);
+    router.push(`/dashboard/orders/${id}/edit`);
+  };
+
+  const handleConfirmOrder = () => {
+    if (!confirmOrder) return;
+    confirmOrderMutation.mutate(confirmOrder._id, {
+      onSuccess: () => {
+        setConfirmOrder(null);
+      },
+    });
+  };
+
+  const filteredOrders = useMemo(
+    () =>
+      quickSearchFilter(orders, search, (order) => {
+        const { paidNGN } = (order.history || []).reduce(
+          (acc, h) => {
+            const type = h.type?.toLowerCase();
+            const sign = type === "hoàn tiền" ? -1 : 1;
+            return {
+              paidNGN: acc.paidNGN + (h.moneyPaidNGN || 0) * sign,
+            };
+          },
+          { paidNGN: 0 },
+        );
+        const remaining = order.totalPrice - paidNGN;
+        const balance = paidNGN - order.totalPrice;
+        return [
+          order._id,
+          order.type,
+          order.customer?.name,
+          order.state,
+          order.totalPrice,
+          paidNGN,
+          remaining,
+          balance,
+          order.note,
+          order.createdAt,
+        ];
+      }),
+    [orders, search],
+  );
 
   if (isLoading) {
     return (
@@ -105,6 +136,14 @@ export function OrderTable({
   return (
     <>
       <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+        <div className="p-3 border-b bg-muted/40">
+          <Input
+            placeholder="Tìm nhanh theo mọi cột..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-xs"
+          />
+        </div>
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
@@ -126,7 +165,7 @@ export function OrderTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {orders.length === 0 ? (
+            {filteredOrders.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={9}
@@ -136,29 +175,43 @@ export function OrderTable({
                 </TableCell>
               </TableRow>
             ) : (
-              orders.map((order) => {
-                const remaining = Math.max(0, -order.payment);
-                const paid = order.totalPrice - remaining;
+              filteredOrders.map((order) => {
+                const { paidNGN } = (order.history || []).reduce(
+                  (acc, h) => {
+                    const type = h.type?.toLowerCase();
+                    const sign = type === "hoàn tiền" ? -1 : 1;
+                    return {
+                      paidNGN: acc.paidNGN + (h.moneyPaidNGN || 0) * sign,
+                    };
+                  },
+                  { paidNGN: 0 },
+                );
+                const balance = paidNGN - order.totalPrice;
                 const lowerState = order.state?.toLowerCase();
+                const stateCfg = ORDER_STATE_CONFIG[lowerState as keyof typeof ORDER_STATE_CONFIG];
                 const isLocked =
                   lowerState === "hoàn tác" || lowerState === "đã xong";
-                const canRevert = !isLocked && paid === 0;
+                const canRevert = !isLocked && paidNGN === 0;
+                const canConfirm = lowerState === "báo giá";
                 return (
                   <TableRow key={order._id} className="hover:bg-muted/30">
                     <TableCell className="font-mono font-medium">
                       {order._id.slice(-5).toUpperCase()}
                     </TableCell>
-                    <TableCell>{order.customer?.name}</TableCell>
+                    <TableCell>
+                      {order.customer?.name}
+                      {order.type === "cao" ? " (C)" : " (T)"}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant="outline"
                         className={
-                          stateConfig[lowerState || ""]?.className ||
+                          stateCfg?.className ||
                           "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800"
                         }
                       >
                         <span
-                          className={`size-2 rounded-full shrink-0 ${stateConfig[lowerState || ""]?.dot || "bg-gray-500"}`}
+                          className={`size-2 rounded-full shrink-0 ${stateCfg?.dot || "bg-gray-500"}`}
                         />
                         {order.state.charAt(0).toUpperCase() +
                           order.state.slice(1).toLowerCase()}
@@ -168,10 +221,23 @@ export function OrderTable({
                       {formatNGN(order.totalPrice)}
                     </TableCell>
                     <TableCell className="text-right text-green-600">
-                      {formatNGN(paid)}
+                      {formatNGN(paidNGN)}
                     </TableCell>
-                    <TableCell className="text-right text-red-600">
-                      {formatNGN(remaining)}
+                    <TableCell className="text-right">
+                      {balance === 0 ? (
+                        <span className="text-muted-foreground">
+                          {formatNGN(0)}
+                        </span>
+                      ) : (
+                        <span
+                          className={
+                            balance < 0 ? "text-red-600" : "text-green-600"
+                          }
+                        >
+                          {balance < 0 ? "-" : "+"}
+                          {formatNGN(Math.abs(balance))}
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="max-w-[150px] truncate">
                       {order.note || "-"}
@@ -221,6 +287,17 @@ export function OrderTable({
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
+                              if (!canConfirm) return;
+                              setConfirmOrder(order);
+                            }}
+                            disabled={!canConfirm}
+                            className="cursor-pointer"
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-2" />
+                            Chốt đơn
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
                               if (isLocked) return;
                               setPaymentOrder(order);
                             }}
@@ -244,9 +321,7 @@ export function OrderTable({
                           <DropdownMenuItem
                             onClick={() => {
                               if (isLocked) return;
-                              router.push(
-                                `/dashboard/orders/${order._id}/edit`,
-                              );
+                              setEditOrder(order);
                             }}
                             disabled={isLocked}
                             className="cursor-pointer"
@@ -299,6 +374,55 @@ export function OrderTable({
         onOpenChange={(open) => !open && setRevertOrder(null)}
         order={revertOrder}
       />
+
+      <Dialog open={!!editOrder} onOpenChange={(open) => !open && setEditOrder(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Đồng ý chỉnh sửa đơn</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc muốn chỉnh sửa đơn hàng{" "}
+              <strong>#{editOrder?._id.slice(-5).toUpperCase()}</strong>? Những thay đổi
+              tiếp theo có thể ảnh hưởng tới kho và công nợ.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOrder(null)}>
+              Hủy
+            </Button>
+            <Button onClick={handleConfirmEdit} className="cursor-pointer">
+              Đồng ý chỉnh sửa đơn
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!confirmOrder}
+        onOpenChange={(open) => !open && setConfirmOrder(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Đồng ý chốt đơn</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc muốn chốt đơn hàng{" "}
+              <strong>#{confirmOrder?._id.slice(-5).toUpperCase()}</strong>? Sau khi
+              chốt, chỉ có thể chỉnh sửa thông qua nghiệp vụ chỉnh sửa đơn.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmOrder(null)}>
+              Hủy
+            </Button>
+            <Button
+              onClick={handleConfirmOrder}
+              className="cursor-pointer"
+              disabled={confirmOrderMutation.isPending}
+            >
+              Đồng ý chốt đơn
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -18,6 +18,7 @@ import { sortWarehouseItems } from "@/features/warehouse/utils/sort-warehouse";
 import { useUpdateWarehouse } from "@/features/warehouse/hooks/use-warehouses";
 import { useAccessControl } from "@/components/access-control";
 import type { WarehouseItem, PaginationMeta } from "@/types/api";
+import { quickSearchFilter } from "@/utils/search";
 
 interface PriceTableProps {
   items: WarehouseItem[];
@@ -34,7 +35,24 @@ export function PriceTable({
   onPageChange,
   onPageSizeChange,
 }: PriceTableProps) {
+  const [search, setSearch] = useState("");
+
   const sortedItems = useMemo(() => sortWarehouseItems(items), [items]);
+  const filteredItems = useMemo(
+    () =>
+      quickSearchFilter(sortedItems, search, (item) => [
+        item._id,
+        item.inches,
+        item.item,
+        item.quality,
+        item.style,
+        item.color,
+        item.priceHigh,
+        item.priceLow,
+        item.sale,
+      ]),
+    [sortedItems, search],
+  );
   const { isAdmin } = useAccessControl();
   const updateWarehouse = useUpdateWarehouse();
 
@@ -79,6 +97,14 @@ export function PriceTable({
 
   return (
     <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+      <div className="p-3 border-b bg-muted/40">
+        <Input
+          placeholder="Tìm nhanh theo mọi cột..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+      </div>
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
@@ -95,14 +121,14 @@ export function PriceTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedItems.length === 0 ? (
+          {filteredItems.length === 0 ? (
             <TableRow>
               <TableCell colSpan={isAdmin ? 10 : 9} className="h-24 text-center text-muted-foreground">
                 Không có dữ liệu
               </TableCell>
             </TableRow>
           ) : (
-            sortedItems.map((item) => (
+            filteredItems.map((item) => (
               <TableRow key={item._id} className="hover:bg-muted/30">
                 <TableCell className="font-mono font-medium">{item._id.slice(-5).toUpperCase()}</TableCell>
                 <TableCell className="font-medium">{item.inches}&quot;</TableCell>

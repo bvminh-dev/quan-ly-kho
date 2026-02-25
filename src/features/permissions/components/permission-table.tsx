@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { PermissionGate } from "@/components/access-control";
 import { DataTablePagination } from "@/components/layout/data-table-pagination";
@@ -33,6 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { quickSearchFilter } from "@/utils/search";
 
 const methodColors: Record<string, string> = {
   GET: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
@@ -63,6 +65,20 @@ export function PermissionTable({
   const [deletePermission, setDeletePermission] =
     useState<PermissionItem | null>(null);
   const deletePermissionMutation = useDeletePermission();
+  const [search, setSearch] = useState("");
+
+  const filteredPermissions = useMemo(
+    () =>
+      quickSearchFilter(permissions, search, (perm) => [
+        perm._id,
+        perm.name,
+        perm.apiPath,
+        perm.method,
+        perm.module,
+        perm.isActive ? "active" : "inactive",
+      ]),
+    [permissions, search],
+  );
 
   const handleDelete = () => {
     if (deletePermission) {
@@ -85,6 +101,14 @@ export function PermissionTable({
   return (
     <>
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+        <div className="p-3 border-b bg-muted/40">
+          <Input
+            placeholder="Tìm nhanh theo mọi cột..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-xs"
+          />
+        </div>
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -98,14 +122,14 @@ export function PermissionTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {permissions.length === 0 ? (
+            {filteredPermissions.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   Không có dữ liệu
                 </TableCell>
               </TableRow>
             ) : (
-              permissions.map((perm, index) => (
+              filteredPermissions.map((perm, index) => (
                 <TableRow key={perm._id}>
                   <TableCell className="font-mono font-medium">
                     {perm._id.slice(-5).toUpperCase()}

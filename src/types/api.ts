@@ -278,6 +278,8 @@ export interface OrderDetail {
   customer: OrderCustomerRef;
   totalPrice: number;
   payment: number;
+  debt?: number;
+  paid?: number;
   note: string;
   products: OrderProductDto[];
   history: OrderHistoryDto[];
@@ -310,6 +312,8 @@ export interface CreateOrderDto {
   type: "cao" | "thấp";
   exchangeRate: number;
   customer: string;
+  debt?: number;
+  paid?: number;
   note?: string;
   products: CreateOrderProductDto[];
 }
@@ -318,6 +322,8 @@ export interface UpdateOrderDto {
   type?: "cao" | "thấp";
   exchangeRate?: number;
   customer?: string;
+  debt?: number;
+  paid?: number;
   note?: string;
   products?: CreateOrderProductDto[];
 }
@@ -338,6 +344,8 @@ export interface RevertOrderDto {
 
 export interface HistoryEnterMetadata {
   totalAmount?: number;
+  amountAvailable?: number;
+  amountOccupied?: number;
   priceHigh?: number;
   priceLow?: number;
   sale?: number;

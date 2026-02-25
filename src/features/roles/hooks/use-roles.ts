@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { roleService } from "@/services/role.service";
 import { QUERY_KEYS } from "@/config";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/utils/api-error";
 import type {
   CreateRoleDto,
   UpdateRoleDto,
@@ -43,8 +44,8 @@ export function useCreateRole() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ROLES });
       toast.success("Tạo vai trò thành công");
     },
-    onError: () => {
-      toast.error("Tạo vai trò thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Tạo vai trò thất bại"));
     },
   });
 }
@@ -59,8 +60,8 @@ export function useUpdateRole() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ROLES });
       toast.success("Cập nhật vai trò thành công");
     },
-    onError: () => {
-      toast.error("Cập nhật vai trò thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Cập nhật vai trò thất bại"));
     },
   });
 }
@@ -74,8 +75,8 @@ export function useDeleteRole() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ROLES });
       toast.success("Xóa vai trò thành công");
     },
-    onError: () => {
-      toast.error("Xóa vai trò thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Xóa vai trò thất bại"));
     },
   });
 }

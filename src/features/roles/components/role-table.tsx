@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { PermissionGate } from "@/components/access-control";
 import { DataTablePagination } from "@/components/layout/data-table-pagination";
@@ -33,6 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { quickSearchFilter } from "@/utils/search";
 
 interface RoleTableProps {
   roles: RoleItem[];
@@ -52,6 +54,20 @@ export function RoleTable({
   const [editRole, setEditRole] = useState<RoleItem | null>(null);
   const [deleteRole, setDeleteRole] = useState<RoleItem | null>(null);
   const deleteRoleMutation = useDeleteRole();
+  const [search, setSearch] = useState("");
+
+  const filteredRoles = useMemo(
+    () =>
+      quickSearchFilter(roles, search, (role) => [
+        role._id,
+        role.name,
+        role.description,
+        role.permissions?.length,
+        role.isActive ? "active" : "inactive",
+        role.createdAt,
+      ]),
+    [roles, search],
+  );
 
   const handleDelete = () => {
     if (deleteRole) {
@@ -74,6 +90,14 @@ export function RoleTable({
   return (
     <>
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+        <div className="p-3 border-b bg-muted/40">
+          <Input
+            placeholder="Tìm nhanh theo mọi cột..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-xs"
+          />
+        </div>
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -87,14 +111,14 @@ export function RoleTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {roles.length === 0 ? (
+            {filteredRoles.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   Không có dữ liệu
                 </TableCell>
               </TableRow>
             ) : (
-              roles.map((role, index) => (
+              filteredRoles.map((role, index) => (
                 <TableRow key={role._id}>
                   <TableCell className="font-mono font-medium">
                     {role._id.slice(-5).toUpperCase()}

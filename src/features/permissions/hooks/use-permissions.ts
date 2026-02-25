@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { permissionService } from "@/services/permission.service";
 import { QUERY_KEYS } from "@/config";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/utils/api-error";
 import type {
   CreatePermissionDto,
   UpdatePermissionDto,
@@ -43,8 +44,8 @@ export function useCreatePermission() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PERMISSIONS });
       toast.success("Tạo quyền hạn thành công");
     },
-    onError: () => {
-      toast.error("Tạo quyền hạn thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Tạo quyền hạn thất bại"));
     },
   });
 }
@@ -64,8 +65,8 @@ export function useUpdatePermission() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PERMISSIONS });
       toast.success("Cập nhật quyền hạn thành công");
     },
-    onError: () => {
-      toast.error("Cập nhật quyền hạn thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Cập nhật quyền hạn thất bại"));
     },
   });
 }
@@ -79,8 +80,8 @@ export function useDeletePermission() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PERMISSIONS });
       toast.success("Xóa quyền hạn thành công");
     },
-    onError: () => {
-      toast.error("Xóa quyền hạn thất bại");
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Xóa quyền hạn thất bại"));
     },
   });
 }
