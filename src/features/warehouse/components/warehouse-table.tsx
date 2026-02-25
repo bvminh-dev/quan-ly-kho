@@ -1,15 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
+import { RoleGate } from "@/components/access-control";
+import { DataTablePagination } from "@/components/layout/data-table-pagination";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,15 +17,23 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DataTablePagination } from "@/components/layout/data-table-pagination";
 import { Input } from "@/components/ui/input";
-import { RoleGate } from "@/components/access-control";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import type { PaginationMeta, WarehouseItem } from "@/types/api";
+import { quickSearchFilter } from "@/utils/search";
 import { MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useDeleteWarehouse } from "../hooks/use-warehouses";
 import { sortWarehouseItems } from "../utils/sort-warehouse";
 import { AddStockDialog } from "./add-stock-dialog";
-import { useDeleteWarehouse } from "../hooks/use-warehouses";
-import type { WarehouseItem, PaginationMeta } from "@/types/api";
-import { quickSearchFilter } from "@/utils/search";
 
 interface WarehouseTableProps {
   items: WarehouseItem[];
@@ -69,6 +69,29 @@ export function WarehouseTable({
       ]),
     [sortedItems, search],
   );
+
+  // Calculate totals by unit
+  const totals = useMemo(() => {
+    const result = {
+      stockKg: 0,
+      stockPcs: 0,
+      pendingExportKg: 0,
+      pendingExportPcs: 0,
+    };
+
+    filteredItems.forEach((item) => {
+      const isKg = item.unitOfCalculation.toLowerCase() === "kg";
+      if (isKg) {
+        result.stockKg += item.amountAvailable;
+        result.pendingExportKg += item.amountOccupied;
+      } else {
+        result.stockPcs += item.amountAvailable;
+        result.pendingExportPcs += item.amountOccupied;
+      }
+    });
+
+    return result;
+  }, [filteredItems]);
   const deleteWarehouse = useDeleteWarehouse();
   const [addStockWarehouse, setAddStockWarehouse] = useState<WarehouseItem | null>(null);
   const [deleteWarehouseItem, setDeleteWarehouseItem] = useState<WarehouseItem | null>(null);
@@ -93,13 +116,33 @@ export function WarehouseTable({
 
   return (
     <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
-      <div className="p-3 border-b bg-muted/40">
+      <div className="p-3 border-b bg-muted/40 flex items-center gap-4 flex-wrap">
         <Input
           placeholder="Tìm nhanh theo mọi cột..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"
         />
+        <div className="flex items-center gap-4 text-sm flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Tồn kho:</span>
+            <span className="font-medium text-green-600">
+              kg: {totals.stockKg.toLocaleString()} kg,
+            </span>
+            <span className="font-medium text-green-600">
+              {totals.stockPcs.toLocaleString()} pcs
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Chờ xuất:</span>
+            <span className="font-medium text-orange-600">
+              {totals.pendingExportKg.toLocaleString()} kg,
+            </span>
+            <span className="font-medium text-orange-600">
+              {totals.pendingExportPcs.toLocaleString()} pcs
+            </span>
+          </div>
+        </div>
       </div>
       <Table>
         <TableHeader>
@@ -110,9 +153,8 @@ export function WarehouseTable({
             <TableHead className="font-semibold">Quality</TableHead>
             <TableHead className="font-semibold">Style</TableHead>
             <TableHead className="font-semibold">Color</TableHead>
-            <TableHead className="font-semibold text-right">Tổng SL</TableHead>
-            <TableHead className="font-semibold text-right">Khả dụng</TableHead>
-            <TableHead className="font-semibold text-right">Chiếm dụng</TableHead>
+            <TableHead className="font-semibold text-right">Tồn kho</TableHead>
+            <TableHead className="font-semibold text-right">Chờ xuất</TableHead>
             <TableHead className="font-semibold">Đơn vị</TableHead>
             <TableHead className="font-semibold text-center">Thao tác</TableHead>
           </TableRow>
@@ -120,7 +162,7 @@ export function WarehouseTable({
         <TableBody>
           {filteredItems.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={11} className="h-24 text-center text-muted-foreground">
+              <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
                 Không có dữ liệu
               </TableCell>
             </TableRow>
@@ -133,7 +175,6 @@ export function WarehouseTable({
                 <TableCell>{item.quality}</TableCell>
                 <TableCell>{item.style}</TableCell>
                 <TableCell>{item.color}</TableCell>
-                <TableCell className="text-right">{item.totalAmount}</TableCell>
                 <TableCell className="text-right font-medium text-green-600">
                   {item.amountAvailable}
                 </TableCell>
