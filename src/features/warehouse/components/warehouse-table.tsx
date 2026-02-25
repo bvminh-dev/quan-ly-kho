@@ -127,7 +127,7 @@ export function WarehouseTable({
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Tồn kho:</span>
             <span className="font-medium text-green-600">
-              kg: {totals.stockKg.toLocaleString()} kg,
+              {totals.stockKg.toLocaleString()} kg,
             </span>
             <span className="font-medium text-green-600">
               {totals.stockPcs.toLocaleString()} pcs
