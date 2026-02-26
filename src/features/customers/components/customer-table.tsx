@@ -33,6 +33,7 @@ import { useAccessControl } from "@/components/access-control";
 import { useDeleteCustomer } from "../hooks/use-customers";
 import { CustomerFormDialog } from "./customer-form-dialog";
 import type { CustomerItem, PaginationMeta } from "@/types/api";
+import { formatUSD } from "@/utils/currency";
 import { quickSearchFilter } from "@/utils/search";
 
 interface CustomerTableProps {
@@ -134,7 +135,7 @@ export function CustomerTable({
                         : ""
                     }`}
                   >
-                    ${customer.payment.toFixed(2)}
+                    ${formatUSD(customer.payment)}
                   </TableCell>
                   <TableCell className="max-w-[200px] truncate">
                     {customer.note || "-"}

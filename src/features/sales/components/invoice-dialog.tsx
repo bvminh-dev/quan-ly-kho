@@ -10,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { getWarehouseDisplayName } from "@/features/warehouse/utils/sort-warehouse";
 import type { OrderDetail, WarehouseItem } from "@/types/api";
-import { formatNGN } from "@/utils/currency";
+import { formatNGN, formatNumber, formatUSD } from "@/utils/currency";
 import { toPng } from "html-to-image";
 import { Copy, Download, ExternalLink, X } from "lucide-react";
 import { useCallback, useRef } from "react";
@@ -104,7 +104,6 @@ export function InvoiceDialog({
   )}${String(now.getDate()).padStart(2, "0")}`;
   const invoiceNo = `INV-${ymd}-${order._id.slice(-4).toUpperCase()}`;
 
-  const formatUSD = (v: number) => `$${v.toFixed(2)}`;
   let setColorCounter = 0;
 
   const lowerState = order.state?.toLowerCase() as
@@ -220,7 +219,7 @@ export function InvoiceDialog({
                 <p className="text-sm text-gray-500">Customer:</p>
                 <p className="text-xl font-bold">{order.customer?.name}</p>
                 <p className="text-sm text-gray-600 mt-2">
-                  Rate: 1 USD = {order.exchangeRate.toLocaleString()} NGN
+                  Rate: 1 USD = {formatNumber(order.exchangeRate)} NGN
                 </p>
               </div>
             </div>

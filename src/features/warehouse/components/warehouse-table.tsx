@@ -28,6 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { PaginationMeta, WarehouseItem } from "@/types/api";
+import { formatNumber } from "@/utils/currency";
 import { quickSearchFilter } from "@/utils/search";
 import { MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -93,8 +94,10 @@ export function WarehouseTable({
     return result;
   }, [filteredItems]);
   const deleteWarehouse = useDeleteWarehouse();
-  const [addStockWarehouse, setAddStockWarehouse] = useState<WarehouseItem | null>(null);
-  const [deleteWarehouseItem, setDeleteWarehouseItem] = useState<WarehouseItem | null>(null);
+  const [addStockWarehouse, setAddStockWarehouse] =
+    useState<WarehouseItem | null>(null);
+  const [deleteWarehouseItem, setDeleteWarehouseItem] =
+    useState<WarehouseItem | null>(null);
 
   const handleDelete = () => {
     if (deleteWarehouseItem) {
@@ -127,19 +130,19 @@ export function WarehouseTable({
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">Tồn kho:</span>
             <span className="font-medium text-green-600">
-              {totals.stockKg.toLocaleString()} kg,
+              {formatNumber(totals.stockKg)} kg,
             </span>
             <span className="font-medium text-green-600">
-              {totals.stockPcs.toLocaleString()} pcs
+              {formatNumber(totals.stockPcs)} pcs
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Chờ xuất:</span>
+            <span className="text-muted-foreground">Chờ giao:</span>
             <span className="font-medium text-orange-600">
-              {totals.pendingExportKg.toLocaleString()} kg,
+              {formatNumber(totals.pendingExportKg)} kg,
             </span>
             <span className="font-medium text-orange-600">
-              {totals.pendingExportPcs.toLocaleString()} pcs
+              {formatNumber(totals.pendingExportPcs)} pcs
             </span>
           </div>
         </div>
@@ -154,38 +157,54 @@ export function WarehouseTable({
             <TableHead className="font-semibold">Style</TableHead>
             <TableHead className="font-semibold">Color</TableHead>
             <TableHead className="font-semibold text-right">Tồn kho</TableHead>
-            <TableHead className="font-semibold text-right">Chờ xuất</TableHead>
+            <TableHead className="font-semibold text-right">Chờ giao</TableHead>
             <TableHead className="font-semibold">Đơn vị</TableHead>
-            <TableHead className="font-semibold text-center">Thao tác</TableHead>
+            <TableHead className="font-semibold text-center">
+              Thao tác
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filteredItems.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
+              <TableCell
+                colSpan={10}
+                className="h-24 text-center text-muted-foreground"
+              >
                 Không có dữ liệu
               </TableCell>
             </TableRow>
           ) : (
             filteredItems.map((item) => (
               <TableRow key={item._id} className="hover:bg-muted/30">
-                <TableCell className="font-mono font-medium">{item._id.slice(-5).toUpperCase()}</TableCell>
-                <TableCell className="font-medium">{item.inches}&quot;</TableCell>
+                <TableCell className="font-mono font-medium">
+                  {item._id.slice(-5).toUpperCase()}
+                </TableCell>
+                <TableCell className="font-medium">
+                  {item.inches}&quot;
+                </TableCell>
                 <TableCell>{item.item}</TableCell>
                 <TableCell>{item.quality}</TableCell>
                 <TableCell>{item.style}</TableCell>
                 <TableCell>{item.color}</TableCell>
                 <TableCell className="text-right font-medium text-green-600">
-                  {item.amountAvailable}
+                  {formatNumber(item.amountAvailable)}
                 </TableCell>
                 <TableCell className="text-right text-orange-600">
-                  {item.amountOccupied}
+                  {formatNumber(item.amountOccupied)}
                 </TableCell>
                 <TableCell>{item.unitOfCalculation}</TableCell>
-                <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                <TableCell
+                  className="text-center"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 cursor-pointer"
+                      >
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -239,12 +258,17 @@ export function WarehouseTable({
             <DialogTitle>Xác nhận xóa</DialogTitle>
             <DialogDescription>
               Bạn có chắc muốn xóa lô hàng{" "}
-              <strong>{deleteWarehouseItem?._id.slice(-5).toUpperCase()}</strong>? Hành động
-              này không thể hoàn tác.
+              <strong>
+                {deleteWarehouseItem?._id.slice(-5).toUpperCase()}
+              </strong>
+              ? Hành động này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteWarehouseItem(null)}>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteWarehouseItem(null)}
+            >
               Hủy
             </Button>
             <Button

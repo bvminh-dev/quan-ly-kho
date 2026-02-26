@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { OrderDetail, WarehouseItem } from "@/types/api";
 import { getWarehouseDisplayName } from "@/features/warehouse/utils/sort-warehouse";
-import { formatNGN } from "@/utils/currency";
+import { formatNGN, formatNumber } from "@/utils/currency";
 import { ORDER_STATE_CONFIG } from "../constants/order-state-config";
 
 interface OrderDetailDialogProps {
@@ -76,7 +76,7 @@ export function OrderDetailDialog({
               <div>
                 <span className="text-muted-foreground">Tỷ giá: </span>
                 <span className="font-medium">
-                  1 USD = {order.exchangeRate.toLocaleString()} NGN
+                  1 USD = {formatNumber(order.exchangeRate)} NGN
                 </span>
               </div>
               <div>

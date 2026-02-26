@@ -121,9 +121,17 @@ export function CustomerFormDialog({
                   <FormControl>
                     <Input
                       type="number"
+                      step="any"
                       placeholder="0"
                       {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      value={field.value ?? ""}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === ""
+                            ? 0
+                            : parseFloat(e.target.value) || 0
+                        )
+                      }
                     />
                   </FormControl>
                   <FormMessage />

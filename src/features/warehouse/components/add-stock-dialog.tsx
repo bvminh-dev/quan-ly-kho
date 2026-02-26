@@ -25,7 +25,7 @@ import { useAddStock } from "../hooks/use-warehouses";
 import type { WarehouseItem } from "@/types/api";
 
 const schema = z.object({
-  quantity: z.number().min(1, "Số lượng phải lớn hơn 0"),
+  quantity: z.number().min(0.01, "Số lượng phải lớn hơn 0"),
   note: z.string().min(1, "Ghi chú là bắt buộc"),
 });
 
@@ -88,9 +88,17 @@ export function AddStockDialog({
                   <FormControl>
                     <Input
                       type="number"
-                      min={1}
+                      min={0}
+                      step="any"
                       {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      value={field.value ?? ""}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === ""
+                            ? 0
+                            : parseFloat(e.target.value) || 0
+                        )
+                      }
                     />
                   </FormControl>
                   <FormMessage />

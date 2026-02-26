@@ -21,6 +21,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { useUpdateHistoryExport } from "../hooks/use-history-warehouse";
+import { formatNumber } from "@/utils/currency";
 import type { HistoryExportItem } from "@/types/api";
 
 const schema = z.object({
@@ -122,7 +123,7 @@ export function HistoryExportFormDialog({
             </div>
             <div>
               <span className="text-muted-foreground">Thanh toán:</span>{" "}
-              <span className="font-medium">{item.paymentOrder.toLocaleString()}</span>
+              <span className="font-medium">{formatNumber(item.paymentOrder)}</span>
             </div>
           </div>
         </div>

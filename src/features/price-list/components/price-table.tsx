@@ -17,6 +17,7 @@ import { Pencil, Check, X } from "lucide-react";
 import { sortWarehouseItems } from "@/features/warehouse/utils/sort-warehouse";
 import { useUpdateWarehouse } from "@/features/warehouse/hooks/use-warehouses";
 import { useAccessControl } from "@/components/access-control";
+import { formatNumber } from "@/utils/currency";
 import type { WarehouseItem, PaginationMeta } from "@/types/api";
 import { quickSearchFilter } from "@/utils/search";
 
@@ -140,42 +141,66 @@ export function PriceTable({
                   {editingId === item._id ? (
                     <Input
                       type="number"
+                      min={0}
+                      step="any"
                       value={editValues.priceHigh}
                       onChange={(e) =>
-                        setEditValues((v) => ({ ...v, priceHigh: Number(e.target.value) }))
+                        setEditValues((v) => ({
+                          ...v,
+                          priceHigh:
+                            e.target.value === ""
+                              ? 0
+                              : parseFloat(e.target.value) || 0,
+                        }))
                       }
                       className="h-8 w-24 ml-auto text-right"
                     />
                   ) : (
-                    `$${item.priceHigh.toFixed(2)}`
+                    `$${formatNumber(item.priceHigh)}`
                   )}
                 </TableCell>
                 <TableCell className="text-right">
                   {editingId === item._id ? (
                     <Input
                       type="number"
+                      min={0}
+                      step="any"
                       value={editValues.priceLow}
                       onChange={(e) =>
-                        setEditValues((v) => ({ ...v, priceLow: Number(e.target.value) }))
+                        setEditValues((v) => ({
+                          ...v,
+                          priceLow:
+                            e.target.value === ""
+                              ? 0
+                              : parseFloat(e.target.value) || 0,
+                        }))
                       }
                       className="h-8 w-24 ml-auto text-right"
                     />
                   ) : (
-                    `$${item.priceLow.toFixed(2)}`
+                    `$${formatNumber(item.priceLow)}`
                   )}
                 </TableCell>
                 <TableCell className="text-right">
                   {editingId === item._id ? (
                     <Input
                       type="number"
+                      min={0}
+                      step="any"
                       value={editValues.sale}
                       onChange={(e) =>
-                        setEditValues((v) => ({ ...v, sale: Number(e.target.value) }))
+                        setEditValues((v) => ({
+                          ...v,
+                          sale:
+                            e.target.value === ""
+                              ? 0
+                              : parseFloat(e.target.value) || 0,
+                        }))
                       }
                       className="h-8 w-24 ml-auto text-right"
                     />
                   ) : (
-                    `$${item.sale.toFixed(2)}`
+                    `$${formatNumber(item.sale)}`
                   )}
                 </TableCell>
                 {isAdmin && (

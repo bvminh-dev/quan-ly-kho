@@ -282,8 +282,16 @@ export function WarehouseFormDialog({
                     <Input
                       type="number"
                       min={0}
+                      step="any"
                       {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      value={field.value ?? ""}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === ""
+                            ? 0
+                            : parseFloat(e.target.value) || 0
+                        )
+                      }
                     />
                   </FormControl>
                   <FormMessage />
@@ -302,9 +310,16 @@ export function WarehouseFormDialog({
                       <Input
                         type="number"
                         min={0}
+                        step="any"
                         {...field}
-                        value={field.value ?? 0}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        value={field.value ?? ""}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === ""
+                              ? 0
+                              : parseFloat(e.target.value) || 0
+                          )
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -322,9 +337,16 @@ export function WarehouseFormDialog({
                       <Input
                         type="number"
                         min={0}
+                        step="any"
                         {...field}
-                        value={field.value ?? 0}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        value={field.value ?? ""}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === ""
+                              ? 0
+                              : parseFloat(e.target.value) || 0
+                          )
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -342,9 +364,16 @@ export function WarehouseFormDialog({
                       <Input
                         type="number"
                         min={0}
+                        step="any"
                         {...field}
-                        value={field.value ?? 0}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        value={field.value ?? ""}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === ""
+                              ? 0
+                              : parseFloat(e.target.value) || 0
+                          )
+                        }
                       />
                     </FormControl>
                     <FormMessage />

@@ -20,13 +20,11 @@ import { useMemo, useState } from "react";
 import { useCustomer } from "../hooks/use-customers";
 import { CustomerFormDialog } from "./customer-form-dialog";
 import { ORDER_STATE_CONFIG } from "@/features/orders/constants/order-state-config";
-import { formatNGN } from "@/utils/currency";
+import { formatNGN, formatNumber, formatUSD } from "@/utils/currency";
 
 interface CustomerDetailProps {
   customerId: string;
 }
-
-const formatUSD = (v: number) => `$${v.toFixed(2)}`;
 
 export function CustomerDetail({ customerId }: CustomerDetailProps) {
   const router = useRouter();
@@ -250,7 +248,7 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                       </TableCell>
                       <TableCell className="text-right">
                         <span className="font-medium">
-                          1 USD = {order.exchangeRate.toLocaleString()} NGN
+                          1 USD = {formatNumber(order.exchangeRate)} NGN
                         </span>
                       </TableCell>
                       <TableCell>

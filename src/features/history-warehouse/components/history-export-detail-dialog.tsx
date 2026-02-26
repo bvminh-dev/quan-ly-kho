@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatNumber } from "@/utils/currency";
 import { useHistoryExportItem } from "../hooks/use-history-warehouse";
 
 interface HistoryExportDetailDialogProps {
@@ -121,15 +122,15 @@ export function HistoryExportDetailDialog({
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Giá cao:</span>{" "}
-                    <span className="font-medium">{item.priceHigh}</span>
+                    <span className="font-medium">{formatNumber(item.priceHigh)}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Giá thấp:</span>{" "}
-                    <span className="font-medium">{item.priceLow}</span>
+                    <span className="font-medium">{formatNumber(item.priceLow)}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Giảm giá:</span>{" "}
-                    <span className="font-medium">{item.sale}</span>
+                    <span className="font-medium">{formatNumber(item.sale)}</span>
                   </div>
                 </div>
               </div>
@@ -153,15 +154,15 @@ export function HistoryExportDetailDialog({
                   </div>
                   <div>
                     <span className="text-muted-foreground">Số lượng:</span>{" "}
-                    <span className="font-medium">{item.quantityOrder}</span>
+                    <span className="font-medium">{formatNumber(item.quantityOrder)}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Giá bán:</span>{" "}
-                    <span className="font-medium">{item.priceOrder}</span>
+                    <span className="font-medium">{formatNumber(item.priceOrder)}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Giá sale:</span>{" "}
-                    <span className="font-medium">{item.saleOrder}</span>
+                    <span className="font-medium">{formatNumber(item.saleOrder)}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Thanh toán:</span>{" "}
@@ -171,7 +172,7 @@ export function HistoryExportDetailDialog({
                       }`}
                     >
                       {item.paymentOrder >= 0 ? "+" : ""}
-                      {item.paymentOrder.toLocaleString()}
+                      {formatNumber(item.paymentOrder)}
                     </span>
                   </div>
                 </div>

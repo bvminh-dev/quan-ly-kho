@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { HistoryEnterItem, PaginationMeta } from "@/types/api";
+import { formatNumber } from "@/utils/currency";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { quickSearchFilter } from "@/utils/search";
@@ -63,19 +64,19 @@ export function HistoryEnterTable({
     const { type, metadata } = item;
     switch (type) {
       case "Tạo mới":
-        return `SL: ${metadata.totalAmount || 0}, Cao: ${metadata.priceHigh || 0}, Thấp: ${metadata.priceLow || 0}`;
+        return `SL: ${formatNumber(metadata.totalAmount ?? 0)}, Cao: ${formatNumber(metadata.priceHigh ?? 0)}, Thấp: ${formatNumber(metadata.priceLow ?? 0)}`;
       case "Nhập thêm hàng":
-        return `Số lượng: ${metadata.quantity || 0}`;
+        return `Số lượng: ${formatNumber(metadata.quantity ?? 0)}`;
       case "Hoàn đơn":
         const orderIdStr =
           typeof metadata.orderId === "string"
             ? metadata.orderId.slice(-5).toUpperCase()
             : metadata.orderId?._id?.slice(-5).toUpperCase() || "";
-        return `SL hoàn: ${metadata.quantityRevert || 0}, Đơn: ${orderIdStr}`;
+        return `SL hoàn: ${formatNumber(metadata.quantityRevert ?? 0)}, Đơn: ${orderIdStr}`;
       case "Sửa giá":
-        return `${metadata.priceHighOld !== metadata.priceHighNew ? `Giá cao: ${metadata.priceHighOld || 0} → ${metadata.priceHighNew || 0}` : ""} ${metadata.priceLowOld !== metadata.priceLowNew ? `Giá thấp: ${metadata.priceLowOld || 0} → ${metadata.priceLowNew || 0}` : ""} ${metadata.saleOld !== metadata.saleNew ? `sale: ${metadata.saleOld || 0} → ${metadata.saleNew || 0}` : ""}`.trim();
+        return `${metadata.priceHighOld !== metadata.priceHighNew ? `Giá cao: ${formatNumber(metadata.priceHighOld ?? 0)} → ${formatNumber(metadata.priceHighNew ?? 0)}` : ""} ${metadata.priceLowOld !== metadata.priceLowNew ? `Giá thấp: ${formatNumber(metadata.priceLowOld ?? 0)} → ${formatNumber(metadata.priceLowNew ?? 0)}` : ""} ${metadata.saleOld !== metadata.saleNew ? `sale: ${formatNumber(metadata.saleOld ?? 0)} → ${formatNumber(metadata.saleNew ?? 0)}` : ""}`.trim();
       case "Xóa":
-        return `SL: ${metadata.totalAmount || 0}, khả dụng: ${metadata.amountAvailable || 0}, chiếm dụng: ${metadata.amountOccupied || 0}`;
+        return `SL: ${formatNumber(metadata.totalAmount ?? 0)}, khả dụng: ${formatNumber(metadata.amountAvailable ?? 0)}, chiếm dụng: ${formatNumber(metadata.amountOccupied ?? 0)}`;
       default:
         return "-";
     }

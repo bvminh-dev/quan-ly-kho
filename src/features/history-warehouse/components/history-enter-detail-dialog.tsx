@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatNumber } from "@/utils/currency";
 import { useHistoryEnterItem } from "../hooks/use-history-warehouse";
 
 interface HistoryEnterDetailDialogProps {
@@ -37,19 +38,19 @@ export function HistoryEnterDetailDialog({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <span className="text-muted-foreground">Tổng số lượng:</span>{" "}
-                <span className="font-medium">{metadata.totalAmount || 0}</span>
+                <span className="font-medium">{formatNumber(metadata.totalAmount ?? 0)}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Giá cao:</span>{" "}
-                <span className="font-medium">{metadata.priceHigh || 0}</span>
+                <span className="font-medium">{formatNumber(metadata.priceHigh ?? 0)}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Giá thấp:</span>{" "}
-                <span className="font-medium">{metadata.priceLow || 0}</span>
+                <span className="font-medium">{formatNumber(metadata.priceLow ?? 0)}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Giảm giá:</span>{" "}
-                <span className="font-medium">{metadata.sale || 0}</span>
+                <span className="font-medium">{formatNumber(metadata.sale ?? 0)}</span>
               </div>
             </div>
           </div>
@@ -58,7 +59,7 @@ export function HistoryEnterDetailDialog({
         return (
           <div>
             <span className="text-muted-foreground">Số lượng nhập thêm:</span>{" "}
-            <span className="font-medium">{metadata.quantity || 0}</span>
+            <span className="font-medium">{formatNumber(metadata.quantity ?? 0)}</span>
           </div>
         );
       case "Hoàn đơn":
@@ -66,7 +67,7 @@ export function HistoryEnterDetailDialog({
           <div className="space-y-2">
             <div>
               <span className="text-muted-foreground">Số lượng hoàn:</span>{" "}
-              <span className="font-medium">{metadata.quantityRevert || 0}</span>
+              <span className="font-medium">{formatNumber(metadata.quantityRevert ?? 0)}</span>
             </div>
             {metadata.orderId && (
               <div>
@@ -86,32 +87,32 @@ export function HistoryEnterDetailDialog({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <span className="text-muted-foreground">Giá cao cũ:</span>{" "}
-                <span className="font-medium">{metadata.priceHighOld || 0}</span>
+                <span className="font-medium">{formatNumber(metadata.priceHighOld ?? 0)}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Giá cao mới:</span>{" "}
                 <span className="font-medium text-green-600">
-                  {metadata.priceHighNew || 0}
+                  {formatNumber(metadata.priceHighNew ?? 0)}
                 </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Giá thấp cũ:</span>{" "}
-                <span className="font-medium">{metadata.priceLowOld || 0}</span>
+                <span className="font-medium">{formatNumber(metadata.priceLowOld ?? 0)}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Giá thấp mới:</span>{" "}
                 <span className="font-medium text-green-600">
-                  {metadata.priceLowNew || 0}
+                  {formatNumber(metadata.priceLowNew ?? 0)}
                 </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Sale cũ:</span>{" "}
-                <span className="font-medium">{metadata.saleOld || 0}</span>
+                <span className="font-medium">{formatNumber(metadata.saleOld ?? 0)}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Sale mới:</span>{" "}
                 <span className="font-medium text-green-600">
-                  {metadata.saleNew || 0}
+                  {formatNumber(metadata.saleNew ?? 0)}
                 </span>
               </div>
             </div>

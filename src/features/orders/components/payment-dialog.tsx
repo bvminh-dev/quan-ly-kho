@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useExchangeRate } from "@/hooks/use-exchange-rate";
+import { round2 } from "@/utils/currency";
 import { useAddHistory, useConfirmOrder } from "../hooks/use-orders";
 import type { OrderDetail } from "@/types/api";
 
@@ -89,7 +90,7 @@ export function PaymentDialog({
   const handleNGNChange = (ngn: number) => {
     form.setValue("moneyPaidNGN", ngn);
     if (watchRate > 0) {
-      form.setValue("moneyPaidDolar", parseFloat((ngn / watchRate).toFixed(2)));
+      form.setValue("moneyPaidDolar", round2(ngn / watchRate));
     }
   };
 
@@ -155,8 +156,13 @@ export function PaymentDialog({
             <Label className="text-xs">Tỷ giá</Label>
             <Input
               type="number"
-              {...form.register("exchangeRate", { valueAsNumber: true })}
+              min={0}
+              step="any"
               className="h-9"
+              {...form.register("exchangeRate", {
+                valueAsNumber: true,
+                setValueAs: (v) => (v === "" || Number.isNaN(Number(v)) ? 0 : parseFloat(String(v))),
+              })}
             />
           </div>
 
@@ -165,8 +171,14 @@ export function PaymentDialog({
               <Label className="text-xs">Số tiền (NGN)</Label>
               <Input
                 type="number"
-                value={watchNGN || ""}
-                onChange={(e) => handleNGNChange(Number(e.target.value))}
+                min={0}
+                step="any"
+                value={watchNGN ?? ""}
+                onChange={(e) =>
+                  handleNGNChange(
+                    e.target.value === "" ? 0 : parseFloat(e.target.value) || 0
+                  )
+                }
                 className="h-9"
               />
               {order && (
@@ -214,7 +226,12 @@ export function PaymentDialog({
               <Label className="text-xs">Số tiền (USD)</Label>
               <Input
                 type="number"
-                value={form.watch("moneyPaidDolar") || ""}
+                step="any"
+                value={
+                  form.watch("moneyPaidDolar") != null
+                    ? Number(form.watch("moneyPaidDolar")).toFixed(2)
+                    : ""
+                }
                 disabled
                 className="h-9 bg-muted cursor-not-allowed"
               />

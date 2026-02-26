@@ -14,15 +14,10 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { getWarehouseDisplayName } from "@/features/warehouse/utils/sort-warehouse";
+import { formatNGN, formatUSD } from "@/utils/currency";
 import { cn } from "@/lib/utils";
 import type { CustomerItem, WarehouseItem } from "@/types/api";
-import {
-  Layers,
-  Package,
-  Plus,
-  Trash2,
-  Ungroup,
-} from "lucide-react";
+import { Layers, Package, Plus, Trash2, Ungroup } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import type { OrderSet, SelectedItem } from "../types";
 import { SET_COLORS } from "../types";
@@ -43,7 +38,11 @@ interface OrderBuilderProps {
   onCreateSet: (tempIds: string[]) => void;
   onUngroupSet: (setId: string) => void;
   onUpdateSet: (setId: string, updates: Partial<OrderSet>) => void;
-  onUpdateSetItem: (setId: string, tempId: string, updates: Partial<SelectedItem>) => void;
+  onUpdateSetItem: (
+    setId: string,
+    tempId: string,
+    updates: Partial<SelectedItem>,
+  ) => void;
   onRemoveSetItem: (setId: string, tempId: string) => void;
   note: string;
   onNoteChange: (note: string) => void;
@@ -153,7 +152,10 @@ export function OrderBuilder({
           <div className="space-y-1.5 sm:col-span-2">
             <Label className="text-xs">Khách hàng</Label>
             <div className="flex gap-2">
-              <Select value={selectedCustomerId} onValueChange={onCustomerChange}>
+              <Select
+                value={selectedCustomerId}
+                onValueChange={onCustomerChange}
+              >
                 <SelectTrigger className="h-9 flex-1">
                   <SelectValue placeholder="Chọn khách hàng" />
                 </SelectTrigger>
@@ -180,8 +182,14 @@ export function OrderBuilder({
             <Label className="text-xs">Debt (USD)</Label>
             <Input
               type="number"
-              value={debt || ""}
-              onChange={(e) => onDebtChange(Number(e.target.value) || 0)}
+              min={0}
+              step="any"
+              value={debt ?? ""}
+              onChange={(e) =>
+                onDebtChange(
+                  e.target.value === "" ? 0 : parseFloat(e.target.value) || 0,
+                )
+              }
               className="h-9"
             />
           </div>
@@ -190,8 +198,14 @@ export function OrderBuilder({
             <Label className="text-xs">Paid (USD)</Label>
             <Input
               type="number"
-              value={paid || ""}
-              onChange={(e) => onPaidChange(Number(e.target.value) || 0)}
+              min={0}
+              step="any"
+              value={paid ?? ""}
+              onChange={(e) =>
+                onPaidChange(
+                  e.target.value === "" ? 0 : parseFloat(e.target.value) || 0,
+                )
+              }
               className="h-9"
             />
           </div>
@@ -200,8 +214,14 @@ export function OrderBuilder({
             <Label className="text-xs">Tỷ giá (1 USD = ? NGN)</Label>
             <Input
               type="number"
-              value={exchangeRate}
-              onChange={(e) => onExchangeRateChange(Number(e.target.value))}
+              min={0}
+              step="any"
+              value={exchangeRate ?? ""}
+              onChange={(e) =>
+                onExchangeRateChange(
+                  e.target.value === "" ? 0 : parseFloat(e.target.value) || 0,
+                )
+              }
               className="h-9"
             />
           </div>
@@ -216,7 +236,7 @@ export function OrderBuilder({
                   "inline-flex items-center justify-center rounded-sm px-2 text-xs font-medium transition-all cursor-pointer",
                   priceType === "low"
                     ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 Giá thấp
@@ -228,7 +248,7 @@ export function OrderBuilder({
                   "inline-flex items-center justify-center rounded-sm px-2 text-xs font-medium transition-all cursor-pointer",
                   priceType === "high"
                     ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 Giá cao
@@ -249,7 +269,12 @@ export function OrderBuilder({
 
           {selectedForSet.size >= 2 && (
             <div className="flex justify-end">
-              <Button size="sm" variant="outline" onClick={handleCreateSet} className="cursor-pointer">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleCreateSet}
+                className="cursor-pointer"
+              >
                 <Layers className="h-3.5 w-3.5 mr-1" />
                 Tạo Set ({selectedForSet.size})
               </Button>
@@ -292,17 +317,21 @@ export function OrderBuilder({
                   </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1">
-                      <Label className="text-xs">Số lượng (max: {wh?.amountAvailable})</Label>
+                      <Label className="text-xs">
+                        Số lượng (max: {wh?.amountAvailable}{" "}
+                        {wh?.unitOfCalculation})
+                      </Label>
                       <Input
                         type="number"
                         min={0}
+                        step="any"
                         max={wh?.amountAvailable ?? 999}
-                        value={item.quantity || ""}
+                        value={item.quantity ?? ""}
                         onChange={(e) =>
                           onUpdateItem(item.tempId, {
                             quantity: Math.min(
-                              Number(e.target.value),
-                              wh?.amountAvailable ?? 999
+                              parseFloat(e.target.value) || 0,
+                              wh?.amountAvailable ?? 999,
                             ),
                           })
                         }
@@ -313,10 +342,12 @@ export function OrderBuilder({
                       <Label className="text-xs">Đơn giá ($)</Label>
                       <Input
                         type="number"
-                        value={item.price || ""}
+                        min={0}
+                        step="any"
+                        value={item.price ?? ""}
                         onChange={(e) =>
                           onUpdateItem(item.tempId, {
-                            price: Number(e.target.value),
+                            price: parseFloat(e.target.value) || 0,
                             customPrice: true,
                           })
                         }
@@ -327,10 +358,12 @@ export function OrderBuilder({
                       <Label className="text-xs">Giảm giá ($)</Label>
                       <Input
                         type="number"
-                        value={item.sale || ""}
+                        min={0}
+                        step="any"
+                        value={item.sale ?? ""}
                         onChange={(e) =>
                           onUpdateItem(item.tempId, {
-                            sale: Number(e.target.value),
+                            sale: parseFloat(e.target.value) || 0,
                             customSale: true,
                           })
                         }
@@ -369,7 +402,9 @@ export function OrderBuilder({
                     <Label className="text-xs">Tên set</Label>
                     <Input
                       value={set.nameSet}
-                      onChange={(e) => onUpdateSet(set.id, { nameSet: e.target.value })}
+                      onChange={(e) =>
+                        onUpdateSet(set.id, { nameSet: e.target.value })
+                      }
                       className="h-8"
                       placeholder="Set A"
                     />
@@ -378,8 +413,14 @@ export function OrderBuilder({
                     <Label className="text-xs">Giá set ($)</Label>
                     <Input
                       type="number"
-                      value={set.priceSet || ""}
-                      onChange={(e) => onUpdateSet(set.id, { priceSet: Number(e.target.value) })}
+                      min={0}
+                      step="any"
+                      value={set.priceSet ?? ""}
+                      onChange={(e) =>
+                        onUpdateSet(set.id, {
+                          priceSet: parseFloat(e.target.value) || 0,
+                        })
+                      }
                       className="h-8"
                     />
                   </div>
@@ -387,8 +428,14 @@ export function OrderBuilder({
                     <Label className="text-xs">Giảm giá ($)</Label>
                     <Input
                       type="number"
-                      value={set.saleSet || ""}
-                      onChange={(e) => onUpdateSet(set.id, { saleSet: Number(e.target.value) })}
+                      min={0}
+                      step="any"
+                      value={set.saleSet ?? ""}
+                      onChange={(e) =>
+                        onUpdateSet(set.id, {
+                          saleSet: parseFloat(e.target.value) || 0,
+                        })
+                      }
                       className="h-8"
                     />
                   </div>
@@ -396,9 +443,14 @@ export function OrderBuilder({
                     <Label className="text-xs">SL set</Label>
                     <Input
                       type="number"
-                      min={1}
-                      value={set.quantitySet || ""}
-                      onChange={(e) => onUpdateSet(set.id, { quantitySet: Number(e.target.value) })}
+                      min={0}
+                      step="any"
+                      value={set.quantitySet ?? ""}
+                      onChange={(e) =>
+                        onUpdateSet(set.id, {
+                          quantitySet: parseFloat(e.target.value) || 0,
+                        })
+                      }
                       className="h-8"
                     />
                   </div>
@@ -410,7 +462,10 @@ export function OrderBuilder({
                   {set.items.map((item) => {
                     const wh = warehouseMap[item.warehouseId];
                     return (
-                      <div key={item.tempId} className="flex items-center gap-3 text-sm">
+                      <div
+                        key={item.tempId}
+                        className="flex items-center gap-3 text-sm"
+                      >
                         <span className="flex-1 truncate font-medium">
                           {getWarehouseDisplayName(item.warehouse)}
                         </span>
@@ -418,13 +473,14 @@ export function OrderBuilder({
                           <Input
                             type="number"
                             min={0}
+                            step="any"
                             max={wh?.amountAvailable ?? 999}
-                            value={item.quantity || ""}
+                            value={item.quantity ?? ""}
                             onChange={(e) =>
                               onUpdateSetItem(set.id, item.tempId, {
                                 quantity: Math.min(
-                                  Number(e.target.value),
-                                  wh?.amountAvailable ?? 999
+                                  parseFloat(e.target.value) || 0,
+                                  wh?.amountAvailable ?? 999,
                                 ),
                               })
                             }
@@ -451,7 +507,7 @@ export function OrderBuilder({
       </ScrollArea>
 
       <div className="border-t p-4 space-y-3">
-        <div className="space-y-1.5">
+        {/* <div className="space-y-1.5">
           <Label className="text-xs">Ghi chú</Label>
           <Textarea
             value={note}
@@ -459,14 +515,16 @@ export function OrderBuilder({
             placeholder="Ghi chú đơn hàng..."
             className="h-16 resize-none"
           />
-        </div>
+        </div> */}
 
         <div className="flex items-center justify-between">
           <div className="text-sm">
             <span className="text-muted-foreground">Tổng: </span>
-            <span className="text-lg font-bold text-primary">${total.toFixed(2)}</span>
+            <span className="text-lg font-bold text-primary">
+              {formatUSD(total)}
+            </span>
             <span className="text-muted-foreground ml-2">
-              (₦{Math.round(total * exchangeRate).toLocaleString()})
+              ({formatNGN(total * exchangeRate)})
             </span>
           </div>
           <div className="flex gap-2">
