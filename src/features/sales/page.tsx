@@ -16,7 +16,7 @@ import { useExchangeRate } from "@/hooks/use-exchange-rate";
 import type { CreateOrderDto, OrderDetail, WarehouseItem } from "@/types/api";
 import { ChevronDown, ChevronRight, Warehouse } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { InvoiceDialog } from "./components/invoice-dialog";
 import { OrderBuilder } from "./components/order-builder";
@@ -30,8 +30,32 @@ const genSetId = () => `set-${++setIdCounter}-${Date.now()}`;
 let orderCounter = 0;
 const getNextOrder = () => ++orderCounter;
 
+const normalizeSetName = (name: string) => name.trim().toLowerCase();
+
+const getNextSetName = (existingSets: OrderSet[]) => {
+  const usedNames = new Set(
+    existingSets.map((set) => normalizeSetName(set.nameSet))
+  );
+
+  let maxAutoSetNumber = 0;
+  for (const set of existingSets) {
+    const match = set.nameSet.trim().match(/^set\s+(\d+)$/i);
+    if (!match) continue;
+    maxAutoSetNumber = Math.max(maxAutoSetNumber, Number(match[1]));
+  }
+
+  let nextNumber = maxAutoSetNumber + 1;
+  while (usedNames.has(normalizeSetName(`Set ${nextNumber}`))) {
+    nextNumber += 1;
+  }
+
+  return `Set ${nextNumber}`;
+};
+
 export default function SalesPage() {
   const router = useRouter();
+
+  const ungroupedSetIdsRef = useRef<Set<string>>(new Set());
 
   const { data: whData } = useAllWarehouses();
   const { data: custData } = useAllCustomers();
@@ -138,6 +162,7 @@ export default function SalesPage() {
               ...remaining.map((i) => ({
                 ...i,
                 tempId: genTempId(),
+                quantity: set.quantitySet ?? 0,
                 orderIndex: getNextOrder(),
               }))
             );
@@ -180,13 +205,27 @@ export default function SalesPage() {
       );
       if (itemsToGroup.length < 2) return;
 
+      const baseQuantity = itemsToGroup[0].quantity ?? 0;
+      if (
+        !baseQuantity ||
+        itemsToGroup.some((item) => (item.quantity ?? 0) !== baseQuantity)
+      ) {
+        toast.error(
+          "Để tạo set, số lượng của tất cả sản phẩm trong set phải bằng nhau và lớn hơn 0"
+        );
+        return;
+      }
+
       const newSet: OrderSet = {
         id: genSetId(),
-        nameSet: `Set ${sets.length + 1}`,
+        nameSet: getNextSetName(sets),
         priceSet: 0,
         saleSet: 0,
-        quantitySet: 1,
-        items: itemsToGroup,
+        quantitySet: baseQuantity,
+        items: itemsToGroup.map((item) => ({
+          ...item,
+          quantity: 1,
+        })),
         orderIndex: Math.min(...itemsToGroup.map((i) => i.orderIndex)),
       };
 
@@ -195,34 +234,56 @@ export default function SalesPage() {
       );
       setSets((prev) => [...prev, newSet]);
     },
-    [standaloneItems, sets.length]
+    [standaloneItems, sets]
   );
 
   const handleUngroupSet = useCallback((setId: string) => {
+    if (ungroupedSetIdsRef.current.has(setId)) return;
+    ungroupedSetIdsRef.current.add(setId);
+
+    let extractedSet: OrderSet | null = null;
     setSets((prevSets) => {
-      const targetSet = prevSets.find((s) => s.id === setId);
-      if (!targetSet) return prevSets;
-
-      setStandaloneItems((prevItems) => {
-        const cloned = targetSet.items.map((i) => ({
-          ...i,
-          tempId: genTempId(),
-          orderIndex: getNextOrder(),
-        }));
-        const merged = [...prevItems, ...cloned];
-        merged.sort((a, b) => a.orderIndex - b.orderIndex);
-        return merged;
-      });
-
+      extractedSet = prevSets.find((s) => s.id === setId) ?? null;
+      if (!extractedSet) return prevSets;
       return prevSets.filter((s) => s.id !== setId);
+    });
+
+    if (!extractedSet) {
+      ungroupedSetIdsRef.current.delete(setId);
+      return;
+    }
+
+    setStandaloneItems((prevItems) => {
+      const cloned = extractedSet.items.map((i) => ({
+        ...i,
+        tempId: genTempId(),
+        quantity: extractedSet.quantitySet ?? 0,
+        orderIndex: getNextOrder(),
+      }));
+      const merged = [...prevItems, ...cloned];
+      merged.sort((a, b) => a.orderIndex - b.orderIndex);
+      return merged;
     });
   }, []);
 
   const handleUpdateSet = useCallback(
     (setId: string, updates: Partial<OrderSet>) => {
-      setSets((prev) =>
-        prev.map((s) => (s.id === setId ? { ...s, ...updates } : s))
-      );
+      setSets((prev) => {
+        const nextName = updates.nameSet?.trim();
+        if (nextName) {
+          const hasDuplicate = prev.some(
+            (set) =>
+              set.id !== setId &&
+              normalizeSetName(set.nameSet) === normalizeSetName(nextName)
+          );
+          if (hasDuplicate) {
+            toast.error("Tên set đã tồn tại, vui lòng chọn tên khác");
+            return prev;
+          }
+        }
+
+        return prev.map((s) => (s.id === setId ? { ...s, ...updates } : s));
+      });
     },
     []
   );
@@ -254,6 +315,7 @@ export default function SalesPage() {
         const cloned = remaining.map((i) => ({
           ...i,
           tempId: genTempId(),
+          quantity: set.quantitySet ?? 0,
           orderIndex: getNextOrder(),
         }));
         setStandaloneItems((items) => {
@@ -330,6 +392,14 @@ export default function SalesPage() {
       }
     }
     for (const set of sets) {
+      if (!set.priceSet || set.priceSet <= 0) {
+        toast.error("Giá set phải lớn hơn 0");
+        return null;
+      }
+      if (!set.quantitySet || set.quantitySet <= 0) {
+        toast.error("Số lượng set phải lớn hơn 0");
+        return null;
+      }
       for (const item of set.items) {
         if (!item.quantity || item.quantity <= 0) {
           toast.error("Vui lòng nhập số lượng cho tất cả sản phẩm trong set");
@@ -499,8 +569,6 @@ export default function SalesPage() {
             onUpdateSet={handleUpdateSet}
             onUpdateSetItem={handleUpdateSetItem}
             onRemoveSetItem={handleRemoveSetItem}
-            note={note}
-            onNoteChange={setNote}
             debt={debt}
             onDebtChange={setDebt}
             paid={paid}

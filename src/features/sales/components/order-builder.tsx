@@ -12,7 +12,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
 import { getWarehouseDisplayName } from "@/features/warehouse/utils/sort-warehouse";
 import { formatNGN, formatUSD } from "@/utils/currency";
 import { cn } from "@/lib/utils";
@@ -44,8 +43,6 @@ interface OrderBuilderProps {
     updates: Partial<SelectedItem>,
   ) => void;
   onRemoveSetItem: (setId: string, tempId: string) => void;
-  note: string;
-  onNoteChange: (note: string) => void;
   debt: number;
   onDebtChange: (value: number) => void;
   paid: number;
@@ -54,6 +51,7 @@ interface OrderBuilderProps {
   onConfirm: () => void;
   isSaving: boolean;
   warehouseMap: Record<string, WarehouseItem>;
+  maxAvailableByWarehouseId?: Record<string, number>;
   title?: string;
 }
 
@@ -73,10 +71,7 @@ export function OrderBuilder({
   onCreateSet,
   onUngroupSet,
   onUpdateSet,
-  onUpdateSetItem,
   onRemoveSetItem,
-  note,
-  onNoteChange,
   debt,
   onDebtChange,
   paid,
@@ -85,9 +80,19 @@ export function OrderBuilder({
   onConfirm,
   isSaving,
   warehouseMap,
+  maxAvailableByWarehouseId,
   title = "Tạo đơn hàng",
 }: OrderBuilderProps) {
   const [selectedForSet, setSelectedForSet] = useState<Set<string>>(new Set());
+
+  const getMaxQuantity = useCallback(
+    (warehouseId: string) => {
+      const fromMap = maxAvailableByWarehouseId?.[warehouseId];
+      if (typeof fromMap === "number") return fromMap;
+      return warehouseMap[warehouseId]?.amountAvailable ?? 999;
+    },
+    [maxAvailableByWarehouseId, warehouseMap]
+  );
 
   const toggleSelectForSet = useCallback((tempId: string) => {
     setSelectedForSet((prev) => {
@@ -285,6 +290,7 @@ export function OrderBuilder({
             if (entry.type === "standalone") {
               const item = entry.item;
               const wh = warehouseMap[item.warehouseId];
+              const maxQuantity = getMaxQuantity(item.warehouseId);
               return (
                 <div
                   key={item.tempId}
@@ -318,20 +324,20 @@ export function OrderBuilder({
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1">
                       <Label className="text-xs">
-                        Số lượng (max: {wh?.amountAvailable}{" "}
+                        Số lượng (max: {maxQuantity}{" "}
                         {wh?.unitOfCalculation})
                       </Label>
                       <Input
                         type="number"
                         min={0}
                         step="any"
-                        max={wh?.amountAvailable ?? 999}
+                        max={maxQuantity}
                         value={item.quantity ?? ""}
                         onChange={(e) =>
                           onUpdateItem(item.tempId, {
                             quantity: Math.min(
                               parseFloat(e.target.value) || 0,
-                              wh?.amountAvailable ?? 999,
+                              maxQuantity,
                             ),
                           })
                         }
@@ -460,7 +466,6 @@ export function OrderBuilder({
 
                 <div className="space-y-2">
                   {set.items.map((item) => {
-                    const wh = warehouseMap[item.warehouseId];
                     return (
                       <div
                         key={item.tempId}
@@ -472,18 +477,10 @@ export function OrderBuilder({
                         <div className="flex items-center gap-2">
                           <Input
                             type="number"
-                            min={0}
+                            min={1}
                             step="any"
-                            max={wh?.amountAvailable ?? 999}
-                            value={item.quantity ?? ""}
-                            onChange={(e) =>
-                              onUpdateSetItem(set.id, item.tempId, {
-                                quantity: Math.min(
-                                  parseFloat(e.target.value) || 0,
-                                  wh?.amountAvailable ?? 999,
-                                ),
-                              })
-                            }
+                            value={item.quantity ?? 1}
+                            readOnly
                             className="h-7 w-20"
                             placeholder="SL"
                           />
@@ -507,15 +504,6 @@ export function OrderBuilder({
       </ScrollArea>
 
       <div className="border-t p-4 space-y-3">
-        {/* <div className="space-y-1.5">
-          <Label className="text-xs">Ghi chú</Label>
-          <Textarea
-            value={note}
-            onChange={(e) => onNoteChange(e.target.value)}
-            placeholder="Ghi chú đơn hàng..."
-            className="h-16 resize-none"
-          />
-        </div> */}
 
         <div className="flex items-center justify-between">
           <div className="text-sm">

@@ -12,10 +12,9 @@ import { getWarehouseDisplayName } from "@/features/warehouse/utils/sort-warehou
 import type { OrderDetail, WarehouseItem } from "@/types/api";
 import { formatNGN, formatNumber, formatUSD } from "@/utils/currency";
 import { toPng } from "html-to-image";
-import { Copy, Download, ExternalLink, X } from "lucide-react";
-import { useCallback, useRef } from "react";
+import { Copy, Download, X } from "lucide-react";
+import { Fragment, useCallback, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import { SET_INVOICE_BG_COLORS, SET_INVOICE_BORDER_COLORS } from "../types";
 import { ORDER_STATE_CONFIG } from "@/features/orders/constants/order-state-config";
 
 interface InvoiceDialogProps {
@@ -33,11 +32,47 @@ export function InvoiceDialog({
 }: InvoiceDialogProps) {
   const invoiceRef = useRef<HTMLDivElement>(null);
 
+  const isSetProduct = (product: OrderDetail["products"][number]) => {
+    const qtySet = product.quantitySet ?? 0;
+    const hasSetMeta =
+      Boolean(product.nameSet?.trim()) ||
+      (product.priceSet ?? 0) > 0 ||
+      (product.saleSet ?? 0) > 0;
+    return qtySet > 0 && (hasSetMeta || product.items.length > 1);
+  };
+
   const generateImage = useCallback(async () => {
-    if (!invoiceRef.current) return null;
-    return await toPng(invoiceRef.current, {
+    const node = invoiceRef.current;
+    if (!node) return null;
+
+    if (typeof document !== "undefined" && document.fonts?.ready) {
+      await document.fonts.ready;
+    }
+
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve());
+    });
+
+    const width = Math.ceil(node.scrollWidth);
+    const height = Math.ceil(node.scrollHeight);
+
+    // Keep canvas size under browser limits to avoid export failures.
+    const maxPixels = 16_000_000;
+    const area = Math.max(width * height, 1);
+    const safeRatio = Math.min(2, Math.sqrt(maxPixels / area));
+    const pixelRatio = Math.max(1, safeRatio);
+
+    return await toPng(node, {
       backgroundColor: "#ffffff",
-      pixelRatio: 2,
+      cacheBust: true,
+      pixelRatio,
+      width,
+      height,
+      canvasWidth: Math.ceil(width * pixelRatio),
+      canvasHeight: Math.ceil(height * pixelRatio),
+      style: {
+        transform: "none",
+      },
     });
   }, []);
 
@@ -45,6 +80,9 @@ export function InvoiceDialog({
     try {
       const dataUrl = await generateImage();
       if (!dataUrl) return;
+      if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
+        throw new Error("Clipboard API unavailable");
+      }
       const res = await fetch(dataUrl);
       const blob = await res.blob();
       await navigator.clipboard.write([
@@ -59,7 +97,10 @@ export function InvoiceDialog({
   const handleDownload = async () => {
     try {
       const dataUrl = await generateImage();
-      if (!dataUrl) return;
+      if (!dataUrl) {
+        toast.error("Không thể tạo ảnh hóa đơn");
+        return;
+      }
       const link = document.createElement("a");
       link.download = `invoice-${order?._id?.slice(-5) || "unknown"}.png`;
       link.href = dataUrl;
@@ -69,24 +110,9 @@ export function InvoiceDialog({
     }
   };
 
-  const handleOpenNewTab = async () => {
-    try {
-      const dataUrl = await generateImage();
-      if (!dataUrl) return;
-      const newWindow = window.open();
-      if (newWindow) {
-        newWindow.document.write(`<img src="${dataUrl}" />`);
-      }
-    } catch {
-      toast.error("Không thể mở tab mới");
-    }
-  };
-
-  if (!order) return null;
-
-  const priceType = order.type === "cao" ? "high" : "low";
+  const priceType = order?.type === "cao" ? "high" : "low";
   const invoiceLabel = priceType === "high" ? "C" : "T";
-  const now = new Date(order.createdAt);
+  const now = new Date(order?.createdAt ?? Date.now());
   const dateStr = now.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -102,78 +128,105 @@ export function InvoiceDialog({
     2,
     "0",
   )}${String(now.getDate()).padStart(2, "0")}`;
-  const invoiceNo = `INV-${ymd}-${order._id.slice(-4).toUpperCase()}`;
+  const invoiceNo = `INV-${ymd}-${order?._id?.slice(-4).toUpperCase() || "XXXX"}`;
 
-  let setColorCounter = 0;
-
-  const lowerState = order.state?.toLowerCase() as
+  const lowerState = order?.state?.toLowerCase() as
     | keyof typeof ORDER_STATE_CONFIG
     | undefined;
   const stateCfg = lowerState ? ORDER_STATE_CONFIG[lowerState] : undefined;
 
-  // Helpers for line calculations
-  const getItemSetMultiplier = (product: OrderDetail["products"][number]) =>
-    product.isCalcSet && product.quantitySet && product.quantitySet > 0
-      ? product.quantitySet
-      : 1;
-
-  const getItemQty = (
-    product: OrderDetail["products"][number],
-    item: OrderDetail["products"][number]["items"][number],
-  ) => {
-    const setMultiplier = getItemSetMultiplier(product);
-    return item.quantity * setMultiplier;
+  const getSetColors = (index: number) => {
+    const hue = (index * 47) % 360;
+    return {
+      borderColor: `hsl(${hue} 72% 42%)`,
+      bgColor: `hsl(${hue} 80% 96%)`,
+      chipColor: `hsl(${hue} 72% 90%)`,
+    };
   };
 
-  const getItemUnitPrice = (
-    item: OrderDetail["products"][number]["items"][number],
-  ) => item.price;
+  const calculatedProducts = useMemo(() => {
+    if (!order) return [];
 
-  const getItemAmountUSD = (
-    product: OrderDetail["products"][number],
-    item: OrderDetail["products"][number]["items"][number],
-  ) => {
-    const qty = getItemQty(product, item);
-    const unitPrice = getItemUnitPrice(item);
-    return unitPrice * qty;
-  };
+    let setCounter = 0;
+    return order.products.map((product) => {
+      const isSet = isSetProduct(product);
+      const setQty = isSet ? Math.max(product.quantitySet ?? 0, 0) : 1;
+      const isCalcSet = Boolean(
+        isSet && ((product.priceSet ?? 0) > 0 || product.isCalcSet),
+      );
 
-  // Totals & summary (subtotal, discount, debt, paid)
-  let subtotalUSD = 0;
-  let subtotalNGN = 0;
-  let discountUSD = 0;
+      const items = product.items.map((item) => {
+        const wh = warehouseMap[item.id];
+        const displayName = wh ? getWarehouseDisplayName(wh) : item.id;
+        const qtyPerSet = item.quantity ?? 0;
+        const qty = qtyPerSet * setQty;
+        const grossUSD = (item.price ?? 0) * qty;
+        const discountUSD = (item.sale ?? 0) * qty;
+        const totalUSD = grossUSD - discountUSD;
 
-  for (const product of order.products) {
-    const setMultiplier = getItemSetMultiplier(product);
+        return {
+          ...item,
+          wh,
+          displayName,
+          qtyPerSet,
+          qty,
+          grossUSD,
+          discountUSD,
+          totalUSD,
+          totalNGN: totalUSD * order.exchangeRate,
+        };
+      });
 
-    for (const item of product.items) {
-      const qty = item.quantity * setMultiplier;
-      const unitPrice = item.price;
-      const amountUSD = unitPrice * qty;
+      const itemsGrossUSD = items.reduce((sum, item) => sum + item.grossUSD, 0);
+      const itemsDiscountUSD = items.reduce(
+        (sum, item) => sum + item.discountUSD,
+        0,
+      );
+      const setGrossUSD = isCalcSet
+        ? (product.priceSet ?? 0) * setQty
+        : itemsGrossUSD;
+      const setDiscountUSD = isCalcSet
+        ? (product.saleSet ?? 0) * setQty
+        : itemsDiscountUSD;
+      const setTotalUSD = setGrossUSD - setDiscountUSD;
 
-      subtotalUSD += amountUSD;
-      subtotalNGN += amountUSD * order.exchangeRate;
+      const setVisualIndex = isSet ? setCounter++ : -1;
 
-      if (item.sale) {
-        discountUSD += item.sale * qty;
-      }
-    }
+      return {
+        product,
+        isSet,
+        isCalcSet,
+        setQty,
+        setGrossUSD,
+        setDiscountUSD,
+        setTotalUSD,
+        setTotalNGN: setTotalUSD * order.exchangeRate,
+        items,
+        setVisualIndex,
+      };
+    });
+  }, [order, warehouseMap]);
+  const subtotalUSD = calculatedProducts.reduce(
+    (sum, product) => sum + product.setGrossUSD,
+    0,
+  );
+  const discountUSD = calculatedProducts.reduce(
+    (sum, product) => sum + product.setDiscountUSD,
+    0,
+  );
+  const exchangeRate = order?.exchangeRate ?? 0;
+  const subtotalNGN = subtotalUSD * exchangeRate;
+  const discountNGN = discountUSD * exchangeRate;
 
-    if (product.isCalcSet && product.saleSet && product.quantitySet) {
-      discountUSD += product.saleSet * product.quantitySet;
-    }
-  }
-
-  const discountNGN = discountUSD * order.exchangeRate;
-
-  // Debt & Paid: lấy từ API, nhập theo USD
-  const debtUSD = order.debt ?? 0;
-  const paidUSD = order.paid ?? 0;
-  const debtNGN = debtUSD * order.exchangeRate;
-  const paidNGN = paidUSD * order.exchangeRate;
+  const debtUSD = order?.debt ?? 0;
+  const paidUSD = order?.paid ?? 0;
+  const debtNGN = debtUSD * exchangeRate;
+  const paidNGN = paidUSD * exchangeRate;
 
   const totalUSD = subtotalUSD - discountUSD + debtUSD - paidUSD;
-  const totalNGN = totalUSD * order.exchangeRate;
+  const totalNGN = totalUSD * exchangeRate;
+
+  if (!order) return null;
 
   return (
     <Dialog open={open} onOpenChange={() => onClose()}>
@@ -199,11 +252,11 @@ export function InvoiceDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-6">
+        <div className="flex-1 overflow-auto px-6 flex justify-center">
           <div
             ref={invoiceRef}
-            className="bg-white text-gray-900 p-8 max-w-4xl mx-auto"
-            style={{ fontFamily: "Arial, sans-serif", minWidth: 640 }}
+            className="bg-white text-gray-900 p-8 shrink-0"
+            style={{ fontFamily: "Arial, sans-serif", minWidth: 1024 }}
           >
             <div className="flex justify-between items-start mb-6">
               <div>
@@ -224,121 +277,126 @@ export function InvoiceDialog({
               </div>
             </div>
 
-            <table className="w-full border-collapse mb-4">
+            <table className="w-full border-collapse mb-6">
               <thead>
-                <tr className="border-b-2 border-indigo-600">
-                  <th className="text-left py-2 font-semibold text-sm">
+                <tr className="border-y-2 border-indigo-600">
+                  <th className="text-left py-2 text-sm font-semibold">
                     Description
                   </th>
-                  <th className="text-center py-2 font-semibold text-sm w-20 whitespace-nowrap">
+                  <th className="text-center py-2 text-sm font-semibold w-24">
                     Qty
                   </th>
-                  <th className="text-center py-2 font-semibold text-sm w-28 whitespace-nowrap">
+                  <th className="text-right py-2 text-sm font-semibold w-28">
                     Unit Price
                   </th>
-                  <th className="text-right py-2 font-semibold text-sm w-24 whitespace-nowrap">
-                    Amount
+                  <th className="text-right py-2 text-sm font-semibold w-28">
+                    Discount
                   </th>
-                  <th className="text-right py-2 font-semibold text-sm w-32 whitespace-nowrap">
-                    Amount (NGN)
+                  <th className="text-right py-2 text-sm font-semibold w-32">
+                    Total (USD)
+                  </th>
+                  <th className="text-right py-2 text-sm font-semibold w-36">
+                    Total (NGN)
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {order.products.map((product, pIdx) => {
-                  const isSet = product.isCalcSet && product.items.length > 1;
-
-                  if (isSet) {
-                    const colorIdx = setColorCounter++;
-                    const borderColor =
-                      SET_INVOICE_BORDER_COLORS[
-                        colorIdx % SET_INVOICE_BORDER_COLORS.length
-                      ];
-                    const bgColor =
-                      SET_INVOICE_BG_COLORS[
-                        colorIdx % SET_INVOICE_BG_COLORS.length
-                      ];
-
+                {calculatedProducts.map((entry, idx) => {
+                  if (entry.isSet) {
+                    const colors = getSetColors(entry.setVisualIndex);
                     return (
-                      <tr key={pIdx}>
-                        <td className="py-2" colSpan={5}>
-                          <div
-                            className={`border-l-4 ${borderColor} ${bgColor} pl-3 rounded-r py-1`}
+                      <Fragment key={`set-group-${idx}`}>
+                        <tr
+                          key={`set-row-${idx}`}
+                          className="border-b border-gray-200"
+                          style={{ backgroundColor: colors.bgColor }}
+                        >
+                          <td className="py-2 text-sm font-semibold whitespace-normal wrap-break-word leading-snug">
+                            <span
+                              className="inline-block size-2 rounded-sm mr-2 align-middle"
+                              style={{ backgroundColor: colors.borderColor }}
+                            />
+                            {entry.product.nameSet?.trim() ||
+                              `Set ${entry.setVisualIndex + 1}`}
+                          </td>
+                          <td className="py-2 text-sm text-center tabular-nums">
+                            {formatNumber(entry.setQty)}
+                          </td>
+                          <td className="py-2 text-sm text-right tabular-nums">
+                            {entry.isCalcSet
+                              ? formatUSD(entry.product.priceSet ?? 0)
+                              : formatUSD(
+                                  entry.setQty > 0
+                                    ? entry.setGrossUSD / entry.setQty
+                                    : 0,
+                                )}
+                          </td>
+                          <td className="py-2 text-sm text-right tabular-nums text-red-600">
+                            -{formatUSD(entry.setDiscountUSD)}
+                          </td>
+                          <td className="py-2 text-sm text-right tabular-nums font-semibold">
+                            {formatUSD(entry.setTotalUSD)}
+                          </td>
+                          <td className="py-2 text-sm text-right tabular-nums font-semibold">
+                            {formatNGN(entry.setTotalNGN)}
+                          </td>
+                        </tr>
+                        {entry.items.map((it, itemIdx) => (
+                          <tr
+                            key={`set-item-${idx}-${itemIdx}`}
+                            className="border-b border-gray-100"
+                            style={{ backgroundColor: colors.bgColor }}
                           >
-                            <div className="text-xs font-semibold mb-1 text-gray-500">
-                              {product.nameSet || `Set ${colorIdx + 1}`}
-                            </div>
-                            {product.items.map((it, iIdx) => {
-                              const wh = warehouseMap[it.id];
-                              const name = wh
-                                ? getWarehouseDisplayName(wh)
-                                : it.id;
-                              const qty = getItemQty(product, it);
-                              const unitPrice = getItemUnitPrice(it);
-                              const amountUSD = getItemAmountUSD(
-                                product,
-                                it,
-                              );
-                              return (
-                                <div
-                                  key={iIdx}
-                                  className="flex items-center justify-between py-1"
-                                >
-                                  <span className="text-sm">{name}</span>
-                                  <span className="text-sm text-center w-20 whitespace-nowrap tabular-nums">
-                                    {qty}{" "}
-                                    {wh?.unitOfCalculation?.toLowerCase() ||
-                                      "pcs"}
-                                  </span>
-                                  <span className="text-sm text-center w-28 whitespace-nowrap tabular-nums">
-                                    {formatUSD(unitPrice)}
-                                  </span>
-                                  <span className="text-sm text-right w-24 whitespace-nowrap tabular-nums">
-                                    {formatUSD(amountUSD)}
-                                  </span>
-                                  <span className="text-sm text-right w-32 whitespace-nowrap tabular-nums">
-                                    {formatNGN(
-                                      amountUSD * order.exchangeRate,
-                                    )}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </td>
-                      </tr>
+                            <td className="py-1.5 pl-6 text-sm text-gray-700 whitespace-normal wrap-break-word leading-snug">
+                              • {it.displayName}
+                            </td>
+                            <td className="py-1.5 text-sm text-center text-gray-500 tabular-nums">
+                              -
+                            </td>
+                            <td className="py-1.5 text-sm text-right text-gray-500 tabular-nums">
+                              -
+                            </td>
+                            <td className="py-1.5 text-sm text-right text-gray-500 tabular-nums">
+                              -
+                            </td>
+                            <td className="py-1.5 text-sm text-right text-gray-500 tabular-nums">
+                              -
+                            </td>
+                            <td className="py-1.5 text-sm text-right text-gray-500 tabular-nums">
+                              -
+                            </td>
+                          </tr>
+                        ))}
+                      </Fragment>
                     );
                   }
 
-                  return product.items.map((it, iIdx) => {
-                    const wh = warehouseMap[it.id];
-                    const name = wh ? getWarehouseDisplayName(wh) : it.id;
-                    const qty = getItemQty(product, it);
-                    const unitPrice = getItemUnitPrice(it);
-                    const amountUSD = getItemAmountUSD(product, it);
-
-                    return (
-                      <tr
-                        key={`${pIdx}-${iIdx}`}
-                        className="border-b border-gray-100"
-                      >
-                        <td className="py-2 text-sm">{name}</td>
-                        <td className="py-2 text-sm text-center whitespace-nowrap tabular-nums">
-                          {qty}{" "}
-                          {wh?.unitOfCalculation?.toLowerCase() || "pcs"}
-                        </td>
-                        <td className="py-2 text-sm text-center whitespace-nowrap tabular-nums">
-                          {formatUSD(unitPrice)}
-                        </td>
-                        <td className="py-2 text-sm text-right whitespace-nowrap tabular-nums">
-                          {formatUSD(amountUSD)}
-                        </td>
-                        <td className="py-2 text-sm text-right whitespace-nowrap tabular-nums">
-                          {formatNGN(amountUSD * order.exchangeRate)}
-                        </td>
-                      </tr>
-                    );
-                  });
+                  return entry.items.map((it, itemIdx) => (
+                    <tr
+                      key={`single-row-${idx}-${itemIdx}`}
+                      className="border-b border-gray-100"
+                    >
+                      <td className="py-2 text-sm whitespace-normal wrap-break-word leading-snug">
+                        {it.displayName}
+                      </td>
+                      <td className="py-2 text-sm text-center tabular-nums">
+                        {formatNumber(it.qty)}{" "}
+                        {it.wh?.unitOfCalculation?.toLowerCase() || "pcs"}
+                      </td>
+                      <td className="py-2 text-sm text-right tabular-nums">
+                        {formatUSD(it.price)}
+                      </td>
+                      <td className="py-2 text-sm text-right tabular-nums text-red-600">
+                        -{formatUSD(it.discountUSD)}
+                      </td>
+                      <td className="py-2 text-sm text-right tabular-nums">
+                        {formatUSD(it.totalUSD)}
+                      </td>
+                      <td className="py-2 text-sm text-right tabular-nums">
+                        {formatNGN(it.totalNGN)}
+                      </td>
+                    </tr>
+                  ));
                 })}
               </tbody>
             </table>
@@ -346,10 +404,10 @@ export function InvoiceDialog({
             <div className="border-gray-200 pt-3 space-y-1.5">
               <div className="flex justify-end gap-8 text-sm">
                 <span className="text-gray-500">Subtotal Amount:</span>
-                <span className="w-24 text-right whitespace-nowrap tabular-nums">
+                <span className="w-32 text-right whitespace-nowrap tabular-nums">
                   {formatUSD(subtotalUSD)}
                 </span>
-                <span className="w-28 text-right whitespace-nowrap tabular-nums">
+                <span className="w-36 text-right whitespace-nowrap tabular-nums">
                   {formatNGN(subtotalNGN)}
                 </span>
               </div>
@@ -357,10 +415,10 @@ export function InvoiceDialog({
               {discountUSD > 0 && (
                 <div className="flex justify-end gap-8 text-sm text-red-600">
                   <span className="text-gray-500">Discount:</span>
-                  <span className="w-24 text-right whitespace-nowrap tabular-nums">
+                  <span className="w-32 text-right whitespace-nowrap tabular-nums">
                     -{formatUSD(discountUSD)}
                   </span>
-                  <span className="w-28 text-right whitespace-nowrap tabular-nums">
+                  <span className="w-36 text-right whitespace-nowrap tabular-nums">
                     -{formatNGN(discountNGN)}
                   </span>
                 </div>
@@ -369,10 +427,10 @@ export function InvoiceDialog({
               {debtUSD > 0 && (
                 <div className="flex justify-end gap-8 text-sm text-red-600">
                   <span className="text-gray-500">Debt:</span>
-                  <span className="w-24 text-right whitespace-nowrap tabular-nums">
+                  <span className="w-32 text-right whitespace-nowrap tabular-nums">
                     {formatUSD(debtUSD)}
                   </span>
-                  <span className="w-28 text-right whitespace-nowrap tabular-nums">
+                  <span className="w-36 text-right whitespace-nowrap tabular-nums">
                     {formatNGN(debtNGN)}
                   </span>
                 </div>
@@ -381,10 +439,10 @@ export function InvoiceDialog({
               {paidUSD > 0 && (
                 <div className="flex justify-end gap-8 text-sm text-emerald-600">
                   <span className="text-gray-500">Paid:</span>
-                  <span className="w-24 text-right whitespace-nowrap tabular-nums">
+                  <span className="w-32 text-right whitespace-nowrap tabular-nums">
                     -{formatUSD(paidUSD)}
                   </span>
-                  <span className="w-28 text-right whitespace-nowrap tabular-nums">
+                  <span className="w-36 text-right whitespace-nowrap tabular-nums">
                     -{formatNGN(paidNGN)}
                   </span>
                 </div>
@@ -394,10 +452,10 @@ export function InvoiceDialog({
             <div className="border-t-2 border-gray-300 mt-2 pt-3">
               <div className="flex justify-end gap-8 text-lg font-bold">
                 <span>Total (USD):</span>
-                <span className="text-red-600 w-24 text-right whitespace-nowrap tabular-nums">
+                <span className="text-red-600 w-32 text-right whitespace-nowrap tabular-nums">
                   {formatUSD(totalUSD)}
                 </span>
-                <span className="text-red-600 w-28 text-right whitespace-nowrap tabular-nums">
+                <span className="text-red-600 w-36 text-right whitespace-nowrap tabular-nums">
                   {formatNGN(totalNGN)}
                 </span>
               </div>
@@ -437,14 +495,14 @@ export function InvoiceDialog({
             <Download className="h-4 w-4 mr-2" />
             Tải PNG
           </Button>
-          <Button
+          {/* <Button
             variant="outline"
             onClick={handleOpenNewTab}
             className="cursor-pointer"
           >
             <ExternalLink className="h-4 w-4 mr-2" />
             Mở tab mới
-          </Button>
+          </Button> */}
           <Button
             variant="destructive"
             onClick={onClose}

@@ -20,7 +20,7 @@ import { useExchangeRate } from "@/hooks/use-exchange-rate";
 import type { WarehouseItem } from "@/types/api";
 import { ChevronDown, ChevronRight, Warehouse } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 let tempIdCounter = 1000;
@@ -29,6 +29,8 @@ let setIdCounter = 1000;
 const genSetId = () => `edit-set-${++setIdCounter}-${Date.now()}`;
 let orderCounter = 1000;
 const getNextOrder = () => ++orderCounter;
+let setNameCounter = 0;
+const getNextSetName = () => `Set ${++setNameCounter}`;
 
 interface OrderEditPageProps {
   orderId: string;
@@ -36,6 +38,8 @@ interface OrderEditPageProps {
 
 export function OrderEditPage({ orderId }: OrderEditPageProps) {
   const router = useRouter();
+
+  const ungroupedSetIdsRef = useRef<Set<string>>(new Set());
 
   const { data: orderData, isLoading: orderLoading } = useOrder(orderId);
   const { data: whData } = useAllWarehouses();
@@ -154,6 +158,17 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
 
     setStandaloneItems(standalone);
     setSets(orderSets);
+    let maxSuffix = setNameCounter;
+    for (const set of orderSets) {
+      const match = /^Set\s+(\d+)$/.exec(set.nameSet || "");
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (!Number.isNaN(num) && num > maxSuffix) {
+          maxSuffix = num;
+        }
+      }
+    }
+    setNameCounter = maxSuffix;
     setInitialized(true);
   }, [order, warehouseMap, initialized]);
 
@@ -165,6 +180,27 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
     }
     return ids;
   }, [standaloneItems, sets]);
+
+  const maxAvailableByWarehouseId = useMemo(() => {
+    const reservedInCurrentOrder: Record<string, number> = {};
+    if (!order) return reservedInCurrentOrder;
+
+    for (const product of order.products) {
+      const isSet = product.items.length > 1;
+      const setMultiplier = isSet ? (product.quantitySet || 1) : 1;
+      for (const item of product.items) {
+        reservedInCurrentOrder[item.id] =
+          (reservedInCurrentOrder[item.id] ?? 0) + item.quantity * setMultiplier;
+      }
+    }
+
+    const effectiveMax: Record<string, number> = {};
+    for (const wh of warehouseItems) {
+      effectiveMax[wh._id] =
+        (wh.amountAvailable ?? 0) + (reservedInCurrentOrder[wh._id] ?? 0);
+    }
+    return effectiveMax;
+  }, [order, warehouseItems]);
 
   const handleSelectWarehouse = useCallback(
     (wh: WarehouseItem) => {
@@ -205,6 +241,7 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
               ...remaining.map((i) => ({
                 ...i,
                 tempId: genTempId(),
+                quantity: (i.quantity ?? 0) * (set.quantitySet ?? 1),
                 orderIndex: getNextOrder(),
               }))
             );
@@ -246,15 +283,30 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
         tempIds.includes(i.tempId)
       );
       if (itemsToGroup.length < 2) return;
+
+      const baseQuantity = itemsToGroup[0].quantity ?? 0;
+      if (
+        !baseQuantity ||
+        itemsToGroup.some((item) => (item.quantity ?? 0) !== baseQuantity)
+      ) {
+        toast.error(
+          "Để tạo set, số lượng của tất cả sản phẩm trong set phải bằng nhau và lớn hơn 0"
+        );
+        return;
+      }
+
       setSets((prev) => [
         ...prev,
         {
           id: genSetId(),
-          nameSet: `Set ${prev.length + 1}`,
+          nameSet: getNextSetName(),
           priceSet: 0,
           saleSet: 0,
-          quantitySet: 1,
-          items: itemsToGroup,
+          quantitySet: baseQuantity,
+          items: itemsToGroup.map((item) => ({
+            ...item,
+            quantity: 1,
+          })),
           orderIndex: Math.min(...itemsToGroup.map((i) => i.orderIndex)),
         },
       ]);
@@ -266,22 +318,31 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
   );
 
   const handleUngroupSet = useCallback((setId: string) => {
+    if (ungroupedSetIdsRef.current.has(setId)) return;
+    ungroupedSetIdsRef.current.add(setId);
+
+    let extractedSet: OrderSet | null = null;
     setSets((prevSets) => {
-      const targetSet = prevSets.find((s) => s.id === setId);
-      if (!targetSet) return prevSets;
-
-      setStandaloneItems((prevItems) => {
-        const cloned = targetSet.items.map((i) => ({
-          ...i,
-          tempId: genTempId(),
-          orderIndex: getNextOrder(),
-        }));
-        const merged = [...prevItems, ...cloned];
-        merged.sort((a, b) => a.orderIndex - b.orderIndex);
-        return merged;
-      });
-
+      extractedSet = prevSets.find((s) => s.id === setId) ?? null;
+      if (!extractedSet) return prevSets;
       return prevSets.filter((s) => s.id !== setId);
+    });
+
+    if (!extractedSet) {
+      ungroupedSetIdsRef.current.delete(setId);
+      return;
+    }
+
+    setStandaloneItems((prevItems) => {
+      const cloned = extractedSet.items.map((i) => ({
+        ...i,
+        tempId: genTempId(),
+        quantity: (i.quantity ?? 0) * (extractedSet.quantitySet ?? 1),
+        orderIndex: getNextOrder(),
+      }));
+      const merged = [...prevItems, ...cloned];
+      merged.sort((a, b) => a.orderIndex - b.orderIndex);
+      return merged;
     });
   }, []);
 
@@ -321,6 +382,7 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
         const cloned = remaining.map((i) => ({
           ...i,
           tempId: genTempId(),
+          quantity: (i.quantity ?? 0) * (set.quantitySet ?? 1),
           orderIndex: getNextOrder(),
         }));
         setStandaloneItems((items) => {
@@ -414,6 +476,14 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
       }
     }
     for (const set of sets) {
+      if (!set.priceSet || set.priceSet <= 0) {
+        toast.error("Giá set phải lớn hơn 0");
+        return;
+      }
+      if (!set.quantitySet || set.quantitySet <= 0) {
+        toast.error("Số lượng set phải lớn hơn 0");
+        return;
+      }
       for (const item of set.items) {
         if (!item.quantity || item.quantity <= 0) {
           toast.error("Vui lòng nhập số lượng cho tất cả sản phẩm trong set");
@@ -564,8 +634,6 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
             onUpdateSet={handleUpdateSet}
             onUpdateSetItem={handleUpdateSetItem}
             onRemoveSetItem={handleRemoveSetItem}
-            note={note}
-            onNoteChange={setNote}
             debt={debt}
             onDebtChange={setDebt}
             paid={paid}
@@ -574,6 +642,7 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
             onConfirm={handleSave}
             isSaving={updateOrder.isPending}
             warehouseMap={warehouseMap}
+            maxAvailableByWarehouseId={maxAvailableByWarehouseId}
             title="Chỉnh sửa đơn hàng"
           />
         </div>
