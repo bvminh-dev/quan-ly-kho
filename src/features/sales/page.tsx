@@ -241,28 +241,26 @@ export default function SalesPage() {
     if (ungroupedSetIdsRef.current.has(setId)) return;
     ungroupedSetIdsRef.current.add(setId);
 
-    let extractedSet: OrderSet | null = null;
     setSets((prevSets) => {
-      extractedSet = prevSets.find((s) => s.id === setId) ?? null;
-      if (!extractedSet) return prevSets;
+      const extractedSet = prevSets.find((s) => s.id === setId);
+      if (!extractedSet) {
+        ungroupedSetIdsRef.current.delete(setId);
+        return prevSets;
+      }
+
+      setStandaloneItems((prevItems) => {
+        const cloned = extractedSet.items.map((i) => ({
+          ...i,
+          tempId: genTempId(),
+          quantity: extractedSet.quantitySet ?? 0,
+          orderIndex: getNextOrder(),
+        }));
+        const merged = [...prevItems, ...cloned];
+        merged.sort((a, b) => a.orderIndex - b.orderIndex);
+        return merged;
+      });
+
       return prevSets.filter((s) => s.id !== setId);
-    });
-
-    if (!extractedSet) {
-      ungroupedSetIdsRef.current.delete(setId);
-      return;
-    }
-
-    setStandaloneItems((prevItems) => {
-      const cloned = extractedSet.items.map((i) => ({
-        ...i,
-        tempId: genTempId(),
-        quantity: extractedSet.quantitySet ?? 0,
-        orderIndex: getNextOrder(),
-      }));
-      const merged = [...prevItems, ...cloned];
-      merged.sort((a, b) => a.orderIndex - b.orderIndex);
-      return merged;
     });
   }, []);
 
