@@ -48,6 +48,13 @@ import { RevertOrderDialog } from "./revert-order-dialog";
 import { quickSearchFilter } from "@/utils/search";
 import { useConfirmOrder } from "../hooks/use-orders";
 
+function getOrderCreatorName(createdBy: OrderDetail["createdBy"]) {
+  if (createdBy && typeof createdBy === "object") {
+    return createdBy.name;
+  }
+  return "-";
+}
+
 interface OrderTableProps {
   orders: OrderDetail[];
   meta: PaginationMeta;
@@ -107,6 +114,7 @@ export function OrderTable({
         );
         const remaining = order.totalPrice - paidNGN;
         const balance = paidNGN - order.totalPrice;
+        const creatorName = getOrderCreatorName(order.createdBy);
         return [
           order._id,
           order.type,
@@ -117,6 +125,7 @@ export function OrderTable({
           remaining,
           balance,
           order.note,
+          creatorName,
           order.createdAt,
         ];
       }),
@@ -158,6 +167,7 @@ export function OrderTable({
                 Còn lại
               </TableHead>
               <TableHead className="font-semibold">Ghi chú</TableHead>
+              <TableHead className="font-semibold">Người tạo</TableHead>
               <TableHead className="font-semibold">Thời gian tạo</TableHead>
               <TableHead className="font-semibold text-center">
                 Thao tác
@@ -168,7 +178,7 @@ export function OrderTable({
             {filteredOrders.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={9}
+                  colSpan={10}
                   className="h-24 text-center text-muted-foreground"
                 >
                   Không có dữ liệu
@@ -241,6 +251,9 @@ export function OrderTable({
                     </TableCell>
                     <TableCell className="max-w-[150px] truncate">
                       {order.note || "-"}
+                    </TableCell>
+                    <TableCell>
+                      {getOrderCreatorName(order.createdBy)}
                     </TableCell>
                     <TableCell>
                       {(() => {

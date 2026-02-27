@@ -270,6 +270,11 @@ export interface OrderCustomerRef {
   name: string;
 }
 
+export interface OrderCreatorRef {
+  _id: string;
+  name: string;
+}
+
 export interface OrderDetail {
   _id: string;
   type: "cao" | "thấp";
@@ -283,7 +288,7 @@ export interface OrderDetail {
   note: string;
   products: OrderProductDto[];
   history: OrderHistoryDto[];
-  createdBy: string;
+  createdBy: string | OrderCreatorRef;
   updatedBy: string;
   isDeleted: boolean;
   createdAt: string;

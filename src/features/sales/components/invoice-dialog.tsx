@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -7,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+import { ORDER_STATE_CONFIG } from "@/features/orders/constants/order-state-config";
 import { getWarehouseDisplayName } from "@/features/warehouse/utils/sort-warehouse";
 import type { OrderDetail, WarehouseItem } from "@/types/api";
 import { formatNGN, formatNumber, formatUSD } from "@/utils/currency";
@@ -15,7 +16,6 @@ import { toPng } from "html-to-image";
 import { Copy, Download, X } from "lucide-react";
 import { Fragment, useCallback, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import { ORDER_STATE_CONFIG } from "@/features/orders/constants/order-state-config";
 
 interface InvoiceDialogProps {
   open: boolean;
@@ -160,9 +160,7 @@ export function InvoiceDialog({
         const displayName = wh ? getWarehouseDisplayName(wh) : item.id;
         const qtyPerSet = item.quantity ?? 0;
         const qty = qtyPerSet * setQty;
-        const grossUSD = (item.price ?? 0) * qty;
-        const discountUSD = (item.sale ?? 0) * qty;
-        const totalUSD = grossUSD - discountUSD;
+        const totalUSD = (item.price ?? 0) * qty;
 
         return {
           ...item,
@@ -170,25 +168,15 @@ export function InvoiceDialog({
           displayName,
           qtyPerSet,
           qty,
-          grossUSD,
-          discountUSD,
           totalUSD,
           totalNGN: totalUSD * order.exchangeRate,
         };
       });
 
-      const itemsGrossUSD = items.reduce((sum, item) => sum + item.grossUSD, 0);
-      const itemsDiscountUSD = items.reduce(
-        (sum, item) => sum + item.discountUSD,
-        0,
-      );
-      const setGrossUSD = isCalcSet
+      const itemsTotalUSD = items.reduce((sum, item) => sum + item.totalUSD, 0);
+      const setTotalUSD = isCalcSet
         ? (product.priceSet ?? 0) * setQty
-        : itemsGrossUSD;
-      const setDiscountUSD = isCalcSet
-        ? (product.saleSet ?? 0) * setQty
-        : itemsDiscountUSD;
-      const setTotalUSD = setGrossUSD - setDiscountUSD;
+        : itemsTotalUSD;
 
       const setVisualIndex = isSet ? setCounter++ : -1;
 
@@ -197,8 +185,6 @@ export function InvoiceDialog({
         isSet,
         isCalcSet,
         setQty,
-        setGrossUSD,
-        setDiscountUSD,
         setTotalUSD,
         setTotalNGN: setTotalUSD * order.exchangeRate,
         items,
@@ -207,23 +193,18 @@ export function InvoiceDialog({
     });
   }, [order, warehouseMap]);
   const subtotalUSD = calculatedProducts.reduce(
-    (sum, product) => sum + product.setGrossUSD,
-    0,
-  );
-  const discountUSD = calculatedProducts.reduce(
-    (sum, product) => sum + product.setDiscountUSD,
+    (sum, product) => sum + product.setTotalUSD,
     0,
   );
   const exchangeRate = order?.exchangeRate ?? 0;
   const subtotalNGN = subtotalUSD * exchangeRate;
-  const discountNGN = discountUSD * exchangeRate;
 
   const debtUSD = order?.debt ?? 0;
   const paidUSD = order?.paid ?? 0;
   const debtNGN = debtUSD * exchangeRate;
   const paidNGN = paidUSD * exchangeRate;
 
-  const totalUSD = subtotalUSD - discountUSD + debtUSD - paidUSD;
+  const totalUSD = subtotalUSD + debtUSD - paidUSD;
   const totalNGN = totalUSD * exchangeRate;
 
   if (!order) return null;
@@ -289,9 +270,6 @@ export function InvoiceDialog({
                   <th className="text-right py-2 text-sm font-semibold w-28">
                     Unit Price
                   </th>
-                  <th className="text-right py-2 text-sm font-semibold w-28">
-                    Discount
-                  </th>
                   <th className="text-right py-2 text-sm font-semibold w-32">
                     Total (USD)
                   </th>
@@ -327,12 +305,9 @@ export function InvoiceDialog({
                               ? formatUSD(entry.product.priceSet ?? 0)
                               : formatUSD(
                                   entry.setQty > 0
-                                    ? entry.setGrossUSD / entry.setQty
+                                    ? entry.setTotalUSD / entry.setQty
                                     : 0,
                                 )}
-                          </td>
-                          <td className="py-2 text-sm text-right tabular-nums text-red-600">
-                            -{formatUSD(entry.setDiscountUSD)}
                           </td>
                           <td className="py-2 text-sm text-right tabular-nums font-semibold">
                             {formatUSD(entry.setTotalUSD)}
@@ -351,9 +326,6 @@ export function InvoiceDialog({
                               • {it.displayName}
                             </td>
                             <td className="py-1.5 text-sm text-center text-gray-500 tabular-nums">
-                              -
-                            </td>
-                            <td className="py-1.5 text-sm text-right text-gray-500 tabular-nums">
                               -
                             </td>
                             <td className="py-1.5 text-sm text-right text-gray-500 tabular-nums">
@@ -386,9 +358,6 @@ export function InvoiceDialog({
                       <td className="py-2 text-sm text-right tabular-nums">
                         {formatUSD(it.price)}
                       </td>
-                      <td className="py-2 text-sm text-right tabular-nums text-red-600">
-                        -{formatUSD(it.discountUSD)}
-                      </td>
                       <td className="py-2 text-sm text-right tabular-nums">
                         {formatUSD(it.totalUSD)}
                       </td>
@@ -411,18 +380,6 @@ export function InvoiceDialog({
                   {formatNGN(subtotalNGN)}
                 </span>
               </div>
-
-              {discountUSD > 0 && (
-                <div className="flex justify-end gap-8 text-sm text-red-600">
-                  <span className="text-gray-500">Discount:</span>
-                  <span className="w-32 text-right whitespace-nowrap tabular-nums">
-                    -{formatUSD(discountUSD)}
-                  </span>
-                  <span className="w-36 text-right whitespace-nowrap tabular-nums">
-                    -{formatNGN(discountNGN)}
-                  </span>
-                </div>
-              )}
 
               {debtUSD > 0 && (
                 <div className="flex justify-end gap-8 text-sm text-red-600">

@@ -1,15 +1,12 @@
 "use client";
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod/v4";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -21,9 +18,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useExchangeRate } from "@/hooks/use-exchange-rate";
-import { round2 } from "@/utils/currency";
-import { useAddHistory, useConfirmOrder } from "../hooks/use-orders";
 import type { OrderDetail } from "@/types/api";
+import { round2 } from "@/utils/currency";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod/v4";
+import { useAddHistory, useConfirmOrder } from "../hooks/use-orders";
 
 const schema = z.object({
   type: z.enum(["khách trả", "hoàn tiền"]),
@@ -225,11 +225,13 @@ export function PaymentDialog({
             <div className="space-y-1.5">
               <Label className="text-xs">Số tiền (USD)</Label>
               <Input
-                type="number"
-                step="any"
+                type="text"
                 value={
                   form.watch("moneyPaidDolar") != null
-                    ? Number(form.watch("moneyPaidDolar")).toFixed(2)
+                    ? Number(form.watch("moneyPaidDolar")).toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
                     : ""
                 }
                 disabled
