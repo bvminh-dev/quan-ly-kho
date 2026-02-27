@@ -127,6 +127,7 @@ export function useAddHistory() {
       orderService.addHistory(id, dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ORDERS });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WAREHOUSES });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CUSTOMERS });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HISTORY_EXPORT });
       toast.success("Ghi nhận thanh toán thành công");
