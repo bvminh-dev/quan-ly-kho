@@ -91,7 +91,7 @@ export function OrderBuilder({
       if (typeof fromMap === "number") return fromMap;
       return warehouseMap[warehouseId]?.amountAvailable ?? 999;
     },
-    [maxAvailableByWarehouseId, warehouseMap]
+    [maxAvailableByWarehouseId, warehouseMap],
   );
 
   const toggleSelectForSet = useCallback((tempId: string) => {
@@ -131,7 +131,7 @@ export function OrderBuilder({
     return entries;
   }, [standaloneItems, sets]);
 
-  const total = useMemo(() => {
+  const subtotal = useMemo(() => {
     let sum = 0;
     for (const item of standaloneItems) {
       sum += (item.price - item.sale) * item.quantity;
@@ -147,6 +147,11 @@ export function OrderBuilder({
     }
     return sum;
   }, [standaloneItems, sets]);
+
+  const finalTotal = useMemo(
+    () => subtotal + (debt || 0) - (paid || 0),
+    [subtotal, debt, paid],
+  );
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -324,8 +329,7 @@ export function OrderBuilder({
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1">
                       <Label className="text-xs">
-                        Số lượng (max: {maxQuantity}{" "}
-                        {wh?.unitOfCalculation})
+                        Số lượng (max: {maxQuantity} {wh?.unitOfCalculation})
                       </Label>
                       <Input
                         type="number"
@@ -504,16 +508,17 @@ export function OrderBuilder({
       </ScrollArea>
 
       <div className="border-t p-4 space-y-3">
-
         <div className="flex items-center justify-between">
           <div className="text-sm">
-            <span className="text-muted-foreground">Tổng: </span>
-            <span className="text-lg font-bold text-primary">
-              {formatUSD(total)}
-            </span>
-            <span className="text-muted-foreground ml-2">
-              ({formatNGN(total * exchangeRate)})
-            </span>
+            <div>
+              <span className="text-muted-foreground">Tổng: </span>
+              <span className="text-lg font-bold text-primary">
+                {formatUSD(finalTotal)}
+              </span>
+              <span className="text-muted-foreground ml-2">
+                ({formatNGN(finalTotal * exchangeRate)})
+              </span>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button

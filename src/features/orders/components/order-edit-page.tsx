@@ -17,10 +17,10 @@ import { WarehousePicker } from "@/features/sales/components/warehouse-picker";
 import type { OrderSet, SelectedItem } from "@/features/sales/types";
 import { useAllWarehouses } from "@/features/warehouse/hooks/use-warehouses";
 import { useExchangeRate } from "@/hooks/use-exchange-rate";
-import type { WarehouseItem } from "@/types/api";
+import type { CustomerItem, OrderDetail, WarehouseItem } from "@/types/api";
 import { ChevronDown, ChevronRight, Warehouse } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 let tempIdCounter = 1000;
@@ -37,20 +37,17 @@ interface OrderEditPageProps {
 }
 
 export function OrderEditPage({ orderId }: OrderEditPageProps) {
-  const router = useRouter();
-
-  const ungroupedSetIdsRef = useRef<Set<string>>(new Set());
-
   const { data: orderData, isLoading: orderLoading } = useOrder(orderId);
   const { data: whData } = useAllWarehouses();
   const { data: custData } = useAllCustomers();
-  const updateOrder = useUpdateOrder();
-  const createCustomer = useCreateCustomer();
   const { data: liveRate } = useExchangeRate();
 
-  const warehouseItems = whData?.data?.items ?? [];
-  const customers = custData?.data?.items ?? [];
-  const order = orderData?.data;
+  const warehouseItems = useMemo(
+    () => whData?.data?.items ?? [],
+    [whData],
+  );
+  const customers = useMemo(() => custData?.data?.items ?? [], [custData]);
+  const order = orderData?.data as OrderDetail | undefined;
 
   const warehouseMap = useMemo(() => {
     const map: Record<string, WarehouseItem> = {};
@@ -60,65 +57,84 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
     return map;
   }, [warehouseItems]);
 
-  const [selectedCustomerId, setSelectedCustomerId] = useState("");
-  const [exchangeRate, setExchangeRate] = useState(liveRate ? Math.round(liveRate) : 1550);
-  const [priceType, setPriceType] = useState<"high" | "low">("high");
-  const [standaloneItems, setStandaloneItems] = useState<SelectedItem[]>([]);
-  const [sets, setSets] = useState<OrderSet[]>([]);
-  const [note, setNote] = useState("");
-  const [debt, setDebt] = useState(0);
-  const [paid, setPaid] = useState(0);
-  const [initialized, setInitialized] = useState(false);
+  const defaultExchangeRate = liveRate ? Math.round(liveRate) : 1550;
 
-  const [warehouseExpanded, setWarehouseExpanded] = useState(true);
-  const [createCustOpen, setCreateCustOpen] = useState(false);
-  const [newCustName, setNewCustName] = useState("");
+  if (orderLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-[400px] w-full" />
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    if (!order || initialized || !warehouseMap) return;
-    if (Object.keys(warehouseMap).length === 0) return;
+  if (!order || Object.keys(warehouseMap).length === 0) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-[400px] w-full" />
+      </div>
+    );
+  }
 
-    setSelectedCustomerId(order.customer?._id || "");
-    setExchangeRate(order.exchangeRate);
-    setNote(order.note || "");
+  return (
+    <OrderEditForm
+      key={orderId}
+      orderId={orderId}
+      order={order}
+      warehouseItems={warehouseItems}
+      customers={customers}
+      warehouseMap={warehouseMap}
+      defaultExchangeRate={defaultExchangeRate}
+    />
+  );
+}
 
-    const lowerState = order.state?.toLowerCase();
-    const customer = customers.find((c) => c._id === order.customer?._id);
+interface OrderEditFormProps {
+  orderId: string;
+  order: OrderDetail;
+  warehouseItems: WarehouseItem[];
+  customers: CustomerItem[];
+  warehouseMap: Record<string, WarehouseItem>;
+  defaultExchangeRate: number;
+}
 
-    // Với đơn đang ở trạng thái "Báo giá" thì Debt/Paid nên bám theo
-    // công nợ hiện tại của khách (customer.payment), tránh trường hợp
-    // khách đã không còn nợ nhưng đơn cũ vẫn hiển thị Debt.
-    if (lowerState === "báo giá" && customer) {
-      const balance = customer.payment ?? 0;
-      if (balance < 0) {
-        setDebt(Math.abs(balance));
-        setPaid(0);
-      } else if (balance > 0) {
-        setDebt(0);
-        setPaid(balance);
-      } else {
-        setDebt(0);
-        setPaid(0);
-      }
+function buildInitialEditItems(
+  order: OrderDetail,
+  warehouseMap: Record<string, WarehouseItem>,
+) {
+  const standalone: SelectedItem[] = [];
+  const orderSets: OrderSet[] = [];
+
+  for (const product of order.products) {
+    const isSet = product.items.length > 1;
+
+    if (isSet) {
+      const setOrderIdx = getNextOrder();
+      const setItems: SelectedItem[] = product.items.map((it) => ({
+        tempId: genTempId(),
+        warehouseId: it.id,
+        warehouse: warehouseMap[it.id] || ({} as WarehouseItem),
+        quantity: it.quantity,
+        price: it.price,
+        sale: it.sale,
+        customPrice: it.customPrice,
+        customSale: it.customSale,
+        orderIndex: getNextOrder(),
+      }));
+
+      orderSets.push({
+        id: genSetId(),
+        nameSet: product.nameSet || "",
+        priceSet: product.priceSet || 0,
+        saleSet: product.saleSet || 0,
+        quantitySet: product.quantitySet || 1,
+        items: setItems,
+        orderIndex: setOrderIdx,
+      });
     } else {
-      setDebt(order.debt ?? 0);
-      setPaid(order.paid ?? 0);
-    }
-  }, [order, warehouseMap, initialized, customers]);
-
-  useEffect(() => {
-    if (!order || initialized || !warehouseMap) return;
-    if (Object.keys(warehouseMap).length === 0) return;
-
-    const standalone: SelectedItem[] = [];
-    const orderSets: OrderSet[] = [];
-
-    for (const product of order.products) {
-      const isSet = product.items.length > 1;
-
-      if (isSet) {
-        const setOrderIdx = getNextOrder();
-        const setItems: SelectedItem[] = product.items.map((it) => ({
+      for (const it of product.items) {
+        standalone.push({
           tempId: genTempId(),
           warehouseId: it.id,
           warehouse: warehouseMap[it.id] || ({} as WarehouseItem),
@@ -128,49 +144,66 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
           customPrice: it.customPrice,
           customSale: it.customSale,
           orderIndex: getNextOrder(),
-        }));
-
-        orderSets.push({
-          id: genSetId(),
-          nameSet: product.nameSet || "",
-          priceSet: product.priceSet || 0,
-          saleSet: product.saleSet || 0,
-          quantitySet: product.quantitySet || 1,
-          items: setItems,
-          orderIndex: setOrderIdx,
         });
-      } else {
-        for (const it of product.items) {
-          standalone.push({
-            tempId: genTempId(),
-            warehouseId: it.id,
-            warehouse: warehouseMap[it.id] || ({} as WarehouseItem),
-            quantity: it.quantity,
-            price: it.price,
-            sale: it.sale,
-            customPrice: it.customPrice,
-            customSale: it.customSale,
-            orderIndex: getNextOrder(),
-          });
-        }
       }
     }
+  }
 
-    setStandaloneItems(standalone);
-    setSets(orderSets);
-    let maxSuffix = setNameCounter;
-    for (const set of orderSets) {
-      const match = /^Set\s+(\d+)$/.exec(set.nameSet || "");
-      if (match) {
-        const num = parseInt(match[1], 10);
-        if (!Number.isNaN(num) && num > maxSuffix) {
-          maxSuffix = num;
-        }
+  let maxSuffix = setNameCounter;
+  for (const set of orderSets) {
+    const match = /^Set\s+(\d+)$/.exec(set.nameSet || "");
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (!Number.isNaN(num) && num > maxSuffix) {
+        maxSuffix = num;
       }
     }
-    setNameCounter = maxSuffix;
-    setInitialized(true);
-  }, [order, warehouseMap, initialized]);
+  }
+  setNameCounter = maxSuffix;
+
+  return { standalone, orderSets };
+}
+
+function OrderEditForm({
+  orderId,
+  order,
+  warehouseItems,
+  customers,
+  warehouseMap,
+  defaultExchangeRate,
+}: OrderEditFormProps) {
+  const router = useRouter();
+
+  const ungroupedSetIdsRef = useRef<Set<string>>(new Set());
+  const updateOrder = useUpdateOrder();
+  const createCustomer = useCreateCustomer();
+
+  const [warehouseExpanded, setWarehouseExpanded] = useState(true);
+  const [createCustOpen, setCreateCustOpen] = useState(false);
+  const [newCustName, setNewCustName] = useState("");
+
+  const [selectedCustomerId, setSelectedCustomerId] = useState(
+    () => order.customer?._id || "",
+  );
+  const [exchangeRate, setExchangeRate] = useState(
+    () => order.exchangeRate ?? defaultExchangeRate,
+  );
+  const [priceType, setPriceType] = useState<"high" | "low">(
+    () => (order.type === "thấp" ? "low" : "high"),
+  );
+
+  const initialItems = useMemo(
+    () => buildInitialEditItems(order, warehouseMap),
+    [order, warehouseMap],
+  );
+  const [standaloneItems, setStandaloneItems] = useState<SelectedItem[]>(
+    () => initialItems.standalone,
+  );
+  const [sets, setSets] = useState<OrderSet[]>(() => initialItems.orderSets);
+
+  const note = order.note || "";
+  const [debt, setDebt] = useState(() => order.debt ?? 0);
+  const [paid, setPaid] = useState(() => order.paid ?? 0);
 
   const allSelectedIds = useMemo(() => {
     const ids = new Set<string>();
@@ -183,7 +216,6 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
 
   const maxAvailableByWarehouseId = useMemo(() => {
     const reservedInCurrentOrder: Record<string, number> = {};
-    if (!order) return reservedInCurrentOrder;
 
     for (const product of order.products) {
       const isSet = product.items.length > 1;
@@ -321,28 +353,26 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
     if (ungroupedSetIdsRef.current.has(setId)) return;
     ungroupedSetIdsRef.current.add(setId);
 
-    let extractedSet: OrderSet | null = null;
     setSets((prevSets) => {
-      extractedSet = prevSets.find((s) => s.id === setId) ?? null;
-      if (!extractedSet) return prevSets;
+      const extractedSet = prevSets.find((s) => s.id === setId);
+      if (!extractedSet) {
+        ungroupedSetIdsRef.current.delete(setId);
+        return prevSets;
+      }
+
+      setStandaloneItems((prevItems) => {
+        const cloned = extractedSet.items.map((i) => ({
+          ...i,
+          tempId: genTempId(),
+          quantity: (i.quantity ?? 0) * (extractedSet.quantitySet ?? 1),
+          orderIndex: getNextOrder(),
+        }));
+        const merged = [...prevItems, ...cloned];
+        merged.sort((a, b) => a.orderIndex - b.orderIndex);
+        return merged;
+      });
+
       return prevSets.filter((s) => s.id !== setId);
-    });
-
-    if (!extractedSet) {
-      ungroupedSetIdsRef.current.delete(setId);
-      return;
-    }
-
-    setStandaloneItems((prevItems) => {
-      const cloned = extractedSet.items.map((i) => ({
-        ...i,
-        tempId: genTempId(),
-        quantity: (i.quantity ?? 0) * (extractedSet.quantitySet ?? 1),
-        orderIndex: getNextOrder(),
-      }));
-      const merged = [...prevItems, ...cloned];
-      merged.sort((a, b) => a.orderIndex - b.orderIndex);
-      return merged;
     });
   }, []);
 
@@ -569,21 +599,12 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
     }
   };
 
-  if (orderLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-[400px] w-full" />
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-4 lg:h-full lg:overflow-hidden">
       <div className="space-y-1 shrink-0">
         <h1 className="text-2xl font-bold tracking-tight">Chỉnh sửa đơn hàng</h1>
         <p className="text-sm text-muted-foreground">
-          Đơn hàng #{order?._id?.slice(-5).toUpperCase()}
+          Đơn hàng #{order._id?.slice(-5).toUpperCase()}
         </p>
       </div>
 
