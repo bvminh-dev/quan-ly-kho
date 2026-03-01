@@ -137,3 +137,22 @@ export function useAddHistory() {
     },
   });
 }
+
+export function useDeliverOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, note }: { id: string; note?: string }) =>
+      orderService.deliver(id, { note }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ORDERS });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.WAREHOUSES });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.HISTORY_EXPORT });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CUSTOMERS });
+      toast.success("Cập nhật trạng thái Đã giao thành công");
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Cập nhật trạng thái Đã giao thất bại"));
+    },
+  });
+}

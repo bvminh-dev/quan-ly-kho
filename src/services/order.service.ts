@@ -1,14 +1,14 @@
-import axiosInstance from "@/lib/axios";
 import { ORDER_ROUTES } from "@/config";
+import axiosInstance from "@/lib/axios";
 import type {
+  AddHistoryDto,
   ApiResponse,
+  CreateOrderDto,
+  OrderDetail,
   PaginatedData,
   PaginationParams,
-  OrderDetail,
-  CreateOrderDto,
-  UpdateOrderDto,
-  AddHistoryDto,
   RevertOrderDto,
+  UpdateOrderDto,
 } from "@/types/api";
 
 export const orderService = {
@@ -68,6 +68,14 @@ export const orderService = {
     const { data } = await axiosInstance.patch<ApiResponse<OrderDetail>>(
       ORDER_ROUTES.REVERT(id),
       dto
+    );
+    return data;
+  },
+
+  deliver: async (id: string, payload: { note?: string }) => {
+    const { data } = await axiosInstance.patch<ApiResponse<OrderDetail>>(
+      ORDER_ROUTES.DELIVER(id),
+      payload
     );
     return data;
   },

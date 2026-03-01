@@ -44,6 +44,7 @@ export const ORDER_ROUTES = {
   HISTORY: (id: string) => `${API_PREFIX}/orders/${id}/history`,
   CONFIRM: (id: string) => `${API_PREFIX}/orders/${id}/confirm`,
   REVERT: (id: string) => `${API_PREFIX}/orders/${id}/revert`,
+  DELIVER: (id: string) => `${API_PREFIX}/orders/${id}/deliver`,
 } as const;
 
 export const HISTORY_WAREHOUSE_ROUTES = {

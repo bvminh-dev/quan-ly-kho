@@ -1,17 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { useAccessControl } from "@/components/access-control";
+import { DataTablePagination } from "@/components/layout/data-table-pagination";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -26,15 +17,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DataTablePagination } from "@/components/layout/data-table-pagination";
 import { Input } from "@/components/ui/input";
-import { MoreHorizontal, Pencil, Trash2, Eye } from "lucide-react";
-import { useAccessControl } from "@/components/access-control";
-import { useDeleteCustomer } from "../hooks/use-customers";
-import { CustomerFormDialog } from "./customer-form-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { CustomerItem, PaginationMeta } from "@/types/api";
 import { formatUSD } from "@/utils/currency";
 import { quickSearchFilter } from "@/utils/search";
+import { Eye, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { useDeleteCustomer } from "../hooks/use-customers";
+import { CustomerFormDialog } from "./customer-form-dialog";
 
 interface CustomerTableProps {
   customers: CustomerItem[];
@@ -135,7 +135,7 @@ export function CustomerTable({
                         : ""
                     }`}
                   >
-                    ${formatUSD(customer.payment)}
+                    {formatUSD(customer.payment)}
                   </TableCell>
                   <TableCell className="max-w-[200px] truncate">
                     {customer.note || "-"}

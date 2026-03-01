@@ -5,6 +5,7 @@ import { DataTablePagination } from "@/components/layout/data-table-pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ import {
   Pencil,
   RotateCcw,
   CheckCircle2,
+  Truck,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { formatNGN } from "@/utils/currency";
@@ -46,7 +48,7 @@ import { OrderDetailDialog } from "./order-detail-dialog";
 import { PaymentDialog } from "./payment-dialog";
 import { RevertOrderDialog } from "./revert-order-dialog";
 import { quickSearchFilter } from "@/utils/search";
-import { useConfirmOrder } from "../hooks/use-orders";
+import { useConfirmOrder, useDeliverOrder } from "../hooks/use-orders";
 
 function getOrderCreatorName(createdBy: OrderDetail["createdBy"]) {
   if (createdBy && typeof createdBy === "object") {
@@ -81,7 +83,10 @@ export function OrderTable({
   const [editOrder, setEditOrder] = useState<OrderDetail | null>(null);
   const [search, setSearch] = useState("");
   const [confirmOrder, setConfirmOrder] = useState<OrderDetail | null>(null);
+  const [deliverOrder, setDeliverOrder] = useState<OrderDetail | null>(null);
+  const [deliverNote, setDeliverNote] = useState("");
   const confirmOrderMutation = useConfirmOrder();
+  const deliverOrderMutation = useDeliverOrder();
 
   const handleConfirmEdit = () => {
     if (!editOrder) return;
@@ -97,6 +102,19 @@ export function OrderTable({
         setConfirmOrder(null);
       },
     });
+  };
+
+  const handleDeliverOrder = () => {
+    if (!deliverOrder) return;
+    deliverOrderMutation.mutate(
+      { id: deliverOrder._id, note: deliverNote },
+      {
+        onSuccess: () => {
+          setDeliverOrder(null);
+          setDeliverNote("");
+        },
+      },
+    );
   };
 
   const filteredOrders = useMemo(
@@ -200,9 +218,17 @@ export function OrderTable({
                 const lowerState = order.state?.toLowerCase();
                 const stateCfg = ORDER_STATE_CONFIG[lowerState as keyof typeof ORDER_STATE_CONFIG];
                 const isLocked =
-                  lowerState === "hoàn tác" || lowerState === "đã xong";
+                  lowerState === "hoàn tác" ||
+                  lowerState === "đã xong" ||
+                  lowerState === "đã giao" ||
+                  lowerState === "đã hoàn" ||
+                  lowerState === "hoàn đơn";
                 const canRevert = !isLocked && paidNGN === 0;
-                const canConfirm = lowerState === "báo giá";
+                const canConfirm =
+                  lowerState === "báo giá" || lowerState === "chỉnh sửa";
+                const canAddPayment = lowerState === "đã chốt";
+                const canDeliver =
+                  (order.payment || 0) + order.totalPrice !== 0;
                 return (
                   <TableRow key={order._id} className="hover:bg-muted/30">
                     <TableCell className="font-mono font-medium">
@@ -311,14 +337,26 @@ export function OrderTable({
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
-                              if (isLocked) return;
+                              if (!canAddPayment) return;
                               setPaymentOrder(order);
                             }}
-                            disabled={isLocked}
+                            disabled={!canAddPayment}
                             className="cursor-pointer"
                           >
                             <CreditCard className="h-4 w-4 mr-2" />
                             Ghi nhận thanh toán
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              if (!canDeliver) return;
+                              setDeliverOrder(order);
+                              setDeliverNote("");
+                            }}
+                            disabled={!canDeliver}
+                            className="cursor-pointer"
+                          >
+                            <Truck className="h-4 w-4 mr-2" />
+                            Đã giao
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
@@ -432,6 +470,50 @@ export function OrderTable({
               disabled={confirmOrderMutation.isPending}
             >
               Đồng ý chốt đơn
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!deliverOrder}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeliverOrder(null);
+            setDeliverNote("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Chuyển đơn hàng sang Đã giao</DialogTitle>
+            <DialogDescription>
+              Nhập ghi chú cho lần cập nhật trạng thái này nếu cần.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Ghi chú</Label>
+            <Input
+              value={deliverNote}
+              onChange={(e) => setDeliverNote(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeliverOrder(null);
+                setDeliverNote("");
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handleDeliverOrder}
+              className="cursor-pointer"
+              disabled={deliverOrderMutation.isPending}
+            >
+              Xác nhận Đã giao
             </Button>
           </DialogFooter>
         </DialogContent>

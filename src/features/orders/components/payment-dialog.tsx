@@ -181,46 +181,7 @@ export function PaymentDialog({
                 }
                 className="h-9"
               />
-              {order && (
-                <div className="flex gap-2 mt-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 px-2 text-xs cursor-pointer"
-                    onClick={() => handleQuickFill(25)}
-                  >
-                    25%
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 px-2 text-xs cursor-pointer"
-                    onClick={() => handleQuickFill(50)}
-                  >
-                    50%
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 px-2 text-xs cursor-pointer"
-                    onClick={() => handleQuickFill(75)}
-                  >
-                    75%
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 px-2 text-xs cursor-pointer"
-                    onClick={() => handleQuickFill(100)}
-                  >
-                    100%
-                  </Button>
-                </div>
-              )}
+              
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Số tiền (USD)</Label>

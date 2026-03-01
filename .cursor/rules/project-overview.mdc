@@ -339,3 +339,4 @@ async findAll(
 nên là bộ fillter, sort hãy truyền đúng theo yêu cầu
 
 - Tất cả những hành động như Chỉnh sửa đơn hoặc Hoàn tác đơn hoặc Xóa luôn có xuất hiện Đồng ý chỉnh sửa đơn, hoàn tác đơn hoặc xóa hay không (tránh ấn nhầm)
+- Tất cả button khi click submit nhiều lần hoặc enter nhiều lần thì chặn cho tôi, không được spam hệ thống.

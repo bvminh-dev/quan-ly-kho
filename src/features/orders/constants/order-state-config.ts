@@ -36,6 +36,11 @@ export const ORDER_STATE_CONFIG: Record<
       "bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-800",
     dot: "bg-violet-500",
   },
+  "đã giao": {
+    className:
+      "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800",
+    dot: "bg-emerald-500",
+  },
   "khách trả": {
     className:
       "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800",

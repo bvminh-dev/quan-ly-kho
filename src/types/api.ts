@@ -244,6 +244,7 @@ export interface OrderItemDto {
   sale: number;
   customPrice: boolean;
   customSale: boolean;
+  unitOfCalculation: string;
 }
 
 export interface OrderProductDto {
@@ -302,6 +303,7 @@ export interface CreateOrderItemDto {
   sale?: number;
   customPrice?: boolean;
   customSale?: boolean;
+  unitOfCalculation: string;
 }
 
 export interface CreateOrderProductDto {

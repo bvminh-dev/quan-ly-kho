@@ -431,6 +431,7 @@ export default function SalesPage() {
               sale: it.sale,
               customPrice: it.customPrice,
               customSale: it.customSale,
+              unitOfCalculation: it.warehouse.unitOfCalculation,
             },
           ],
         };
@@ -449,6 +450,7 @@ export default function SalesPage() {
           sale: i.sale,
           customPrice: i.customPrice,
           customSale: i.customSale,
+          unitOfCalculation: i.warehouse.unitOfCalculation,
         })),
       };
     });
@@ -501,9 +503,23 @@ export default function SalesPage() {
     if (!newCustName.trim()) return;
     try {
       const result = await createCustomer.mutateAsync({ name: newCustName.trim() });
-      setSelectedCustomerId(result.data._id);
+      const newCustomer = result.data;
+      const newCustomerId = newCustomer._id;
       setNewCustName("");
       setCreateCustOpen(false);
+      // Tự động chọn khách hàng mới và cập nhật debt/paid
+      setSelectedCustomerId(newCustomerId);
+      const balance = newCustomer.payment ?? 0;
+      if (balance < 0) {
+        setDebt(Math.abs(balance));
+        setPaid(0);
+      } else if (balance > 0) {
+        setDebt(0);
+        setPaid(balance);
+      } else {
+        setDebt(0);
+        setPaid(0);
+      }
     } catch {
       // handled by hook
     }
@@ -591,33 +607,44 @@ export default function SalesPage() {
           <DialogHeader>
             <DialogTitle>Tạo khách hàng mới</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Tên khách hàng</Label>
-              <Input
-                value={newCustName}
-                onChange={(e) => setNewCustName(e.target.value)}
-                placeholder="Nhập tên khách hàng"
-                onKeyDown={(e) => e.key === "Enter" && handleCreateCust()}
-              />
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!createCustomer.isPending && newCustName.trim()) {
+                handleCreateCust();
+              }
+            }}
+          >
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Tên khách hàng</Label>
+                <Input
+                  value={newCustName}
+                  onChange={(e) => setNewCustName(e.target.value)}
+                  placeholder="Nhập tên khách hàng"
+                  disabled={createCustomer.isPending}
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCreateCustOpen(false)}
+                  disabled={createCustomer.isPending}
+                  className="cursor-pointer"
+                >
+                  Hủy
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createCustomer.isPending || !newCustName.trim()}
+                  className="cursor-pointer"
+                >
+                  {createCustomer.isPending ? "Đang tạo..." : "Tạo"}
+                </Button>
+              </div>
             </div>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setCreateCustOpen(false)}
-                className="cursor-pointer"
-              >
-                Hủy
-              </Button>
-              <Button
-                onClick={handleCreateCust}
-                disabled={createCustomer.isPending}
-                className="cursor-pointer"
-              >
-                Tạo
-              </Button>
-            </div>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

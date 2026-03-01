@@ -13,11 +13,11 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { getWarehouseDisplayName } from "@/features/warehouse/utils/sort-warehouse";
-import { formatNGN, formatUSD } from "@/utils/currency";
 import { cn } from "@/lib/utils";
 import type { CustomerItem, WarehouseItem } from "@/types/api";
+import { formatNGN, formatUSD } from "@/utils/currency";
 import { Layers, Package, Plus, Trash2, Ungroup } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { OrderSet, SelectedItem } from "../types";
 import { SET_COLORS } from "../types";
 
@@ -84,6 +84,9 @@ export function OrderBuilder({
   title = "Tạo đơn hàng",
 }: OrderBuilderProps) {
   const [selectedForSet, setSelectedForSet] = useState<Set<string>>(new Set());
+  const [isCreatingSet, setIsCreatingSet] = useState(false);
+  const isProcessingRef = useRef(false);
+  const ungroupingSetIdsRef = useRef<Set<string>>(new Set());
 
   const getMaxQuantity = useCallback(
     (warehouseId: string) => {
@@ -103,11 +106,18 @@ export function OrderBuilder({
     });
   }, []);
 
-  const handleCreateSet = () => {
-    if (selectedForSet.size < 2) return;
-    onCreateSet(Array.from(selectedForSet));
-    setSelectedForSet(new Set());
-  };
+  const handleCreateSet = useCallback(() => {
+    if (selectedForSet.size < 2 || isCreatingSet) return;
+    setIsCreatingSet(true);
+    try {
+      onCreateSet(Array.from(selectedForSet));
+      setSelectedForSet(new Set());
+    } finally {
+      setTimeout(() => {
+        setIsCreatingSet(false);
+      }, 300);
+    }
+  }, [selectedForSet, isCreatingSet, onCreateSet]);
 
   const orderedEntries = useMemo(() => {
     const entries: Array<
@@ -153,8 +163,46 @@ export function OrderBuilder({
     [subtotal, debt, paid],
   );
 
+  const handleSaveQuoteClick = useCallback(() => {
+    if (isSaving || isProcessingRef.current) return;
+    isProcessingRef.current = true;
+    onSaveQuote();
+    setTimeout(() => {
+      isProcessingRef.current = false;
+    }, 1000);
+  }, [isSaving, onSaveQuote]);
+
+  const handleConfirmClick = useCallback(() => {
+    if (isSaving || isProcessingRef.current) return;
+    isProcessingRef.current = true;
+    onConfirm();
+    setTimeout(() => {
+      isProcessingRef.current = false;
+    }, 1000);
+  }, [isSaving, onConfirm]);
+
+  const handleUngroupSetClick = useCallback(
+    (setId: string) => {
+      if (ungroupingSetIdsRef.current.has(setId)) return;
+      ungroupingSetIdsRef.current.add(setId);
+      onUngroupSet(setId);
+      setTimeout(() => {
+        ungroupingSetIdsRef.current.delete(setId);
+      }, 500);
+    },
+    [onUngroupSet],
+  );
+
+  const handleFormSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      // Prevent form submission from triggering button clicks
+    },
+    [],
+  );
+
   return (
-    <div className="flex flex-col flex-1 min-h-0">
+    <form onSubmit={handleFormSubmit} className="flex flex-col flex-1 min-h-0">
       <div className="p-4 border-b space-y-4">
         <h2 className="text-lg font-semibold">{title}</h2>
 
@@ -178,10 +226,12 @@ export function OrderBuilder({
                 </SelectContent>
               </Select>
               <Button
+                type="button"
                 size="icon"
                 variant="outline"
                 className="h-9 w-9 shrink-0 cursor-pointer"
                 onClick={onCreateCustomer}
+                disabled={isSaving}
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -200,6 +250,11 @@ export function OrderBuilder({
                   e.target.value === "" ? 0 : parseFloat(e.target.value) || 0,
                 )
               }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                }
+              }}
               className="h-9"
             />
           </div>
@@ -216,6 +271,11 @@ export function OrderBuilder({
                   e.target.value === "" ? 0 : parseFloat(e.target.value) || 0,
                 )
               }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                }
+              }}
               className="h-9"
             />
           </div>
@@ -232,6 +292,11 @@ export function OrderBuilder({
                   e.target.value === "" ? 0 : parseFloat(e.target.value) || 0,
                 )
               }
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                }
+              }}
               className="h-9"
             />
           </div>
@@ -280,13 +345,15 @@ export function OrderBuilder({
           {selectedForSet.size >= 2 && (
             <div className="flex justify-end">
               <Button
+                type="button"
                 size="sm"
                 variant="outline"
                 onClick={handleCreateSet}
+                disabled={isCreatingSet || isSaving}
                 className="cursor-pointer"
               >
                 <Layers className="h-3.5 w-3.5 mr-1" />
-                Tạo Set ({selectedForSet.size})
+                {isCreatingSet ? "Đang tạo..." : `Tạo Set (${selectedForSet.size})`}
               </Button>
             </div>
           )}
@@ -318,10 +385,12 @@ export function OrderBuilder({
                       </span>
                     </div>
                     <Button
+                      type="button"
                       size="icon"
                       variant="ghost"
                       className="h-7 w-7 text-destructive cursor-pointer"
                       onClick={() => onRemoveItem(item.tempId)}
+                      disabled={isSaving}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
@@ -345,6 +414,11 @@ export function OrderBuilder({
                             ),
                           })
                         }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                          }
+                        }}
                         className="h-8"
                       />
                     </div>
@@ -361,6 +435,11 @@ export function OrderBuilder({
                             customPrice: true,
                           })
                         }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                          }
+                        }}
                         className="h-8"
                       />
                     </div>
@@ -377,6 +456,11 @@ export function OrderBuilder({
                             customSale: true,
                           })
                         }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                          }
+                        }}
                         className="h-8"
                       />
                     </div>
@@ -397,9 +481,11 @@ export function OrderBuilder({
                     {set.nameSet || "(Chưa đặt tên)"}
                   </h3>
                   <Button
+                    type="button"
                     size="sm"
                     variant="ghost"
-                    onClick={() => onUngroupSet(set.id)}
+                    onClick={() => handleUngroupSetClick(set.id)}
+                    disabled={ungroupingSetIdsRef.current.has(set.id) || isSaving}
                     className="cursor-pointer text-xs"
                   >
                     <Ungroup className="h-3.5 w-3.5 mr-1" />
@@ -415,6 +501,11 @@ export function OrderBuilder({
                       onChange={(e) =>
                         onUpdateSet(set.id, { nameSet: e.target.value })
                       }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                        }
+                      }}
                       className="h-8"
                       placeholder="Set A"
                     />
@@ -431,6 +522,11 @@ export function OrderBuilder({
                           priceSet: parseFloat(e.target.value) || 0,
                         })
                       }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                        }
+                      }}
                       className="h-8"
                     />
                   </div>
@@ -446,6 +542,11 @@ export function OrderBuilder({
                           saleSet: parseFloat(e.target.value) || 0,
                         })
                       }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                        }
+                      }}
                       className="h-8"
                     />
                   </div>
@@ -461,6 +562,11 @@ export function OrderBuilder({
                           quantitySet: parseFloat(e.target.value) || 0,
                         })
                       }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                        }
+                      }}
                       className="h-8"
                     />
                   </div>
@@ -470,6 +576,7 @@ export function OrderBuilder({
 
                 <div className="space-y-2">
                   {set.items.map((item) => {
+                    const wh = warehouseMap[item.warehouseId];
                     return (
                       <div
                         key={item.tempId}
@@ -479,20 +586,34 @@ export function OrderBuilder({
                           {getWarehouseDisplayName(item.warehouse)}
                         </span>
                         <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            min={1}
-                            step="any"
-                            value={item.quantity ?? 1}
-                            readOnly
-                            className="h-7 w-20"
-                            placeholder="SL"
-                          />
+                          <div className="flex items-center gap-1">
+                            <Input
+                              type="number"
+                              min={1}
+                              step="any"
+                              value={item.quantity ?? 1}
+                              readOnly
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                }
+                              }}
+                              className="h-7 w-20"
+                              placeholder="SL"
+                            />
+                            {wh?.unitOfCalculation && (
+                              <span className="text-xs text-muted-foreground">
+                                {wh.unitOfCalculation}
+                              </span>
+                            )}
+                          </div>
                           <Button
+                            type="button"
                             size="icon"
                             variant="ghost"
                             className="h-7 w-7 text-destructive cursor-pointer"
                             onClick={() => onRemoveSetItem(set.id, item.tempId)}
+                            disabled={isSaving}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -522,23 +643,25 @@ export function OrderBuilder({
           </div>
           <div className="flex gap-2">
             <Button
+              type="button"
               variant="outline"
-              onClick={onSaveQuote}
-              disabled={isSaving}
+              onClick={handleSaveQuoteClick}
+              disabled={isSaving || isProcessingRef.current}
               className="cursor-pointer"
             >
-              Lưu báo giá
+              {isSaving ? "Đang lưu..." : "Lưu báo giá"}
             </Button>
             <Button
-              onClick={onConfirm}
-              disabled={isSaving}
+              type="button"
+              onClick={handleConfirmClick}
+              disabled={isSaving || isProcessingRef.current}
               className="cursor-pointer"
             >
-              Xác nhận
+              {isSaving ? "Đang xử lý..." : "Xác nhận"}
             </Button>
           </div>
         </div>
       </div>
-    </div>
+    </form>
   );
 }
