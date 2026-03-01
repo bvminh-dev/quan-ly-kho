@@ -547,6 +547,7 @@ function OrderEditForm({
               sale: it.sale,
               customPrice: it.customPrice,
               customSale: it.customSale,
+              unitOfCalculation: it.warehouse.unitOfCalculation,
             },
           ],
         };
@@ -565,6 +566,7 @@ function OrderEditForm({
           sale: i.sale,
           customPrice: i.customPrice,
           customSale: i.customSale,
+          unitOfCalculation: i.warehouse.unitOfCalculation,
         })),
       };
     });
