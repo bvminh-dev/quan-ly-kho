@@ -74,9 +74,18 @@ export default function ReportsPage() {
     [period, date],
   );
 
-  const orderReportQuery = useOrderReport(queryParams, isDateReady);
-  const customerReportQuery = useCustomerReport(queryParams, isDateReady);
-  const staffReportQuery = useStaffReport(queryParams, isDateReady);
+  const orderReportQuery = useOrderReport(
+    queryParams,
+    isDateReady && activeTab === "orders",
+  );
+  const customerReportQuery = useCustomerReport(
+    queryParams,
+    isDateReady && activeTab === "customers",
+  );
+  const staffReportQuery = useStaffReport(
+    queryParams,
+    isDateReady && activeTab === "staff",
+  );
 
   const orderReport = orderReportQuery.data?.data;
   const customerRows = customerReportQuery.data?.data ?? [];

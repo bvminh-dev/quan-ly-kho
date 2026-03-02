@@ -11,6 +11,8 @@ export function useOrderReport(params: DashboardReportParams, enabled = true) {
     queryFn: () => dashboardService.getOrderReport(params),
     placeholderData: (prev) => prev,
     enabled,
+    // refetchOnMount: "always",
+    staleTime: 30000,
   });
 }
 
@@ -23,6 +25,8 @@ export function useCustomerReport(
     queryFn: () => dashboardService.getCustomerReport(params),
     placeholderData: (prev) => prev,
     enabled,
+    // refetchOnMount: "always",
+    staleTime: 30000,
   });
 }
 
@@ -32,5 +36,7 @@ export function useStaffReport(params: DashboardReportParams, enabled = true) {
     queryFn: () => dashboardService.getStaffReport(params),
     placeholderData: (prev) => prev,
     enabled,
+    // refetchOnMount: "always",
+    staleTime: 30000,
   });
 }
