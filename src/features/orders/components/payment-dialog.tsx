@@ -19,7 +19,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useExchangeRate } from "@/hooks/use-exchange-rate";
 import type { OrderDetail } from "@/types/api";
-import { round2 } from "@/utils/currency";
+import { round2, formatMoneyValue } from "@/utils/currency";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
@@ -181,7 +181,7 @@ export function PaymentDialog({
                 }
                 className="h-9"
               />
-              
+
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Số tiền (USD)</Label>
@@ -189,10 +189,7 @@ export function PaymentDialog({
                 type="text"
                 value={
                   form.watch("moneyPaidDolar") != null
-                    ? Number(form.watch("moneyPaidDolar")).toLocaleString("en-US", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })
+                    ? formatMoneyValue(form.watch("moneyPaidDolar"))
                     : ""
                 }
                 disabled

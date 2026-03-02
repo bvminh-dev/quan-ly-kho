@@ -483,6 +483,7 @@ export interface DashboardReportParams {
 }
 
 export interface DashboardOrderReport {
+  totalOrders: number;
   totalOrdersKg: number;
   totalOrdersPcs: number;
   totalValueNGN: number;
@@ -494,6 +495,7 @@ export interface DashboardOrderReport {
 export interface DashboardCustomerReportItem {
   customerId: string;
   customerName: string;
+  totalOrders: number;
   totalOrdersKg: number;
   totalOrdersPcs: number;
   totalPaidNGN: number;
@@ -505,6 +507,7 @@ export interface DashboardCustomerReportItem {
 export interface DashboardStaffReportItem {
   staffId: string;
   staffName: string;
+  totalOrders: number;
   totalOrdersKg: number;
   totalOrdersPcs: number;
   totalCustomers: number;

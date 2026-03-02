@@ -126,33 +126,30 @@ export default function ReportsPage() {
                 <button
                   type="button"
                   onClick={() => handlePeriodChange("day")}
-                  className={`inline-flex items-center rounded-sm px-3 text-sm transition-all cursor-pointer ${
-                    period === "day"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground"
-                  }`}
+                  className={`inline-flex items-center rounded-sm px-3 text-sm transition-all cursor-pointer ${period === "day"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground"
+                    }`}
                 >
                   Ngày
                 </button>
                 <button
                   type="button"
                   onClick={() => handlePeriodChange("month")}
-                  className={`inline-flex items-center rounded-sm px-3 text-sm transition-all cursor-pointer ${
-                    period === "month"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground"
-                  }`}
+                  className={`inline-flex items-center rounded-sm px-3 text-sm transition-all cursor-pointer ${period === "month"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground"
+                    }`}
                 >
                   Tháng
                 </button>
                 <button
                   type="button"
                   onClick={() => handlePeriodChange("year")}
-                  className={`inline-flex items-center rounded-sm px-3 text-sm transition-all cursor-pointer ${
-                    period === "year"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground"
-                  }`}
+                  className={`inline-flex items-center rounded-sm px-3 text-sm transition-all cursor-pointer ${period === "year"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground"
+                    }`}
                 >
                   Năm
                 </button>
@@ -204,7 +201,24 @@ export default function ReportsPage() {
           </TabsList>
 
           <TabsContent value="orders" className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Tổng số đơn hàng
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-1">
+                  {isLoadingOrders ? (
+                    <Skeleton className="h-6 w-32" />
+                  ) : (
+                    <div className="text-lg font-semibold">
+                      {formatNumber(orderReport?.totalOrders ?? 0)}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -250,7 +264,7 @@ export default function ReportsPage() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium">
-                    Tổng thu về
+                    Tổng tiền đã thu
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-1">
@@ -279,6 +293,7 @@ export default function ReportsPage() {
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead>Khách hàng</TableHead>
+                    <TableHead className="text-right">Tổng số đơn hàng</TableHead>
                     <TableHead className="text-right">Kg</TableHead>
                     <TableHead className="text-right">Pcs</TableHead>
                     <TableHead className="text-right">Đã trả (NGN)</TableHead>
@@ -291,7 +306,7 @@ export default function ReportsPage() {
                   {isLoadingCustomers ? (
                     Array.from({ length: 6 }).map((_, idx) => (
                       <TableRow key={`customer-skeleton-${idx}`}>
-                        <TableCell colSpan={7}>
+                        <TableCell colSpan={8}>
                           <Skeleton className="h-6 w-full" />
                         </TableCell>
                       </TableRow>
@@ -299,7 +314,7 @@ export default function ReportsPage() {
                   ) : customerRows.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={7}
+                        colSpan={8}
                         className="h-24 text-center text-muted-foreground"
                       >
                         Không có dữ liệu
@@ -310,6 +325,9 @@ export default function ReportsPage() {
                       <TableRow key={row.customerId}>
                         <TableCell className="font-medium">
                           {row.customerName}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatNumber(row.totalOrders)}
                         </TableCell>
                         <TableCell className="text-right">
                           {formatNumber(row.totalOrdersKg)}
@@ -343,6 +361,7 @@ export default function ReportsPage() {
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead>Nhân viên</TableHead>
+                    <TableHead className="text-right">Tổng số đơn hàng</TableHead>
                     <TableHead className="text-right">Khách hàng</TableHead>
                     <TableHead className="text-right">Kg</TableHead>
                     <TableHead className="text-right">Pcs</TableHead>
@@ -356,7 +375,7 @@ export default function ReportsPage() {
                   {isLoadingStaff ? (
                     Array.from({ length: 6 }).map((_, idx) => (
                       <TableRow key={`staff-skeleton-${idx}`}>
-                        <TableCell colSpan={8}>
+                        <TableCell colSpan={9}>
                           <Skeleton className="h-6 w-full" />
                         </TableCell>
                       </TableRow>
@@ -364,7 +383,7 @@ export default function ReportsPage() {
                   ) : staffRows.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={8}
+                        colSpan={9}
                         className="h-24 text-center text-muted-foreground"
                       >
                         Không có dữ liệu
@@ -375,6 +394,9 @@ export default function ReportsPage() {
                       <TableRow key={row.staffId}>
                         <TableCell className="font-medium">
                           {row.staffName}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatNumber(row.totalOrders)}
                         </TableCell>
                         <TableCell className="text-right">
                           {row.totalCustomers}

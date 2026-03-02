@@ -1,11 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { DataTablePagination } from "@/components/layout/data-table-pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +17,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -31,24 +30,25 @@ import {
 } from "@/components/ui/table";
 import { InvoiceDialog } from "@/features/sales/components/invoice-dialog";
 import type { OrderDetail, PaginationMeta, WarehouseItem } from "@/types/api";
-import { ORDER_STATE_CONFIG } from "../constants/order-state-config";
+import { formatNGN } from "@/utils/currency";
+import { quickSearchFilter } from "@/utils/search";
 import {
+  CheckCircle2,
   CreditCard,
   Eye,
   FileText,
   MoreHorizontal,
   Pencil,
   RotateCcw,
-  CheckCircle2,
   Truck,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { formatNGN } from "@/utils/currency";
+import { useMemo, useState } from "react";
+import { ORDER_STATE_CONFIG } from "../constants/order-state-config";
+import { useConfirmOrder, useDeliverOrder } from "../hooks/use-orders";
 import { OrderDetailDialog } from "./order-detail-dialog";
 import { PaymentDialog } from "./payment-dialog";
 import { RevertOrderDialog } from "./revert-order-dialog";
-import { quickSearchFilter } from "@/utils/search";
-import { useConfirmOrder, useDeliverOrder } from "../hooks/use-orders";
 
 function getOrderCreatorName(createdBy: OrderDetail["createdBy"]) {
   if (createdBy && typeof createdBy === "object") {
@@ -226,9 +226,17 @@ export function OrderTable({
                 const canRevert = !isLocked && paidNGN === 0;
                 const canConfirm =
                   lowerState === "báo giá" || lowerState === "chỉnh sửa";
-                const canAddPayment = lowerState === "đã chốt";
+                const canAddPayment =
+                  lowerState !== "báo giá" &&
+                  lowerState !== "chỉnh sửa" &&
+                  lowerState !== "hoàn tác" &&
+                  lowerState !== "hoàn đơn";
                 const canDeliver =
-                  (order.payment || 0) + order.totalPrice !== 0;
+                  lowerState !== "đã giao" &&
+                  lowerState !== "hoàn đơn" &&
+                  lowerState !== "báo giá" &&
+                  lowerState !== "chỉnh sửa" &&
+                  lowerState !== "hoàn tác";
                 return (
                   <TableRow key={order._id} className="hover:bg-muted/30">
                     <TableCell className="font-mono font-medium">
