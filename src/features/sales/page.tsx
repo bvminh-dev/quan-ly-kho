@@ -210,6 +210,8 @@ export default function SalesPage() {
         items: itemsToGroup.map((item) => ({
           ...item,
           quantity: item.quantity > 0 ? item.quantity : 1,
+          customPrice: false,
+          customSale: false,
         })),
         orderIndex: Math.min(...itemsToGroup.map((i) => i.orderIndex)),
       };

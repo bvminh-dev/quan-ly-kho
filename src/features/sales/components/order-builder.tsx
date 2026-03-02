@@ -430,12 +430,15 @@ export function OrderBuilder({
                         min={0}
                         step="any"
                         value={item.price ?? ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const wh = warehouseMap[item.warehouseId];
+                          const defaultPrice = priceType === "high" ? wh?.priceHigh : wh?.priceLow;
+                          const newPrice = parseFloat(e.target.value) || 0;
                           onUpdateItem(item.tempId, {
-                            price: parseFloat(e.target.value) || 0,
-                            customPrice: true,
-                          })
-                        }
+                            price: newPrice,
+                            customPrice: wh ? newPrice !== (defaultPrice ?? 0) : true,
+                          });
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.preventDefault();
@@ -451,12 +454,15 @@ export function OrderBuilder({
                         min={0}
                         step="any"
                         value={item.sale ?? ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const wh = warehouseMap[item.warehouseId];
+                          const defaultSale = priceType === "high" ? (wh?.sale ?? 0) : 0;
+                          const newSale = parseFloat(e.target.value) || 0;
                           onUpdateItem(item.tempId, {
-                            sale: parseFloat(e.target.value) || 0,
-                            customSale: true,
-                          })
-                        }
+                            sale: newSale,
+                            customSale: wh ? newSale !== defaultSale : true,
+                          });
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.preventDefault();

@@ -300,7 +300,15 @@ export function InvoiceDialog({
                           <td className="py-2 text-sm text-center tabular-nums">
                             {formatNumber(entry.setQty)}
                           </td>
-                          <td className="py-2 text-sm text-right tabular-nums">
+                          <td
+                            className={`py-2 text-sm text-right tabular-nums ${
+                              entry.items.some(
+                                (it) => it.customPrice || it.customSale,
+                              )
+                                ? "font-bold"
+                                : ""
+                            }`}
+                          >
                             {entry.isCalcSet
                               ? formatUSD(entry.product.priceSet ?? 0)
                               : formatUSD(
@@ -355,7 +363,11 @@ export function InvoiceDialog({
                         {formatNumber(it.qty)}{" "}
                         {it.wh?.unitOfCalculation?.toLowerCase() || "pcs"}
                       </td>
-                      <td className="py-2 text-sm text-right tabular-nums">
+                      <td
+                        className={`py-2 text-sm text-right tabular-nums ${
+                          it.customPrice || it.customSale ? "font-bold" : ""
+                        }`}
+                      >
                         {formatUSD(it.price)}
                       </td>
                       <td className="py-2 text-sm text-right tabular-nums">
