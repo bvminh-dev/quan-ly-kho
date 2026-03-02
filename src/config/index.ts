@@ -54,6 +54,12 @@ export const HISTORY_WAREHOUSE_ROUTES = {
   EXPORT_BY_ID: (id: string) => `${API_PREFIX}/history-warehouse/export/${id}`,
 } as const;
 
+export const DASHBOARD_ROUTES = {
+  ORDER_REPORT: `${API_PREFIX}/dashboard/orders`,
+  CUSTOMER_REPORT: `${API_PREFIX}/dashboard/customers`,
+  STAFF_REPORT: `${API_PREFIX}/dashboard/staff`,
+} as const;
+
 export const QUERY_KEYS = {
   ACCOUNT: ["account"] as const,
   USERS: ["users"] as const,
@@ -72,4 +78,7 @@ export const QUERY_KEYS = {
   HISTORY_ENTER_ITEM: (id: string) => ["history-enter", id] as const,
   HISTORY_EXPORT: ["history-export"] as const,
   HISTORY_EXPORT_ITEM: (id: string) => ["history-export", id] as const,
+  DASHBOARD_ORDER_REPORT: ["dashboard-order-report"] as const,
+  DASHBOARD_CUSTOMER_REPORT: ["dashboard-customer-report"] as const,
+  DASHBOARD_STAFF_REPORT: ["dashboard-staff-report"] as const,
 } as const;

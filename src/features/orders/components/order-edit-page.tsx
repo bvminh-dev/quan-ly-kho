@@ -258,40 +258,36 @@ function OrderEditForm({
 
   const handleDeselectWarehouse = useCallback(
     (warehouseId: string) => {
-      setStandaloneItems((prev) =>
-        prev.filter((i) => i.warehouseId !== warehouseId)
-      );
-      setSets((prev) => {
-        const updatedSets: OrderSet[] = [];
-        const returnedItems: SelectedItem[] = [];
-        for (const set of prev) {
-          const remaining = set.items.filter(
-            (i) => i.warehouseId !== warehouseId
+      const updatedSets: OrderSet[] = [];
+      const returnedItems: SelectedItem[] = [];
+      for (const set of sets) {
+        const remaining = set.items.filter(
+          (i) => i.warehouseId !== warehouseId
+        );
+        if (remaining.length < 2) {
+          returnedItems.push(
+            ...remaining.map((i) => ({
+              ...i,
+              tempId: genTempId(),
+              quantity: i.quantity ?? 1,
+              orderIndex: getNextOrder(),
+            }))
           );
-          if (remaining.length < 2) {
-            returnedItems.push(
-              ...remaining.map((i) => ({
-                ...i,
-                tempId: genTempId(),
-                quantity: (i.quantity ?? 0) * (set.quantitySet ?? 1),
-                orderIndex: getNextOrder(),
-              }))
-            );
-          } else {
-            updatedSets.push({ ...set, items: remaining });
-          }
+        } else {
+          updatedSets.push({ ...set, items: remaining });
         }
-        if (returnedItems.length > 0) {
-          setStandaloneItems((items) => {
-            const merged = [...items, ...returnedItems];
-            merged.sort((a, b) => a.orderIndex - b.orderIndex);
-            return merged;
-          });
-        }
-        return updatedSets;
+      }
+
+      setStandaloneItems((prev) => {
+        const filtered = prev.filter((i) => i.warehouseId !== warehouseId);
+        if (returnedItems.length === 0) return filtered;
+        const merged = [...filtered, ...returnedItems];
+        merged.sort((a, b) => a.orderIndex - b.orderIndex);
+        return merged;
       });
+      setSets(updatedSets);
     },
-    []
+    [sets]
   );
 
   const handleUpdateItem = useCallback(
@@ -316,17 +312,6 @@ function OrderEditForm({
       );
       if (itemsToGroup.length < 2) return;
 
-      const baseQuantity = itemsToGroup[0].quantity ?? 0;
-      if (
-        !baseQuantity ||
-        itemsToGroup.some((item) => (item.quantity ?? 0) !== baseQuantity)
-      ) {
-        toast.error(
-          "Để tạo set, số lượng của tất cả sản phẩm trong set phải bằng nhau và lớn hơn 0"
-        );
-        return;
-      }
-
       setSets((prev) => [
         ...prev,
         {
@@ -334,10 +319,10 @@ function OrderEditForm({
           nameSet: getNextSetName(),
           priceSet: 0,
           saleSet: 0,
-          quantitySet: baseQuantity,
+          quantitySet: 1,
           items: itemsToGroup.map((item) => ({
             ...item,
-            quantity: 1,
+            quantity: item.quantity > 0 ? item.quantity : 1,
           })),
           orderIndex: Math.min(...itemsToGroup.map((i) => i.orderIndex)),
         },
@@ -353,28 +338,26 @@ function OrderEditForm({
     if (ungroupedSetIdsRef.current.has(setId)) return;
     ungroupedSetIdsRef.current.add(setId);
 
-    setSets((prevSets) => {
-      const extractedSet = prevSets.find((s) => s.id === setId);
-      if (!extractedSet) {
-        ungroupedSetIdsRef.current.delete(setId);
-        return prevSets;
-      }
+    const extractedSet = sets.find((s) => s.id === setId);
+    if (!extractedSet) {
+      ungroupedSetIdsRef.current.delete(setId);
+      return;
+    }
 
-      setStandaloneItems((prevItems) => {
-        const cloned = extractedSet.items.map((i) => ({
-          ...i,
-          tempId: genTempId(),
-          quantity: (i.quantity ?? 0) * (extractedSet.quantitySet ?? 1),
-          orderIndex: getNextOrder(),
-        }));
-        const merged = [...prevItems, ...cloned];
-        merged.sort((a, b) => a.orderIndex - b.orderIndex);
-        return merged;
-      });
+    const cloned = extractedSet.items.map((i) => ({
+      ...i,
+      tempId: genTempId(),
+      quantity: i.quantity ?? 1,
+      orderIndex: getNextOrder(),
+    }));
 
-      return prevSets.filter((s) => s.id !== setId);
+    setSets((prev) => prev.filter((s) => s.id !== setId));
+    setStandaloneItems((prevItems) => {
+      const merged = [...prevItems, ...cloned];
+      merged.sort((a, b) => a.orderIndex - b.orderIndex);
+      return merged;
     });
-  }, []);
+  }, [sets]);
 
   const handleUpdateSet = useCallback(
     (setId: string, updates: Partial<OrderSet>) => {
@@ -404,29 +387,28 @@ function OrderEditForm({
   );
 
   const handleRemoveSetItem = useCallback((setId: string, tempId: string) => {
-    setSets((prev) => {
-      const set = prev.find((s) => s.id === setId);
-      if (!set) return prev;
-      const remaining = set.items.filter((i) => i.tempId !== tempId);
-      if (remaining.length < 2) {
-        const cloned = remaining.map((i) => ({
-          ...i,
-          tempId: genTempId(),
-          quantity: (i.quantity ?? 0) * (set.quantitySet ?? 1),
-          orderIndex: getNextOrder(),
-        }));
-        setStandaloneItems((items) => {
-          const merged = [...items, ...cloned];
-          merged.sort((a, b) => a.orderIndex - b.orderIndex);
-          return merged;
-        });
-        return prev.filter((s) => s.id !== setId);
-      }
-      return prev.map((s) =>
-        s.id === setId ? { ...s, items: remaining } : s
+    const set = sets.find((s) => s.id === setId);
+    if (!set) return;
+    const remaining = set.items.filter((i) => i.tempId !== tempId);
+    if (remaining.length < 2) {
+      const cloned = remaining.map((i) => ({
+        ...i,
+        tempId: genTempId(),
+        quantity: i.quantity ?? 1,
+        orderIndex: getNextOrder(),
+      }));
+      setSets((prev) => prev.filter((s) => s.id !== setId));
+      setStandaloneItems((items) => {
+        const merged = [...items, ...cloned];
+        merged.sort((a, b) => a.orderIndex - b.orderIndex);
+        return merged;
+      });
+    } else {
+      setSets((prev) =>
+        prev.map((s) => s.id === setId ? { ...s, items: remaining } : s)
       );
-    });
-  }, []);
+    }
+  }, [sets]);
 
   const handlePriceTypeChange = useCallback(
     (type: "high" | "low") => {

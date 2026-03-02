@@ -71,6 +71,7 @@ export function OrderBuilder({
   onCreateSet,
   onUngroupSet,
   onUpdateSet,
+  onUpdateSetItem,
   onRemoveSetItem,
   debt,
   onDebtChange,
@@ -577,6 +578,7 @@ export function OrderBuilder({
                 <div className="space-y-2">
                   {set.items.map((item) => {
                     const wh = warehouseMap[item.warehouseId];
+                    const maxQty = getMaxQuantity(item.warehouseId);
                     return (
                       <div
                         key={item.tempId}
@@ -586,26 +588,35 @@ export function OrderBuilder({
                           {getWarehouseDisplayName(item.warehouse)}
                         </span>
                         <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1">
-                            <Input
-                              type="number"
-                              min={1}
-                              step="any"
-                              value={item.quantity ?? 1}
-                              readOnly
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
-                                }
-                              }}
-                              className="h-7 w-20"
-                              placeholder="SL"
-                            />
-                            {wh?.unitOfCalculation && (
-                              <span className="text-xs text-muted-foreground">
-                                {wh.unitOfCalculation}
-                              </span>
-                            )}
+                          <div className="flex flex-col gap-0.5">
+                            <div className="flex items-center gap-1">
+                              <Input
+                                type="number"
+                                min={1}
+                                max={maxQty}
+                                step="any"
+                                value={item.quantity ?? 1}
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value) || 0;
+                                  onUpdateSetItem(set.id, item.tempId, {
+                                    quantity: Math.min(Math.max(val, 0), maxQty),
+                                  });
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") e.preventDefault();
+                                }}
+                                className="h-7 w-20"
+                                placeholder="SL"
+                              />
+                              {wh?.unitOfCalculation && (
+                                <span className="text-xs text-muted-foreground">
+                                  {wh.unitOfCalculation}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground">
+                              min: 1 — max: {maxQty}
+                            </span>
                           </div>
                           <Button
                             type="button"

@@ -474,3 +474,42 @@ export interface UpdateHistoryExportDto {
   paymentOrder?: number;
   note?: string;
 }
+
+export type ReportPeriod = "day" | "month" | "year";
+
+export interface DashboardReportParams {
+  period: ReportPeriod;
+  date: string;
+}
+
+export interface DashboardOrderReport {
+  totalOrdersKg: number;
+  totalOrdersPcs: number;
+  totalValueNGN: number;
+  totalValueUSD: number;
+  totalCollectedNGN: number;
+  totalCollectedUSD: number;
+}
+
+export interface DashboardCustomerReportItem {
+  customerId: string;
+  customerName: string;
+  totalOrdersKg: number;
+  totalOrdersPcs: number;
+  totalPaidNGN: number;
+  totalPaidUSD: number;
+  totalDebtNGN: number;
+  totalDebtUSD: number;
+}
+
+export interface DashboardStaffReportItem {
+  staffId: string;
+  staffName: string;
+  totalOrdersKg: number;
+  totalOrdersPcs: number;
+  totalCustomers: number;
+  totalValueNGN: number;
+  totalValueUSD: number;
+  totalCollectedNGN: number;
+  totalCollectedUSD: number;
+}

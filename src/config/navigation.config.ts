@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   ClipboardList,
   History,
   KeyRound,
@@ -90,6 +91,19 @@ export const navigationConfig: NavigationItem[] = [
     iconBg: "bg-lime-500/10 dark:bg-lime-400/10",
     iconColor: "text-lime-600 dark:text-lime-400",
     hoverBorder: "hover:border-lime-200 dark:hover:border-lime-800",
+  },
+  {
+    title: "Báo cáo",
+    url: "/dashboard/reports",
+    icon: BarChart3,
+    module: null,
+    adminOnly: true,
+    showInDashboard: true,
+    description: "Báo cáo tổng hợp kinh doanh",
+    gradient: "from-fuchsia-500 to-purple-600",
+    iconBg: "bg-fuchsia-500/10 dark:bg-fuchsia-400/10",
+    iconColor: "text-fuchsia-600 dark:text-fuchsia-400",
+    hoverBorder: "hover:border-fuchsia-200 dark:hover:border-fuchsia-800",
   },
   {
     title: "Lịch sử",
