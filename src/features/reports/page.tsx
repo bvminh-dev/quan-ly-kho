@@ -216,13 +216,7 @@ export default function ReportsPage() {
                     <Skeleton className="h-6 w-32" />
                   ) : (
                     <div className="text-lg font-semibold">
-                      {formatNumber(orderReport?.totalOrdersKg ?? 0)} Kg
-                    </div>
-                  )}
-                  {isLoadingOrders ? (
-                    <Skeleton className="h-5 w-24" />
-                  ) : (
-                    <div className="text-sm text-muted-foreground">
+                      {formatNumber(orderReport?.totalOrdersKg ?? 0)} Kg {" - "}
                       {formatNumber(orderReport?.totalOrdersPcs ?? 0)} Pcs
                     </div>
                   )}
