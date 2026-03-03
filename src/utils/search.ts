@@ -1,16 +1,20 @@
 export function normalizeText(value: unknown): string {
   if (value === null || value === undefined) return "";
-  const str = String(value)
-    // Chuẩn hóa riêng ký tự đ/Đ cho chắc chắn
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "d");
 
-  return str
+  const str = String(value);
+
+  // Chuẩn hóa riêng ký tự đ/Đ cho chắc chắn (phải làm trước khi normalize)
+  const normalized = str
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+
+  // Chuyển về lowercase trước khi normalize để đảm bảo xử lý đúng
+  return normalized
     .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s]/g, " ")
-    .replace(/\s+/g, " ")
+    .normalize("NFD") // Tách dấu ra khỏi ký tự
+    .replace(/[\u0300-\u036f]/g, "") // Xóa tất cả các dấu (diacritics)
+    .replace(/[^a-z0-9\s]/g, " ") // Thay thế ký tự đặc biệt bằng space
+    .replace(/\s+/g, " ") // Chuẩn hóa nhiều space thành 1 space
     .trim();
 }
 
@@ -34,7 +38,7 @@ export function quickSearchFilter<T>(
     const haystack = normalizeText(fields.join(" "));
     if (!haystack) return false;
 
-    return tokens.some((token) => haystack.includes(token));
+    return tokens.every((token) => haystack.includes(token));
   });
 }
 
