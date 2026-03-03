@@ -52,12 +52,14 @@ export function AppSidebar() {
     }
   };
 
-  const ActiveIcon = ({ 
-    Icon, 
-    isActive 
-  }: { 
-    Icon: React.ComponentType<{ className?: string }>; 
+  const ActiveIcon = ({
+    Icon,
+    isActive,
+    className = "h-4 w-4"
+  }: {
+    Icon: React.ComponentType<{ className?: string }>;
     isActive: boolean;
+    className?: string;
   }) => {
     const [shouldAnimate, setShouldAnimate] = useState(false);
     const prevActiveRef = useRef(false);
@@ -74,9 +76,9 @@ export function AppSidebar() {
         }, 50);
         return () => clearTimeout(timer);
       }
-      
+
       isMountedRef.current = true;
-      
+
       if (isActive && !prevActiveRef.current) {
         setShouldAnimate(true);
         animatePaths();
@@ -89,14 +91,14 @@ export function AppSidebar() {
     const animatePaths = () => {
       setTimeout(() => {
         const svgElement = containerRef.current?.querySelector('svg');
-        
+
         if (!svgElement) return;
 
         const paths = svgElement.querySelectorAll('path, circle, rect, line, polyline, polygon');
-        
+
         paths.forEach((path, index) => {
           const element = path as SVGPathElement | SVGCircleElement | SVGRectElement | SVGLineElement | SVGPolylineElement | SVGPolygonElement;
-          
+
           let length = 0;
           if (element instanceof SVGPathElement) {
             length = element.getTotalLength();
@@ -114,7 +116,7 @@ export function AppSidebar() {
           element.style.setProperty('--path-length', `${length}`);
           element.style.strokeDasharray = `${length}`;
           element.style.strokeDashoffset = `${length}`;
-          
+
           const delay = index * 0.1;
           element.style.animationDelay = `${delay}s`;
           element.style.animation = `icon-stroke-draw 0.5s ease-out ${delay}s forwards`;
@@ -124,10 +126,9 @@ export function AppSidebar() {
 
     return (
       <div ref={containerRef}>
-        <Icon 
-          className={`h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 group-active:scale-95 ${
-            shouldAnimate ? "icon-active-animate" : ""
-          }`} 
+        <Icon
+          className={`${className} transition-all duration-300 group-hover:scale-110 group-hover:rotate-3 group-active:scale-95 ${shouldAnimate ? "icon-active-animate" : ""
+            }`}
         />
       </div>
     );
@@ -168,9 +169,9 @@ export function AppSidebar() {
                         router.push(child.url);
                         if (isMobile) setOpenMobile(false);
                       }}
-                      className="cursor-pointer"
+                      className="cursor-pointer group"
                     >
-                      <child.icon className="h-3.5 w-3.5" />
+                      <ActiveIcon Icon={child.icon} isActive={isChildItemActive} className="h-3.5 w-3.5" />
                       <span>{child.title}</span>
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
