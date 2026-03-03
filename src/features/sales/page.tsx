@@ -212,12 +212,23 @@ export default function SalesPage() {
         priceSet: 0,
         saleSet: 0,
         quantitySet: 1,
-        items: itemsToGroup.map((item) => ({
-          ...item,
-          quantity: item.quantity > 0 ? item.quantity : 1,
-          customPrice: false,
-          customSale: false,
-        })),
+        items: itemsToGroup.map((item) => {
+          const wh = warehouseMap[item.warehouseId];
+          const isKg = wh?.unitOfCalculation?.toLowerCase() !== 'pcs';
+          let quantity = item.quantity > 0 ? item.quantity : 1;
+
+          // Nếu đơn vị là kg và số lượng > 0.5 thì chuyển về 0.5
+          if (isKg && quantity > 0.5) {
+            quantity = 0.5;
+          }
+
+          return {
+            ...item,
+            quantity,
+            customPrice: false,
+            customSale: false,
+          };
+        }),
         orderIndex: Math.min(...itemsToGroup.map((i) => i.orderIndex)),
       };
 
@@ -226,7 +237,7 @@ export default function SalesPage() {
       );
       setSets((prev) => [...prev, newSet]);
     },
-    [standaloneItems, sets]
+    [standaloneItems, sets, warehouseMap]
   );
 
   const handleUngroupSet = useCallback((setId: string) => {
@@ -282,11 +293,11 @@ export default function SalesPage() {
         prev.map((s) =>
           s.id === setId
             ? {
-                ...s,
-                items: s.items.map((i) =>
-                  i.tempId === tempId ? { ...i, ...updates } : i
-                ),
-              }
+              ...s,
+              items: s.items.map((i) =>
+                i.tempId === tempId ? { ...i, ...updates } : i
+              ),
+            }
             : s
         )
       );
@@ -328,8 +339,8 @@ export default function SalesPage() {
           if (!wh) return item;
           const price = type === "high" ? wh.priceHigh : wh.priceLow;
           // Giữ lại giá trị sale nếu đã được tùy chỉnh, nếu không thì chỉ cập nhật khi chọn giá cao
-          const sale = item.customSale 
-            ? item.sale 
+          const sale = item.customSale
+            ? item.sale
             : (type === "high" ? wh.sale : item.sale);
           return {
             ...item,
@@ -348,8 +359,8 @@ export default function SalesPage() {
             if (!wh) return item;
             const price = type === "high" ? wh.priceHigh : wh.priceLow;
             // Giữ lại giá trị sale nếu đã được tùy chỉnh, nếu không thì chỉ cập nhật khi chọn giá cao
-            const sale = item.customSale 
-              ? item.sale 
+            const sale = item.customSale
+              ? item.sale
               : (type === "high" ? wh.sale : item.sale);
             return {
               ...item,

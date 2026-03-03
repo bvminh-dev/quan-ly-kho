@@ -6,29 +6,33 @@ import {
   LayoutDashboard,
   LucideIcon,
   Package,
+  Palette,
+  Ruler,
+  Settings,
   Shield,
   ShoppingCart,
+  Sparkles,
   Tag,
   UserCheck,
   Users,
+  Wand2,
+  Layers,
 } from "lucide-react";
 
 export interface NavigationItem {
-  // Common properties
   title: string;
   url: string;
   icon: LucideIcon;
-  module: string | null; // Module for access control
-  adminOnly: boolean; // Whether this item is admin-only
-
-  // Dashboard card properties (optional - only for items shown on dashboard)
-  showInDashboard?: boolean; // Whether to show as card on dashboard
-  description?: string; // Card description
-  gradient?: string; // Card gradient classes
-  iconBg?: string; // Card icon background classes
-  iconColor?: string; // Card icon color classes
-  hoverBorder?: string; // Card hover border classes
-  comingSoon?: boolean; // Whether this feature is coming soon
+  module: string | null;
+  adminOnly: boolean;
+  showInDashboard?: boolean;
+  description?: string;
+  gradient?: string;
+  iconBg?: string;
+  iconColor?: string;
+  hoverBorder?: string;
+  comingSoon?: boolean;
+  children?: NavigationItem[];
 }
 
 export const navigationConfig: NavigationItem[] = [
@@ -38,7 +42,7 @@ export const navigationConfig: NavigationItem[] = [
     icon: LayoutDashboard,
     module: null,
     adminOnly: false,
-    showInDashboard: false, // Don't show dashboard card on dashboard page
+    showInDashboard: false,
   },
   {
     title: "Kho hàng",
@@ -132,56 +136,77 @@ export const navigationConfig: NavigationItem[] = [
     hoverBorder: "hover:border-blue-200 dark:hover:border-blue-800",
   },
   {
-    title: "Người dùng",
-    url: "/dashboard/users",
-    icon: Users,
-    module: "users",
+    title: "Cài đặt",
+    url: "/dashboard/settings",
+    icon: Settings,
+    module: null,
     adminOnly: true,
-    showInDashboard: true,
-    description: "Quản lý tài khoản người dùng",
-    gradient: "from-blue-500 to-indigo-600",
-    iconBg: "bg-blue-500/10 dark:bg-blue-400/10",
-    iconColor: "text-blue-600 dark:text-blue-400",
-    hoverBorder: "hover:border-blue-200 dark:hover:border-blue-800",
-  },
-  {
-    title: "Vai trò",
-    url: "/dashboard/roles",
-    icon: Shield,
-    module: "roles",
-    adminOnly: true,
-    showInDashboard: true,
-    description: "Quản lý phân quyền vai trò",
-    gradient: "from-emerald-500 to-teal-600",
-    iconBg: "bg-emerald-500/10 dark:bg-emerald-400/10",
-    iconColor: "text-emerald-600 dark:text-emerald-400",
-    hoverBorder: "hover:border-emerald-200 dark:hover:border-emerald-800",
-  },
-  {
-    title: "Quyền hạn",
-    url: "/dashboard/permissions",
-    icon: KeyRound,
-    module: "permissions",
-    adminOnly: true,
-    showInDashboard: true,
-    description: "Quản lý quyền truy cập hệ thống",
-    gradient: "from-violet-500 to-purple-600",
-    iconBg: "bg-violet-500/10 dark:bg-violet-400/10",
-    iconColor: "text-violet-600 dark:text-violet-400",
-    hoverBorder: "hover:border-violet-200 dark:hover:border-violet-800",
+    showInDashboard: false,
+    children: [
+      {
+        title: "Inch",
+        url: "/dashboard/settings/inchs",
+        icon: Ruler,
+        module: null,
+        adminOnly: true,
+      },
+      {
+        title: "Loại sản phẩm",
+        url: "/dashboard/settings/items",
+        icon: Layers,
+        module: null,
+        adminOnly: true,
+      },
+      {
+        title: "Chất lượng",
+        url: "/dashboard/settings/qualitys",
+        icon: Sparkles,
+        module: null,
+        adminOnly: true,
+      },
+      {
+        title: "Kiểu",
+        url: "/dashboard/settings/styles",
+        icon: Wand2,
+        module: null,
+        adminOnly: true,
+      },
+      {
+        title: "Màu",
+        url: "/dashboard/settings/colors",
+        icon: Palette,
+        module: null,
+        adminOnly: true,
+      },
+      {
+        title: "Người dùng",
+        url: "/dashboard/users",
+        icon: Users,
+        module: "users",
+        adminOnly: true,
+      },
+      {
+        title: "Vai trò",
+        url: "/dashboard/roles",
+        icon: Shield,
+        module: "roles",
+        adminOnly: true,
+      },
+      {
+        title: "Quyền hạn",
+        url: "/dashboard/permissions",
+        icon: KeyRound,
+        module: "permissions",
+        adminOnly: true,
+      },
+    ],
   },
 ];
 
-/**
- * Get menu items filtered by role
- */
 export function getMenuItems(isAdmin: boolean): NavigationItem[] {
   return navigationConfig.filter((item) => !item.adminOnly || isAdmin);
 }
 
-/**
- * Get dashboard cards filtered by role and showInDashboard flag
- */
 export function getDashboardCards(isAdmin: boolean): NavigationItem[] {
   return navigationConfig.filter(
     (item) => item.showInDashboard === true && (!item.adminOnly || isAdmin),

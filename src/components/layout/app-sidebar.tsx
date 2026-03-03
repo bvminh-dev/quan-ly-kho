@@ -3,6 +3,11 @@
 import { ModuleGate } from "@/components/access-control";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -13,12 +18,15 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { getMenuItems } from "@/config/navigation.config";
+import { getMenuItems, type NavigationItem } from "@/config/navigation.config";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/auth-store";
-import { LogOut, Package, Settings } from "lucide-react";
+import { ChevronRight, LogOut, Package, Settings } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -57,10 +65,8 @@ export function AppSidebar() {
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-      // Khi component mount lần đầu và đã active (refresh trang)
       if (!isMountedRef.current && isActive) {
         isMountedRef.current = true;
-        // Delay nhỏ để đảm bảo DOM đã render
         const timer = setTimeout(() => {
           setShouldAnimate(true);
           animatePaths();
@@ -71,7 +77,6 @@ export function AppSidebar() {
       
       isMountedRef.current = true;
       
-      // Khi click và chuyển sang active
       if (isActive && !prevActiveRef.current) {
         setShouldAnimate(true);
         animatePaths();
@@ -82,19 +87,16 @@ export function AppSidebar() {
     }, [isActive]);
 
     const animatePaths = () => {
-      // Tìm SVG element trong DOM
       setTimeout(() => {
         const svgElement = containerRef.current?.querySelector('svg');
         
         if (!svgElement) return;
 
-        // Lấy tất cả các path elements
         const paths = svgElement.querySelectorAll('path, circle, rect, line, polyline, polygon');
         
         paths.forEach((path, index) => {
           const element = path as SVGPathElement | SVGCircleElement | SVGRectElement | SVGLineElement | SVGPolylineElement | SVGPolygonElement;
           
-          // Tính toán path length
           let length = 0;
           if (element instanceof SVGPathElement) {
             length = element.getTotalLength();
@@ -106,16 +108,13 @@ export function AppSidebar() {
             const h = parseFloat(element.getAttribute('height') || '0');
             length = 2 * (w + h);
           } else {
-            // Fallback cho line, polyline, polygon
             length = element.getTotalLength ? element.getTotalLength() : 200;
           }
 
-          // Set stroke-dasharray và stroke-dashoffset
           element.style.setProperty('--path-length', `${length}`);
           element.style.strokeDasharray = `${length}`;
           element.style.strokeDashoffset = `${length}`;
           
-          // Animation delay cho từng path (tổng thời gian ≤ 1s)
           const delay = index * 0.1;
           element.style.animationDelay = `${delay}s`;
           element.style.animation = `icon-stroke-draw 0.5s ease-out ${delay}s forwards`;
@@ -136,7 +135,62 @@ export function AppSidebar() {
 
   const menuItems = getMenuItems(isAdmin);
 
-  const renderMenuItem = (item: (typeof menuItems)[0]) => {
+  const isChildActive = (item: NavigationItem) =>
+    item.children?.some((child) => pathname === child.url) ?? false;
+
+  const renderMenuItem = (item: NavigationItem) => {
+    if (item.children && item.children.length > 0) {
+      const isOpen = isChildActive(item) || pathname === item.url;
+
+      return (
+        <Collapsible key={item.title} defaultOpen={isOpen} className="group/collapsible">
+          <SidebarMenuItem>
+            <CollapsibleTrigger asChild>
+              <SidebarMenuButton
+                tooltip={item.title}
+                className="cursor-pointer group"
+              >
+                <ActiveIcon Icon={item.icon} isActive={isOpen} />
+                <span>{item.title}</span>
+                <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+              </SidebarMenuButton>
+            </CollapsibleTrigger>
+          </SidebarMenuItem>
+          <CollapsibleContent>
+            <SidebarMenuSub>
+              {item.children.map((child) => {
+                const isChildItemActive = pathname === child.url;
+                const subButton = (
+                  <SidebarMenuSubItem key={child.title}>
+                    <SidebarMenuSubButton
+                      isActive={isChildItemActive}
+                      onClick={() => {
+                        router.push(child.url);
+                        if (isMobile) setOpenMobile(false);
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <child.icon className="h-3.5 w-3.5" />
+                      <span>{child.title}</span>
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                );
+
+                if (!child.module) return subButton;
+                if (isAdmin) return subButton;
+
+                return (
+                  <ModuleGate key={child.title} module={child.module}>
+                    {subButton}
+                  </ModuleGate>
+                );
+              })}
+            </SidebarMenuSub>
+          </CollapsibleContent>
+        </Collapsible>
+      );
+    }
+
     const isActive = pathname === item.url;
     const menuButton = (
       <SidebarMenuItem key={item.title}>
@@ -155,16 +209,9 @@ export function AppSidebar() {
       </SidebarMenuItem>
     );
 
-    // If no module required, show directly
     if (!item.module) return menuButton;
-
-    // If admin, show directly (admin has access to everything)
     if (isAdmin) return menuButton;
 
-    // If adminOnly is false, show directly (available to all users regardless of module permissions)
-    // if (!item.adminOnly) return menuButton;
-
-    // For adminOnly items, check module access
     return (
       <ModuleGate key={item.title} module={item.module}>
         {menuButton}

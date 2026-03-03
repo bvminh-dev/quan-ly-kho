@@ -402,11 +402,10 @@ export function OrderBuilder({
               return (
                 <div
                   key={item.tempId}
-                  className={`border rounded-lg p-3 transition-colors ${
-                    selectedForSet.has(item.tempId)
-                      ? "border-primary bg-primary/5"
-                      : "border-border"
-                  }`}
+                  className={`border rounded-lg p-3 transition-colors ${selectedForSet.has(item.tempId)
+                    ? "border-primary bg-primary/5"
+                    : "border-border"
+                    }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -645,14 +644,17 @@ export function OrderBuilder({
                             <div className="flex items-center gap-1">
                               <Input
                                 type="number"
-                                min={1}
-                                max={maxQty}
-                                step="any"
-                                value={item.quantity ?? 1}
+                                min={wh?.unitOfCalculation?.toLowerCase() === 'pcs' ? 1 : 0.1}
+                                max={wh?.unitOfCalculation?.toLowerCase() === 'pcs' ? maxQty : 0.5}
+                                step={wh?.unitOfCalculation?.toLowerCase() === 'pcs' ? "any" : 0.1}
+                                value={item.quantity ?? ""}
                                 onChange={(e) => {
                                   const val = parseFloat(e.target.value) || 0;
+                                  const isPcs = wh?.unitOfCalculation?.toLowerCase() === 'pcs';
+                                  const minVal = isPcs ? 1 : 0.1;
+                                  const maxVal = isPcs ? maxQty : 0.5;
                                   onUpdateSetItem(set.id, item.tempId, {
-                                    quantity: Math.min(Math.max(val, 0), maxQty),
+                                    quantity: Math.min(Math.max(val, minVal), maxVal),
                                   });
                                 }}
                                 onKeyDown={(e) => {
@@ -668,7 +670,8 @@ export function OrderBuilder({
                               )}
                             </div>
                             <span className="text-[10px] text-muted-foreground">
-                              min: 1 — max: {maxQty}
+                              min: {wh?.unitOfCalculation?.toLowerCase() === 'pcs' ? 1 : 0.1} — max: {wh?.unitOfCalculation?.toLowerCase() === 'pcs' ? maxQty : 0.5}
+                              {/* <br /> {wh?.unitOfCalculation?.toLowerCase() === 'kg' ? `trong kho còn ${maxQty} ${wh?.unitOfCalculation}` : ``} */}
                             </span>
                             {isOverMaxQuantity && (
                               <span className="text-[10px] text-amber-600">

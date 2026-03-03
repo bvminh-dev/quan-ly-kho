@@ -179,12 +179,32 @@ export interface WarehouseItem {
   updatedAt: string;
 }
 
+export interface CatalogItem {
+  _id: string;
+  code: string;
+  name: string;
+  createdBy: string;
+  updatedBy: string;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCatalogDto {
+  code: string;
+  name: string;
+}
+
+export interface UpdateCatalogDto {
+  name: string;
+}
+
 export interface CreateWarehouseDto {
-  inches: number;
-  item: string;
-  quality: string;
-  style: string;
-  color: string;
+  inchId: string;
+  itemId: string;
+  qualityId: string;
+  styleId: string;
+  colorId: string;
   totalAmount: number;
   unitOfCalculation: string;
   priceHigh?: number;

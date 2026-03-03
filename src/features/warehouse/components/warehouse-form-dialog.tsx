@@ -25,55 +25,25 @@ import {
 } from "@/components/ui/select";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useEffect, useState } from "react";
 import { z } from "zod/v4";
 import { useCreateWarehouse } from "../hooks/use-warehouses";
+import {
+  useInchs,
+  useItems,
+  useQualitys,
+  useStyles,
+  useColors,
+} from "@/features/catalog/hooks/use-catalogs";
 
-const INCHES_OPTIONS = [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30];
-const ITEM_OPTIONS = ["CLOSURE", "FRONTAL", "WEFT"] as const;
-const QUALITY_OPTIONS = [
-  "SDD",
-  "DD",
-  "VIP",
-  "SINGLEDONOR",
-  "2X4",
-  "2X4 SINGLEDONOR",
-  "2X6",
-  "2X6 SINGLEDONOR",
-  "5X5",
-  "5X5 HD",
-  "5X5 SINGLEDONOR",
-  "5X5 SINGLEDONOR HD",
-  "13X4",
-  "13X4 HD",
-  "13X6",
-  "13X6 HD",
-] as const;
-const STYLE_OPTIONS = [
-  "BONESTRAIGHT",
-  "BONESTRAIGHT LỖI",
-  "BOUNCE",
-  "EGG LỖI",
-  "EGGCURLS",
-] as const;
-const COLOR_OPTIONS = [
-  "NATURAL",
-  "BROWN COPPER",
-  "BURGUNDY",
-  "GREY",
-  "PIANO RED",
-  "BURGUNDYN",
-  "BROWN TIP",
-  "BROWN CŨ",
-  "BROWN LẪN",
-] as const;
 const UNIT_OPTIONS = ["Kg", "Pcs"] as const;
 
 const schema = z.object({
-  inches: z.number().min(1, "Chọn inches"),
-  item: z.string().min(1, "Chọn loại sản phẩm"),
-  quality: z.string().min(1, "Chọn chất lượng"),
-  style: z.string().min(1, "Chọn kiểu"),
-  color: z.string().min(1, "Chọn màu"),
+  inchId: z.string().min(1, "Chọn inches"),
+  itemId: z.string().min(1, "Chọn loại sản phẩm"),
+  qualityId: z.string().min(1, "Chọn chất lượng"),
+  styleId: z.string().min(1, "Chọn kiểu"),
+  colorId: z.string().min(1, "Chọn màu"),
   totalAmount: z.number().min(0, "Số lượng >= 0"),
   unitOfCalculation: z.string().min(1, "Chọn đơn vị"),
   priceHigh: z.number().min(0).optional(),
@@ -94,14 +64,28 @@ export function WarehouseFormDialog({
 }: WarehouseFormDialogProps) {
   const createWarehouse = useCreateWarehouse();
 
+  const { data: inchsData, isLoading: inchsLoading } = useInchs();
+  const { data: itemsData, isLoading: itemsLoading } = useItems();
+  const { data: qualitysData, isLoading: qualitysLoading } = useQualitys();
+  const { data: stylesData, isLoading: stylesLoading } = useStyles();
+  const { data: colorsData, isLoading: colorsLoading } = useColors();
+
+  const inchs = inchsData?.data?.items ?? [];
+  const items = itemsData?.data?.items ?? [];
+  const qualitys = qualitysData?.data?.items ?? [];
+  const styles = stylesData?.data?.items ?? [];
+  const colors = colorsData?.data?.items ?? [];
+
+  const isLoadingOptions = inchsLoading || itemsLoading || qualitysLoading || stylesLoading || colorsLoading;
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      inches: 10,
-      item: "",
-      quality: "",
-      style: "",
-      color: "",
+      inchId: "",
+      itemId: "",
+      qualityId: "",
+      styleId: "",
+      colorId: "",
       totalAmount: 0,
       unitOfCalculation: "",
       priceHigh: 0,
@@ -110,17 +94,40 @@ export function WarehouseFormDialog({
     },
   });
 
+  const unitOfCalculation = form.watch("unitOfCalculation");
+  const isPcsUnit = unitOfCalculation === "Pcs";
+
+  // State để lưu giá trị string đang nhập cho các trường số
+  const [totalAmountInput, setTotalAmountInput] = useState<string>("0");
+  const [priceHighInput, setPriceHighInput] = useState<string>("0");
+  const [priceLowInput, setPriceLowInput] = useState<string>("0");
+  const [saleInput, setSaleInput] = useState<string>("0");
+
+  // Reset các input khi dialog mở
+  useEffect(() => {
+    if (open) {
+      setTotalAmountInput("0");
+      setPriceHighInput("0");
+      setPriceLowInput("0");
+      setSaleInput("0");
+    }
+  }, [open]);
+
   const onSubmit = async (values: FormValues) => {
     await createWarehouse.mutateAsync(values);
     onOpenChange(false);
     form.reset();
+    setTotalAmountInput("0");
+    setPriceHighInput("0");
+    setPriceLowInput("0");
+    setSaleInput("0");
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Tạo mới sản phẩm tồn kho</DialogTitle>
+          <DialogTitle>Tạo mới sản phẩm kho hàng</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -128,19 +135,19 @@ export function WarehouseFormDialog({
             <div className="grid grid-cols-2 gap-3">
               <FormField
                 control={form.control}
-                name="item"
+                name="itemId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Loại sản phẩm</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={itemsLoading}>
                       <FormControl>
                         <SelectTrigger className="h-9">
-                          <SelectValue placeholder="Chọn..." />
+                          <SelectValue placeholder={itemsLoading ? "Đang tải..." : "Chọn..."} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {ITEM_OPTIONS.map((v) => (
-                          <SelectItem key={v} value={v}>{v}</SelectItem>
+                        {items.map((v) => (
+                          <SelectItem key={v._id} value={v._id}>{v.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -151,22 +158,23 @@ export function WarehouseFormDialog({
 
               <FormField
                 control={form.control}
-                name="inches"
+                name="inchId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Inches</FormLabel>
                     <Select
-                      onValueChange={(v) => field.onChange(Number(v))}
-                      value={String(field.value)}
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={inchsLoading}
                     >
                       <FormControl>
                         <SelectTrigger className="h-9">
-                          <SelectValue placeholder="Chọn..." />
+                          <SelectValue placeholder={inchsLoading ? "Đang tải..." : "Chọn..."} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {INCHES_OPTIONS.map((v) => (
-                          <SelectItem key={v} value={String(v)}>{v}&quot;</SelectItem>
+                        {inchs.map((v) => (
+                          <SelectItem key={v._id} value={v._id}>{v.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -179,19 +187,19 @@ export function WarehouseFormDialog({
             <div className="grid grid-cols-2 gap-3">
               <FormField
                 control={form.control}
-                name="quality"
+                name="qualityId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Chất lượng</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={qualitysLoading}>
                       <FormControl>
                         <SelectTrigger className="h-9">
-                          <SelectValue placeholder="Chọn..." />
+                          <SelectValue placeholder={qualitysLoading ? "Đang tải..." : "Chọn..."} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {QUALITY_OPTIONS.map((v) => (
-                          <SelectItem key={v} value={v}>{v}</SelectItem>
+                        {qualitys.map((v) => (
+                          <SelectItem key={v._id} value={v._id}>{v.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -202,19 +210,19 @@ export function WarehouseFormDialog({
 
               <FormField
                 control={form.control}
-                name="style"
+                name="styleId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Kiểu</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={stylesLoading}>
                       <FormControl>
                         <SelectTrigger className="h-9">
-                          <SelectValue placeholder="Chọn..." />
+                          <SelectValue placeholder={stylesLoading ? "Đang tải..." : "Chọn..."} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {STYLE_OPTIONS.map((v) => (
-                          <SelectItem key={v} value={v}>{v}</SelectItem>
+                        {styles.map((v) => (
+                          <SelectItem key={v._id} value={v._id}>{v.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -227,19 +235,19 @@ export function WarehouseFormDialog({
             <div className="grid grid-cols-2 gap-3">
               <FormField
                 control={form.control}
-                name="color"
+                name="colorId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Màu</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={colorsLoading}>
                       <FormControl>
                         <SelectTrigger className="h-9">
-                          <SelectValue placeholder="Chọn..." />
+                          <SelectValue placeholder={colorsLoading ? "Đang tải..." : "Chọn..."} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {COLOR_OPTIONS.map((v) => (
-                          <SelectItem key={v} value={v}>{v}</SelectItem>
+                        {colors.map((v) => (
+                          <SelectItem key={v._id} value={v._id}>{v.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -254,7 +262,21 @@ export function WarehouseFormDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Đơn vị tính</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Nếu chuyển sang Pcs, làm tròn totalAmount về số nguyên
+                        if (value === "Pcs") {
+                          const currentAmount = form.getValues("totalAmount");
+                          if (currentAmount && currentAmount % 1 !== 0) {
+                            const roundedValue = Math.round(currentAmount);
+                            form.setValue("totalAmount", roundedValue);
+                            setTotalAmountInput(roundedValue.toString());
+                          }
+                        }
+                      }}
+                      value={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger className="h-9">
                           <SelectValue placeholder="Chọn..." />
@@ -280,18 +302,58 @@ export function WarehouseFormDialog({
                   <FormLabel>Tổng số lượng</FormLabel>
                   <FormControl>
                     <Input
-                      type="number"
-                      min={0}
-                      step="any"
-                      {...field}
-                      value={field.value ?? ""}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value === ""
-                            ? 0
-                            : parseFloat(e.target.value) || 0
-                        )
-                      }
+                      type="text"
+                      inputMode={isPcsUnit ? "numeric" : "decimal"}
+                      value={totalAmountInput}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Nếu đơn vị là Pcs, chỉ cho phép số nguyên
+                        // Nếu đơn vị là Kg hoặc chưa chọn, cho phép số thập phân
+                        const pattern = isPcsUnit ? /^\d*$/ : /^\d*\.?\d*$/;
+                        if (value === "") {
+                          // Không cho phép để trống, tự động set về "0"
+                          setTotalAmountInput("0");
+                          field.onChange(0);
+                        } else if (pattern.test(value)) {
+                          setTotalAmountInput(value);
+                          // Chỉ parse và cập nhật form khi giá trị hợp lệ và không phải đang nhập dở
+                          if (value !== ".") {
+                            if (isPcsUnit) {
+                              const intValue = parseInt(value, 10);
+                              if (!isNaN(intValue)) {
+                                field.onChange(intValue);
+                              }
+                            } else {
+                              const numValue = parseFloat(value);
+                              if (!isNaN(numValue)) {
+                                field.onChange(numValue);
+                              }
+                            }
+                          }
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const value = e.target.value;
+                        // Đảm bảo giá trị cuối cùng là số hợp lệ
+                        if (value === "" || value === ".") {
+                          field.onChange(0);
+                          setTotalAmountInput("0");
+                        } else {
+                          if (isPcsUnit) {
+                            // Với Pcs, làm tròn về số nguyên
+                            const intValue = parseInt(value, 10);
+                            const finalValue = isNaN(intValue) ? 0 : intValue;
+                            field.onChange(finalValue);
+                            setTotalAmountInput(finalValue.toString());
+                          } else {
+                            // Với Kg, giữ nguyên số thập phân
+                            const numValue = parseFloat(value);
+                            const finalValue = isNaN(numValue) ? 0 : numValue;
+                            field.onChange(finalValue);
+                            setTotalAmountInput(finalValue.toString());
+                          }
+                        }
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -308,18 +370,40 @@ export function WarehouseFormDialog({
                     <FormLabel>Giá cao ($)</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        min={0}
-                        step="any"
-                        {...field}
-                        value={field.value ?? ""}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === ""
-                              ? 0
-                              : parseFloat(e.target.value) || 0
-                          )
-                        }
+                        type="text"
+                        inputMode="decimal"
+                        value={priceHighInput}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // Chỉ cho phép số và dấu chấm
+                          if (value === "") {
+                            // Không cho phép để trống, tự động set về "0"
+                            setPriceHighInput("0");
+                            field.onChange(0);
+                          } else if (/^\d*\.?\d*$/.test(value)) {
+                            setPriceHighInput(value);
+                            // Chỉ parse và cập nhật form khi giá trị hợp lệ và không phải đang nhập dở
+                            if (value !== ".") {
+                              const numValue = parseFloat(value);
+                              if (!isNaN(numValue)) {
+                                field.onChange(numValue);
+                              }
+                            }
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const value = e.target.value;
+                          // Đảm bảo giá trị cuối cùng là số hợp lệ
+                          if (value === "" || value === ".") {
+                            field.onChange(0);
+                            setPriceHighInput("0");
+                          } else {
+                            const numValue = parseFloat(value);
+                            const finalValue = isNaN(numValue) ? 0 : numValue;
+                            field.onChange(finalValue);
+                            setPriceHighInput(finalValue.toString());
+                          }
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -335,18 +419,40 @@ export function WarehouseFormDialog({
                     <FormLabel>Giá thấp ($)</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        min={0}
-                        step="any"
-                        {...field}
-                        value={field.value ?? ""}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === ""
-                              ? 0
-                              : parseFloat(e.target.value) || 0
-                          )
-                        }
+                        type="text"
+                        inputMode="decimal"
+                        value={priceLowInput}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // Chỉ cho phép số và dấu chấm
+                          if (value === "") {
+                            // Không cho phép để trống, tự động set về "0"
+                            setPriceLowInput("0");
+                            field.onChange(0);
+                          } else if (/^\d*\.?\d*$/.test(value)) {
+                            setPriceLowInput(value);
+                            // Chỉ parse và cập nhật form khi giá trị hợp lệ và không phải đang nhập dở
+                            if (value !== ".") {
+                              const numValue = parseFloat(value);
+                              if (!isNaN(numValue)) {
+                                field.onChange(numValue);
+                              }
+                            }
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const value = e.target.value;
+                          // Đảm bảo giá trị cuối cùng là số hợp lệ
+                          if (value === "" || value === ".") {
+                            field.onChange(0);
+                            setPriceLowInput("0");
+                          } else {
+                            const numValue = parseFloat(value);
+                            const finalValue = isNaN(numValue) ? 0 : numValue;
+                            field.onChange(finalValue);
+                            setPriceLowInput(finalValue.toString());
+                          }
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -362,18 +468,40 @@ export function WarehouseFormDialog({
                     <FormLabel>Giảm giá ($)</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        min={0}
-                        step="any"
-                        {...field}
-                        value={field.value ?? ""}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value === ""
-                              ? 0
-                              : parseFloat(e.target.value) || 0
-                          )
-                        }
+                        type="text"
+                        inputMode="decimal"
+                        value={saleInput}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // Chỉ cho phép số và dấu chấm
+                          if (value === "") {
+                            // Không cho phép để trống, tự động set về "0"
+                            setSaleInput("0");
+                            field.onChange(0);
+                          } else if (/^\d*\.?\d*$/.test(value)) {
+                            setSaleInput(value);
+                            // Chỉ parse và cập nhật form khi giá trị hợp lệ và không phải đang nhập dở
+                            if (value !== ".") {
+                              const numValue = parseFloat(value);
+                              if (!isNaN(numValue)) {
+                                field.onChange(numValue);
+                              }
+                            }
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const value = e.target.value;
+                          // Đảm bảo giá trị cuối cùng là số hợp lệ
+                          if (value === "" || value === ".") {
+                            field.onChange(0);
+                            setSaleInput("0");
+                          } else {
+                            const numValue = parseFloat(value);
+                            const finalValue = isNaN(numValue) ? 0 : numValue;
+                            field.onChange(finalValue);
+                            setSaleInput(finalValue.toString());
+                          }
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -393,7 +521,7 @@ export function WarehouseFormDialog({
               </Button>
               <Button
                 type="submit"
-                disabled={createWarehouse.isPending}
+                disabled={createWarehouse.isPending || isLoadingOptions}
                 className="cursor-pointer"
               >
                 Tạo

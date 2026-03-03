@@ -33,6 +33,19 @@ export const WAREHOUSE_ROUTES = {
   ADD_STOCK: `${API_PREFIX}/warehouses/add-stock`,
 } as const;
 
+export const CATALOG_ROUTES = {
+  INCHS: `${API_PREFIX}/catalog/inchs`,
+  INCH_BY_ID: (id: string) => `${API_PREFIX}/catalog/inchs/${id}`,
+  ITEMS: `${API_PREFIX}/catalog/items`,
+  ITEM_BY_ID: (id: string) => `${API_PREFIX}/catalog/items/${id}`,
+  QUALITYS: `${API_PREFIX}/catalog/qualitys`,
+  QUALITY_BY_ID: (id: string) => `${API_PREFIX}/catalog/qualitys/${id}`,
+  STYLES: `${API_PREFIX}/catalog/styles`,
+  STYLE_BY_ID: (id: string) => `${API_PREFIX}/catalog/styles/${id}`,
+  COLORS: `${API_PREFIX}/catalog/colors`,
+  COLOR_BY_ID: (id: string) => `${API_PREFIX}/catalog/colors/${id}`,
+} as const;
+
 export const CUSTOMER_ROUTES = {
   BASE: `${API_PREFIX}/customers`,
   BY_ID: (id: string) => `${API_PREFIX}/customers/${id}`,
@@ -70,6 +83,11 @@ export const QUERY_KEYS = {
   PERMISSION: (id: string) => ["permissions", id] as const,
   WAREHOUSES: ["warehouses"] as const,
   WAREHOUSE: (id: string) => ["warehouses", id] as const,
+  CATALOG_INCHS: ["catalog-inchs"] as const,
+  CATALOG_ITEMS: ["catalog-items"] as const,
+  CATALOG_QUALITYS: ["catalog-qualitys"] as const,
+  CATALOG_STYLES: ["catalog-styles"] as const,
+  CATALOG_COLORS: ["catalog-colors"] as const,
   CUSTOMERS: ["customers"] as const,
   CUSTOMER: (id: string) => ["customers", id] as const,
   ORDERS: ["orders"] as const,
