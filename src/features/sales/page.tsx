@@ -10,7 +10,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAllCustomers, useCreateCustomer } from "@/features/customers/hooks/use-customers";
-import { useConfirmOrder, useCreateOrder } from "@/features/orders/hooks/use-orders";
+import {
+  useAddHistory,
+  useConfirmOrder,
+  useCreateOrder,
+} from "@/features/orders/hooks/use-orders";
 import { useAllWarehouses } from "@/features/warehouse/hooks/use-warehouses";
 import { useExchangeRate } from "@/hooks/use-exchange-rate";
 import type { CreateOrderDto, OrderDetail, WarehouseItem } from "@/types/api";
@@ -61,6 +65,7 @@ export default function SalesPage() {
   const { data: custData } = useAllCustomers();
   const createOrder = useCreateOrder();
   const confirmOrder = useConfirmOrder();
+  const addHistory = useAddHistory();
   const createCustomer = useCreateCustomer();
   const { data: liveRate } = useExchangeRate();
 
@@ -469,6 +474,22 @@ export default function SalesPage() {
       const result = await createOrder.mutateAsync(dto);
       const orderId = result.data._id;
       const confirmedResult = await confirmOrder.mutateAsync(orderId);
+      const paidAmountUSD = dto.paid ?? 0;
+      if (paidAmountUSD > 0) {
+        const paidAmountNGN = paidAmountUSD * dto.exchangeRate;
+        await addHistory.mutateAsync({
+          id: orderId,
+          dto: {
+            type: "khách trả",
+            exchangeRate: dto.exchangeRate,
+            moneyPaidNGN: paidAmountNGN,
+            moneyPaidDolar: paidAmountUSD,
+            paymentMethod: "Chuyển khoản",
+            datePaid: new Date().toISOString(),
+            note: "Tự động ghi nhận khi chốt đơn từ màn hình bán hàng",
+          },
+        });
+      }
       toast.success("Đã chốt đơn hàng thành công");
       setCreatedOrder(confirmedResult.data);
       setInvoiceOpen(true);
@@ -509,7 +530,8 @@ export default function SalesPage() {
     }
   };
 
-  const isSaving = createOrder.isPending || confirmOrder.isPending;
+  const isSaving =
+    createOrder.isPending || confirmOrder.isPending || addHistory.isPending;
 
   return (
     <div className="flex flex-col gap-4 lg:h-full lg:overflow-hidden">

@@ -148,7 +148,7 @@ export function InvoiceDialog({
     if (!order) return [];
 
     let setCounter = 0;
-    return order.products.map((product) => {
+    const mapped = order.products.map((product) => {
       const isSet = isSetProduct(product);
       const setQty = isSet ? Math.max(product.quantitySet ?? 0, 0) : 1;
       const isCalcSet = Boolean(
@@ -191,20 +191,34 @@ export function InvoiceDialog({
         setVisualIndex,
       };
     });
+    return [...mapped].sort((a, b) => {
+      if (!a.isSet && b.isSet) return -1;
+      if (a.isSet && !b.isSet) return 1;
+      return 0;
+    });
   }, [order, warehouseMap]);
+  const exchangeRate = order?.exchangeRate ?? 0;
+
   const subtotalUSD = calculatedProducts.reduce(
-    (sum, product) => sum + product.setTotalUSD,
+    (sum, entry) => sum + entry.setTotalUSD,
     0,
   );
-  const exchangeRate = order?.exchangeRate ?? 0;
   const subtotalNGN = subtotalUSD * exchangeRate;
+
+  const discountUSD = calculatedProducts.reduce((sum, entry) => {
+    if (entry.isSet && entry.isCalcSet) {
+      return sum + (entry.product.saleSet ?? 0) * entry.setQty;
+    }
+    return sum + entry.items.reduce((s, it) => s + (it.sale ?? 0) * it.qty, 0);
+  }, 0);
+  const discountNGN = discountUSD * exchangeRate;
 
   const debtUSD = order?.debt ?? 0;
   const paidUSD = order?.paid ?? 0;
   const debtNGN = debtUSD * exchangeRate;
   const paidNGN = paidUSD * exchangeRate;
 
-  const totalUSD = subtotalUSD + debtUSD - paidUSD;
+  const totalUSD = subtotalUSD - discountUSD + debtUSD - paidUSD;
   const totalNGN = totalUSD * exchangeRate;
 
   if (!order) return null;
@@ -271,10 +285,10 @@ export function InvoiceDialog({
                     Unit Price
                   </th>
                   <th className="text-right py-2 text-sm font-semibold w-32">
-                    Total (USD)
+                    Amount
                   </th>
                   <th className="text-right py-2 text-sm font-semibold w-36">
-                    Total (NGN)
+                    Amount (NGN)
                   </th>
                 </tr>
               </thead>
@@ -282,69 +296,61 @@ export function InvoiceDialog({
                 {calculatedProducts.map((entry, idx) => {
                   if (entry.isSet) {
                     const colors = getSetColors(entry.setVisualIndex);
+                    const salePerSet = entry.isCalcSet
+                      ? (entry.product.saleSet ?? 0)
+                      : 0;
+                    const itemCount = entry.items.length;
+
                     return (
                       <Fragment key={`set-group-${idx}`}>
-                        <tr
-                          key={`set-row-${idx}`}
-                          className="border-b border-gray-200"
-                          style={{ backgroundColor: colors.bgColor }}
-                        >
-                          <td className="py-2 text-sm font-semibold whitespace-normal wrap-break-word leading-snug">
-                            <span
-                              className="inline-block size-2 rounded-sm mr-2 align-middle"
-                              style={{ backgroundColor: colors.borderColor }}
-                            />
-                            {entry.product.nameSet?.trim() ||
-                              `Set ${entry.setVisualIndex + 1}`}
-                          </td>
-                          <td className="py-2 text-sm text-center tabular-nums">
-                            {formatNumber(entry.setQty)}
-                          </td>
-                          <td
-                            className={`py-2 text-sm text-right tabular-nums ${
-                              entry.items.some(
-                                (it) => it.customPrice || it.customSale,
-                              )
-                                ? "font-bold"
-                                : ""
-                            }`}
-                          >
-                            {entry.isCalcSet
-                              ? formatUSD(entry.product.priceSet ?? 0)
-                              : formatUSD(
-                                  entry.setQty > 0
-                                    ? entry.setTotalUSD / entry.setQty
-                                    : 0,
-                                )}
-                          </td>
-                          <td className="py-2 text-sm text-right tabular-nums font-semibold">
-                            {formatUSD(entry.setTotalUSD)}
-                          </td>
-                          <td className="py-2 text-sm text-right tabular-nums font-semibold">
-                            {formatNGN(entry.setTotalNGN)}
-                          </td>
-                        </tr>
                         {entry.items.map((it, itemIdx) => (
                           <tr
                             key={`set-item-${idx}-${itemIdx}`}
                             className="border-b border-gray-100"
-                            style={{ backgroundColor: colors.bgColor }}
+                            style={{
+                              borderLeft: `4px solid ${colors.borderColor}`,
+                            }}
                           >
-                            <td className="py-1.5 pl-6 text-sm text-gray-700 whitespace-normal wrap-break-word leading-snug">
-                              • {it.displayName}
+                            <td className="py-2 pl-3 text-sm whitespace-normal wrap-break-word leading-snug">
+                              {it.displayName}
                             </td>
-                            <td className="py-1.5 text-sm text-center text-gray-500 tabular-nums">
-                              -
+                            <td className="py-2 text-sm text-center tabular-nums">
+                              {formatNumber(it.qty)}{" "}
+                              {it.wh?.unitOfCalculation?.toLowerCase() || "pcs"}
                             </td>
-                            <td className="py-1.5 text-sm text-right text-gray-500 tabular-nums">
-                              -
-                            </td>
-                            <td className="py-1.5 text-sm text-right text-gray-500 tabular-nums">
-                              -
-                            </td>
-                            <td className="py-1.5 text-sm text-right text-gray-500 tabular-nums">
-                              -
-                            </td>
+                            {itemIdx === 0 && (
+                              <>
+                                <td
+                                  rowSpan={itemCount}
+                                  className="py-2 text-sm text-right tabular-nums align-middle"
+                                >
+                                  <div className="text-green-700 font-semibold">
+                                    Set:{" "}
+                                    {formatUSD(entry.product.priceSet ?? 0)}
+                                  </div>
+                                  {salePerSet > 0 && (
+                                    <div className="text-red-500">
+                                      -{formatUSD(salePerSet)}
+                                    </div>
+                                  )}
+                                </td>
+                                <td
+                                  rowSpan={itemCount}
+                                  className="py-2 text-sm text-right tabular-nums font-semibold align-middle"
+                                >
+                                  <div>{formatUSD(entry.setTotalUSD)}</div>
+                                  <div className="text-xs text-gray-500 font-normal">
+                                    x{formatNumber(entry.setQty)} set
+                                  </div>
+                                </td>
+                                <td
+                                  rowSpan={itemCount}
+                                  className="py-2 text-sm text-right tabular-nums font-semibold align-middle"
+                                >
+                                  {formatNGN(entry.setTotalNGN)}
+                                </td>
+                              </>
+                            )}
                           </tr>
                         ))}
                       </Fragment>
@@ -384,7 +390,7 @@ export function InvoiceDialog({
 
             <div className="border-gray-200 pt-3 space-y-1.5">
               <div className="flex justify-end gap-8 text-sm">
-                <span className="text-gray-500">Subtotal Amount:</span>
+                <span className="text-gray-500">Subtotal:</span>
                 <span className="w-32 text-right whitespace-nowrap tabular-nums">
                   {formatUSD(subtotalUSD)}
                 </span>
@@ -393,26 +399,38 @@ export function InvoiceDialog({
                 </span>
               </div>
 
-              {debtUSD > 0 && (
-                <div className="flex justify-end gap-8 text-sm text-red-600">
-                  <span className="text-gray-500">Debt:</span>
-                  <span className="w-32 text-right whitespace-nowrap tabular-nums">
-                    {formatUSD(debtUSD)}
+              {discountUSD > 0 && (
+                <div className="flex justify-end gap-8 text-sm">
+                  <span className="text-emerald-600 italic">Discount:</span>
+                  <span className="w-32 text-right whitespace-nowrap tabular-nums text-emerald-600">
+                    -{formatUSD(discountUSD)}
                   </span>
-                  <span className="w-36 text-right whitespace-nowrap tabular-nums">
-                    {formatNGN(debtNGN)}
+                  <span className="w-36 text-right whitespace-nowrap tabular-nums text-emerald-600">
+                    -{formatNGN(discountNGN)}
                   </span>
                 </div>
               )}
 
-              {paidUSD > 0 && (
-                <div className="flex justify-end gap-8 text-sm text-emerald-600">
-                  <span className="text-gray-500">Paid:</span>
-                  <span className="w-32 text-right whitespace-nowrap tabular-nums">
+              {paidUSD !== 0 && (
+                <div className="flex justify-end gap-8 text-sm">
+                  <span className="text-emerald-600 italic">Paid:</span>
+                  <span className="w-32 text-right whitespace-nowrap tabular-nums text-emerald-600">
                     -{formatUSD(paidUSD)}
                   </span>
-                  <span className="w-36 text-right whitespace-nowrap tabular-nums">
+                  <span className="w-36 text-right whitespace-nowrap tabular-nums text-emerald-600">
                     -{formatNGN(paidNGN)}
+                  </span>
+                </div>
+              )}
+
+              {debtUSD !== 0 && (
+                <div className="flex justify-end gap-8 text-sm">
+                  <span className="text-red-600 italic">Debt:</span>
+                  <span className="w-32 text-right whitespace-nowrap tabular-nums text-red-600">
+                    +{formatUSD(Math.abs(debtUSD))}
+                  </span>
+                  <span className="w-36 text-right whitespace-nowrap tabular-nums text-red-600">
+                    +{formatNGN(Math.abs(debtNGN))}
                   </span>
                 </div>
               )}

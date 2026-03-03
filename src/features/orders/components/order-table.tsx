@@ -45,7 +45,11 @@ import {
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { ORDER_STATE_CONFIG } from "../constants/order-state-config";
-import { useConfirmOrder, useDeliverOrder } from "../hooks/use-orders";
+import {
+  useAddHistory,
+  useConfirmOrder,
+  useDeliverOrder,
+} from "../hooks/use-orders";
 import { OrderDetailDialog } from "./order-detail-dialog";
 import { PaymentDialog } from "./payment-dialog";
 import { RevertOrderDialog } from "./revert-order-dialog";
@@ -86,6 +90,7 @@ export function OrderTable({
   const [deliverOrder, setDeliverOrder] = useState<OrderDetail | null>(null);
   const [deliverNote, setDeliverNote] = useState("");
   const confirmOrderMutation = useConfirmOrder();
+  const addHistoryMutation = useAddHistory();
   const deliverOrderMutation = useDeliverOrder();
 
   const handleConfirmEdit = () => {
@@ -95,11 +100,25 @@ export function OrderTable({
     router.push(`/dashboard/orders/${id}/edit`);
   };
 
-  const handleConfirmOrder = () => {
+  const handleConfirmOrder = async () => {
     if (!confirmOrder) return;
-    confirmOrderMutation.mutate(confirmOrder._id, {
-      onSuccess: () => {
-        setConfirmOrder(null);
+    const orderToConfirm = confirmOrder;
+    await confirmOrderMutation.mutateAsync(orderToConfirm._id);
+    setConfirmOrder(null);
+
+    const paidAmountUSD = orderToConfirm.paid ?? 0;
+    if (paidAmountUSD <= 0) return;
+
+    await addHistoryMutation.mutateAsync({
+      id: orderToConfirm._id,
+      dto: {
+        type: "khách trả",
+        exchangeRate: orderToConfirm.exchangeRate,
+        moneyPaidNGN: paidAmountUSD * orderToConfirm.exchangeRate,
+        moneyPaidDolar: paidAmountUSD,
+        paymentMethod: "Chuyển khoản",
+        datePaid: new Date().toISOString(),
+        note: "Tự động ghi nhận khi chốt đơn từ danh sách đơn hàng",
       },
     });
   };
@@ -475,7 +494,7 @@ export function OrderTable({
             <Button
               onClick={handleConfirmOrder}
               className="cursor-pointer"
-              disabled={confirmOrderMutation.isPending}
+              disabled={confirmOrderMutation.isPending || addHistoryMutation.isPending}
             >
               Đồng ý chốt đơn
             </Button>
