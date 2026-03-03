@@ -204,6 +204,13 @@ function OrderEditForm({
   const note = order.note || "";
   const [debt, setDebt] = useState(() => order.debt ?? 0);
   const [paid, setPaid] = useState(() => order.paid ?? 0);
+  const hasRecordedPayment = useMemo(() => {
+    if ((order.payment ?? 0) !== 0) return true;
+    if ((order.paid ?? 0) !== 0 || (order.debt ?? 0) !== 0) return true;
+    return (order.history ?? []).some(
+      (h) => (h.moneyPaidDolar ?? 0) !== 0 || (h.moneyPaidNGN ?? 0) !== 0,
+    );
+  }, [order]);
 
   const allSelectedIds = useMemo(() => {
     const ids = new Set<string>();
@@ -650,6 +657,7 @@ function OrderEditForm({
             isSaving={updateOrder.isPending}
             warehouseMap={warehouseMap}
             maxAvailableByWarehouseId={maxAvailableByWarehouseId}
+            hasRecordedPayment={hasRecordedPayment}
             title="Chỉnh sửa đơn hàng"
           />
         </div>

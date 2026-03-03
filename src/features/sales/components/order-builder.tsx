@@ -52,6 +52,7 @@ interface OrderBuilderProps {
   isSaving: boolean;
   warehouseMap: Record<string, WarehouseItem>;
   maxAvailableByWarehouseId?: Record<string, number>;
+  hasRecordedPayment?: boolean;
   title?: string;
 }
 
@@ -82,6 +83,7 @@ export function OrderBuilder({
   isSaving,
   warehouseMap,
   maxAvailableByWarehouseId,
+  hasRecordedPayment,
   title = "Tạo đơn hàng",
 }: OrderBuilderProps) {
   const [selectedForSet, setSelectedForSet] = useState<Set<string>>(new Set());
@@ -89,13 +91,42 @@ export function OrderBuilder({
   const isProcessingRef = useRef(false);
   const ungroupingSetIdsRef = useRef<Set<string>>(new Set());
 
+  const orderQuantityByWarehouseId = useMemo(() => {
+    const totals: Record<string, number> = {};
+    for (const item of standaloneItems) {
+      totals[item.warehouseId] = (totals[item.warehouseId] ?? 0) + (item.quantity ?? 0);
+    }
+    for (const set of sets) {
+      const setMultiplier = set.quantitySet || 0;
+      for (const item of set.items) {
+        totals[item.warehouseId] =
+          (totals[item.warehouseId] ?? 0) + (item.quantity ?? 0) * setMultiplier;
+      }
+    }
+    return totals;
+  }, [standaloneItems, sets]);
+
   const getMaxQuantity = useCallback(
     (warehouseId: string) => {
+      const warehouseQuantity = warehouseMap[warehouseId]?.amountAvailable ?? 999;
+      const hasRecordedMoney =
+        hasRecordedPayment ?? ((paid || 0) !== 0 || (debt || 0) !== 0);
+      if (!hasRecordedMoney) return warehouseQuantity;
       const fromMap = maxAvailableByWarehouseId?.[warehouseId];
-      if (typeof fromMap === "number") return fromMap;
-      return warehouseMap[warehouseId]?.amountAvailable ?? 999;
+      const fromCurrentOrder = warehouseQuantity + (orderQuantityByWarehouseId[warehouseId] ?? 0);
+      if (typeof fromMap === "number") {
+        return Math.max(fromMap, fromCurrentOrder);
+      }
+      return fromCurrentOrder;
     },
-    [maxAvailableByWarehouseId, warehouseMap],
+    [
+      maxAvailableByWarehouseId,
+      warehouseMap,
+      paid,
+      debt,
+      orderQuantityByWarehouseId,
+      hasRecordedPayment,
+    ],
   );
 
   const toggleSelectForSet = useCallback((tempId: string) => {
@@ -364,6 +395,10 @@ export function OrderBuilder({
               const item = entry.item;
               const wh = warehouseMap[item.warehouseId];
               const maxQuantity = getMaxQuantity(item.warehouseId);
+              const totalOrderedForWarehouse =
+                orderQuantityByWarehouseId[item.warehouseId] ?? 0;
+              const isOverMaxQuantity =
+                totalOrderedForWarehouse > maxQuantity;
               return (
                 <div
                   key={item.tempId}
@@ -472,6 +507,14 @@ export function OrderBuilder({
                       />
                     </div>
                   </div>
+                  {isOverMaxQuantity && (
+                    <p className="mt-2 text-[11px] text-amber-600">
+                      Tổng số lượng trong đơn đang vượt giới hạn cho phép:{" "}
+                      {totalOrderedForWarehouse.toLocaleString()}{" "}
+                      {wh?.unitOfCalculation} {" > "}
+                      {maxQuantity.toLocaleString()} {wh?.unitOfCalculation}
+                    </p>
+                  )}
                 </div>
               );
             }
@@ -585,6 +628,10 @@ export function OrderBuilder({
                   {set.items.map((item) => {
                     const wh = warehouseMap[item.warehouseId];
                     const maxQty = getMaxQuantity(item.warehouseId);
+                    const totalOrderedForWarehouse =
+                      orderQuantityByWarehouseId[item.warehouseId] ?? 0;
+                    const isOverMaxQuantity =
+                      totalOrderedForWarehouse > maxQty;
                     return (
                       <div
                         key={item.tempId}
@@ -623,6 +670,14 @@ export function OrderBuilder({
                             <span className="text-[10px] text-muted-foreground">
                               min: 1 — max: {maxQty}
                             </span>
+                            {isOverMaxQuantity && (
+                              <span className="text-[10px] text-amber-600">
+                                Tổng SL trong đơn vượt max:{" "}
+                                {totalOrderedForWarehouse.toLocaleString()}{" "}
+                                {wh?.unitOfCalculation} {" > "}
+                                {maxQty.toLocaleString()} {wh?.unitOfCalculation}
+                              </span>
+                            )}
                           </div>
                           <Button
                             type="button"
