@@ -62,21 +62,22 @@ export function HistoryEnterTable({
 
   const formatMetadata = (item: HistoryEnterItem) => {
     const { type, metadata } = item;
+    const unitOfCalculation = metadata.unitOfCalculation ?? "";
     switch (type) {
       case "Tạo mới":
-        return `SL: ${formatNumber(metadata.totalAmount ?? 0)}, Cao: ${formatNumber(metadata.priceHigh ?? 0)}, Thấp: ${formatNumber(metadata.priceLow ?? 0)}`;
+        return `SL: ${formatNumber(metadata.totalAmount ?? 0)} ${unitOfCalculation}, Cao: ${formatNumber(metadata.priceHigh ?? 0)}$, Thấp: ${formatNumber(metadata.priceLow ?? 0)}$`;
       case "Nhập thêm hàng":
-        return `Số lượng: ${formatNumber(metadata.quantity ?? 0)}`;
+        return `Số lượng: ${formatNumber(metadata.quantity ?? 0)} ${unitOfCalculation}`;
       case "Hoàn đơn":
         const orderIdStr =
           typeof metadata.orderId === "string"
             ? metadata.orderId.slice(-5).toUpperCase()
             : metadata.orderId?._id?.slice(-5).toUpperCase() || "";
-        return `SL hoàn: ${formatNumber(metadata.quantityRevert ?? 0)}, Đơn: ${orderIdStr}`;
+        return `SL hoàn: ${formatNumber(metadata.quantityRevert ?? 0)} ${unitOfCalculation}, Đơn: ${orderIdStr}`;
       case "Sửa giá":
         return `${metadata.priceHighOld !== metadata.priceHighNew ? `Giá cao: ${formatNumber(metadata.priceHighOld ?? 0)} → ${formatNumber(metadata.priceHighNew ?? 0)}` : ""} ${metadata.priceLowOld !== metadata.priceLowNew ? `Giá thấp: ${formatNumber(metadata.priceLowOld ?? 0)} → ${formatNumber(metadata.priceLowNew ?? 0)}` : ""} ${metadata.saleOld !== metadata.saleNew ? `sale: ${formatNumber(metadata.saleOld ?? 0)} → ${formatNumber(metadata.saleNew ?? 0)}` : ""}`.trim();
       case "Xóa":
-        return `SL: ${formatNumber(metadata.totalAmount ?? 0)}, khả dụng: ${formatNumber(metadata.amountAvailable ?? 0)}, chiếm dụng: ${formatNumber(metadata.amountOccupied ?? 0)}`;
+        return `SL: ${formatNumber(metadata.totalAmount ?? 0)} ${unitOfCalculation}, khả dụng: ${formatNumber(metadata.amountAvailable ?? 0)} ${unitOfCalculation}, chiếm dụng: ${formatNumber(metadata.amountOccupied ?? 0)} ${unitOfCalculation}`;
       default:
         return "-";
     }

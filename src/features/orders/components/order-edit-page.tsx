@@ -10,7 +10,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAllCustomers, useCreateCustomer } from "@/features/customers/hooks/use-customers";
+import {
+  useAllCustomers,
+  useCreateCustomer,
+} from "@/features/customers/hooks/use-customers";
 import { useOrder, useUpdateOrder } from "@/features/orders/hooks/use-orders";
 import { OrderBuilder } from "@/features/sales/components/order-builder";
 import { WarehousePicker } from "@/features/sales/components/warehouse-picker";
@@ -42,10 +45,7 @@ export function OrderEditPage({ orderId }: OrderEditPageProps) {
   const { data: custData } = useAllCustomers();
   const { data: liveRate } = useExchangeRate();
 
-  const warehouseItems = useMemo(
-    () => whData?.data?.items ?? [],
-    [whData],
-  );
+  const warehouseItems = useMemo(() => whData?.data?.items ?? [], [whData]);
   const customers = useMemo(() => custData?.data?.items ?? [], [custData]);
   const order = orderData?.data as OrderDetail | undefined;
 
@@ -188,8 +188,8 @@ function OrderEditForm({
   const [exchangeRate, setExchangeRate] = useState(
     () => order.exchangeRate ?? defaultExchangeRate,
   );
-  const [priceType, setPriceType] = useState<"high" | "low">(
-    () => (order.type === "thấp" ? "low" : "high"),
+  const [priceType, setPriceType] = useState<"high" | "low">(() =>
+    order.type === "thấp" ? "low" : "high",
   );
 
   const initialItems = useMemo(
@@ -226,10 +226,11 @@ function OrderEditForm({
 
     for (const product of order.products) {
       const isSet = product.items.length > 1;
-      const setMultiplier = isSet ? (product.quantitySet || 1) : 1;
+      const setMultiplier = isSet ? product.quantitySet || 1 : 1;
       for (const item of product.items) {
         reservedInCurrentOrder[item.id] =
-          (reservedInCurrentOrder[item.id] ?? 0) + item.quantity * setMultiplier;
+          (reservedInCurrentOrder[item.id] ?? 0) +
+          item.quantity * setMultiplier;
       }
     }
 
@@ -260,7 +261,7 @@ function OrderEditForm({
         },
       ]);
     },
-    [priceType]
+    [priceType],
   );
 
   const handleDeselectWarehouse = useCallback(
@@ -269,7 +270,7 @@ function OrderEditForm({
       const returnedItems: SelectedItem[] = [];
       for (const set of sets) {
         const remaining = set.items.filter(
-          (i) => i.warehouseId !== warehouseId
+          (i) => i.warehouseId !== warehouseId,
         );
         if (remaining.length < 2) {
           returnedItems.push(
@@ -278,7 +279,7 @@ function OrderEditForm({
               tempId: genTempId(),
               quantity: i.quantity ?? 1,
               orderIndex: getNextOrder(),
-            }))
+            })),
           );
         } else {
           updatedSets.push({ ...set, items: remaining });
@@ -294,18 +295,18 @@ function OrderEditForm({
       });
       setSets(updatedSets);
     },
-    [sets]
+    [sets],
   );
 
   const handleUpdateItem = useCallback(
     (tempId: string, updates: Partial<SelectedItem>) => {
       setStandaloneItems((prev) =>
         prev.map((item) =>
-          item.tempId === tempId ? { ...item, ...updates } : item
-        )
+          item.tempId === tempId ? { ...item, ...updates } : item,
+        ),
       );
     },
-    []
+    [],
   );
 
   const handleRemoveItem = useCallback((tempId: string) => {
@@ -315,7 +316,7 @@ function OrderEditForm({
   const handleCreateSet = useCallback(
     (tempIds: string[]) => {
       const itemsToGroup = standaloneItems.filter((i) =>
-        tempIds.includes(i.tempId)
+        tempIds.includes(i.tempId),
       );
       if (itemsToGroup.length < 2) return;
 
@@ -337,44 +338,47 @@ function OrderEditForm({
         },
       ]);
       setStandaloneItems((prev) =>
-        prev.filter((i) => !tempIds.includes(i.tempId))
+        prev.filter((i) => !tempIds.includes(i.tempId)),
       );
     },
-    [standaloneItems]
+    [standaloneItems],
   );
 
-  const handleUngroupSet = useCallback((setId: string) => {
-    if (ungroupedSetIdsRef.current.has(setId)) return;
-    ungroupedSetIdsRef.current.add(setId);
+  const handleUngroupSet = useCallback(
+    (setId: string) => {
+      if (ungroupedSetIdsRef.current.has(setId)) return;
+      ungroupedSetIdsRef.current.add(setId);
 
-    const extractedSet = sets.find((s) => s.id === setId);
-    if (!extractedSet) {
-      ungroupedSetIdsRef.current.delete(setId);
-      return;
-    }
+      const extractedSet = sets.find((s) => s.id === setId);
+      if (!extractedSet) {
+        ungroupedSetIdsRef.current.delete(setId);
+        return;
+      }
 
-    const cloned = extractedSet.items.map((i) => ({
-      ...i,
-      tempId: genTempId(),
-      quantity: i.quantity ?? 1,
-      orderIndex: getNextOrder(),
-    }));
+      const cloned = extractedSet.items.map((i) => ({
+        ...i,
+        tempId: genTempId(),
+        quantity: i.quantity ?? 1,
+        orderIndex: getNextOrder(),
+      }));
 
-    setSets((prev) => prev.filter((s) => s.id !== setId));
-    setStandaloneItems((prevItems) => {
-      const merged = [...prevItems, ...cloned];
-      merged.sort((a, b) => a.orderIndex - b.orderIndex);
-      return merged;
-    });
-  }, [sets]);
+      setSets((prev) => prev.filter((s) => s.id !== setId));
+      setStandaloneItems((prevItems) => {
+        const merged = [...prevItems, ...cloned];
+        merged.sort((a, b) => a.orderIndex - b.orderIndex);
+        return merged;
+      });
+    },
+    [sets],
+  );
 
   const handleUpdateSet = useCallback(
     (setId: string, updates: Partial<OrderSet>) => {
       setSets((prev) =>
-        prev.map((s) => (s.id === setId ? { ...s, ...updates } : s))
+        prev.map((s) => (s.id === setId ? { ...s, ...updates } : s)),
       );
     },
-    []
+    [],
   );
 
   const handleUpdateSetItem = useCallback(
@@ -385,39 +389,42 @@ function OrderEditForm({
             ? {
                 ...s,
                 items: s.items.map((i) =>
-                  i.tempId === tempId ? { ...i, ...updates } : i
+                  i.tempId === tempId ? { ...i, ...updates } : i,
                 ),
               }
-            : s
-        )
+            : s,
+        ),
       );
     },
-    []
+    [],
   );
 
-  const handleRemoveSetItem = useCallback((setId: string, tempId: string) => {
-    const set = sets.find((s) => s.id === setId);
-    if (!set) return;
-    const remaining = set.items.filter((i) => i.tempId !== tempId);
-    if (remaining.length < 2) {
-      const cloned = remaining.map((i) => ({
-        ...i,
-        tempId: genTempId(),
-        quantity: i.quantity ?? 1,
-        orderIndex: getNextOrder(),
-      }));
-      setSets((prev) => prev.filter((s) => s.id !== setId));
-      setStandaloneItems((items) => {
-        const merged = [...items, ...cloned];
-        merged.sort((a, b) => a.orderIndex - b.orderIndex);
-        return merged;
-      });
-    } else {
-      setSets((prev) =>
-        prev.map((s) => s.id === setId ? { ...s, items: remaining } : s)
-      );
-    }
-  }, [sets]);
+  const handleRemoveSetItem = useCallback(
+    (setId: string, tempId: string) => {
+      const set = sets.find((s) => s.id === setId);
+      if (!set) return;
+      const remaining = set.items.filter((i) => i.tempId !== tempId);
+      if (remaining.length < 2) {
+        const cloned = remaining.map((i) => ({
+          ...i,
+          tempId: genTempId(),
+          quantity: i.quantity ?? 1,
+          orderIndex: getNextOrder(),
+        }));
+        setSets((prev) => prev.filter((s) => s.id !== setId));
+        setStandaloneItems((items) => {
+          const merged = [...items, ...cloned];
+          merged.sort((a, b) => a.orderIndex - b.orderIndex);
+          return merged;
+        });
+      } else {
+        setSets((prev) =>
+          prev.map((s) => (s.id === setId ? { ...s, items: remaining } : s)),
+        );
+      }
+    },
+    [sets],
+  );
 
   const handlePriceTypeChange = useCallback(
     (type: "high" | "low") => {
@@ -429,15 +436,17 @@ function OrderEditForm({
           if (!wh) return item;
           const price = type === "high" ? wh.priceHigh : wh.priceLow;
           // Giữ lại giá trị sale nếu đã được tùy chỉnh, nếu không thì chỉ cập nhật khi chọn giá cao
-          const sale = item.customSale 
-            ? item.sale 
-            : (type === "high" ? wh.sale : item.sale);
+          const sale = item.customSale
+            ? item.sale
+            : type === "high"
+              ? wh.sale
+              : item.sale;
           return {
             ...item,
             price,
             sale,
           };
-        })
+        }),
       );
       // Cập nhật items trong sets
       setSets((prev) =>
@@ -449,19 +458,21 @@ function OrderEditForm({
             if (!wh) return item;
             const price = type === "high" ? wh.priceHigh : wh.priceLow;
             // Giữ lại giá trị sale nếu đã được tùy chỉnh, nếu không thì chỉ cập nhật khi chọn giá cao
-            const sale = item.customSale 
-              ? item.sale 
-              : (type === "high" ? wh.sale : item.sale);
+            const sale = item.customSale
+              ? item.sale
+              : type === "high"
+                ? wh.sale
+                : item.sale;
             return {
               ...item,
               price,
               sale,
             };
           }),
-        }))
+        })),
       );
     },
-    [warehouseMap]
+    [warehouseMap],
   );
 
   const handleCustomerChange = useCallback(
@@ -481,7 +492,7 @@ function OrderEditForm({
         setPaid(0);
       }
     },
-    [customers]
+    [customers],
   );
 
   const handleSave = async () => {
@@ -566,6 +577,7 @@ function OrderEditForm({
       await updateOrder.mutateAsync({
         id: orderId,
         dto: {
+          type: priceType === "high" ? "cao" : "thấp",
           exchangeRate,
           customer: selectedCustomerId,
           debt,
@@ -583,7 +595,9 @@ function OrderEditForm({
   const handleCreateCust = async () => {
     if (!newCustName.trim()) return;
     try {
-      const result = await createCustomer.mutateAsync({ name: newCustName.trim() });
+      const result = await createCustomer.mutateAsync({
+        name: newCustName.trim(),
+      });
       setSelectedCustomerId(result.data._id);
       setNewCustName("");
       setCreateCustOpen(false);
@@ -595,14 +609,18 @@ function OrderEditForm({
   return (
     <div className="flex flex-col gap-4 lg:h-full lg:overflow-hidden">
       <div className="space-y-1 shrink-0">
-        <h1 className="text-2xl font-bold tracking-tight">Chỉnh sửa đơn hàng</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          Chỉnh sửa đơn hàng
+        </h1>
         <p className="text-sm text-muted-foreground">
           Đơn hàng #{order._id?.slice(-5).toUpperCase()}
         </p>
       </div>
 
       <div className="flex flex-col gap-4 flex-1 min-h-0">
-        <div className={`border rounded-lg bg-card shadow-sm overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${warehouseExpanded ? "max-h-[500px]" : "h-auto"}`}>
+        <div
+          className={`border rounded-lg bg-card shadow-sm overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${warehouseExpanded ? "max-h-[500px]" : "h-auto"}`}
+        >
           <button
             type="button"
             onClick={() => setWarehouseExpanded((prev) => !prev)}

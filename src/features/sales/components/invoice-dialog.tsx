@@ -227,7 +227,7 @@ export function InvoiceDialog({
     <Dialog open={open} onOpenChange={() => onClose()}>
       <DialogContent
         showCloseButton={false}
-        className="max-w-none! sm:max-w-none! inset-0 top-0 left-0 translate-x-0 translate-y-0 w-screen h-screen rounded-none border-0 p-0 gap-0 flex flex-col"
+        className="max-w-none! sm:max-w-none! inset-0 top-0 left-0 translate-x-0 translate-y-0 w-full h-full max-h-dvh rounded-none border-0 p-0 gap-0 flex flex-col overflow-hidden"
       >
         <DialogHeader className="px-6 pt-4 pb-2 shrink-0">
           <DialogTitle className="flex items-center gap-3">
@@ -247,11 +247,11 @@ export function InvoiceDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-auto px-6 flex justify-center">
+        <div className="flex-1 min-w-0 overflow-auto px-6 flex justify-center">
           <div
             ref={invoiceRef}
-            className="bg-white text-gray-900 p-8 shrink-0"
-            style={{ fontFamily: "Arial, sans-serif", minWidth: 1024 }}
+            className="bg-white text-gray-900 p-8 shrink-0 max-w-4xl mx-auto"
+            style={{ fontFamily: "Arial, sans-serif" }}
           >
             <div className="flex justify-between items-start mb-6">
               <div>
@@ -272,22 +272,22 @@ export function InvoiceDialog({
               </div>
             </div>
 
-            <table className="w-full border-collapse mb-6">
+            <table className="w-full border-collapse mb-6 table-fixed">
               <thead>
                 <tr className="border-y-2 border-indigo-600">
-                  <th className="text-left py-2 text-sm font-semibold">
+                  <th className="text-left py-2 text-sm font-semibold min-w-0">
                     Description
                   </th>
-                  <th className="text-center py-2 text-sm font-semibold w-24">
+                  <th className="text-center py-2 text-sm font-semibold w-20">
                     Qty
                   </th>
                   <th className="text-right py-2 text-sm font-semibold w-28">
                     Unit Price
                   </th>
-                  <th className="text-right py-2 text-sm font-semibold w-32">
+                  <th className="text-right py-2 text-sm font-semibold w-28">
                     Amount
                   </th>
-                  <th className="text-right py-2 text-sm font-semibold w-36">
+                  <th className="text-right py-2 text-sm font-semibold w-32">
                     Amount (NGN)
                   </th>
                 </tr>
@@ -311,7 +311,7 @@ export function InvoiceDialog({
                               borderLeft: `4px solid ${colors.borderColor}`,
                             }}
                           >
-                            <td className="py-2 pl-3 text-sm whitespace-normal wrap-break-word leading-snug">
+                            <td className="py-2 pl-3 text-sm min-w-0 wrap-break-word leading-snug align-top">
                               {it.displayName}
                             </td>
                             <td className="py-2 text-sm text-center tabular-nums">
@@ -362,7 +362,7 @@ export function InvoiceDialog({
                       key={`single-row-${idx}-${itemIdx}`}
                       className="border-b border-gray-100"
                     >
-                      <td className="py-2 text-sm whitespace-normal wrap-break-word leading-snug">
+                      <td className="py-2 text-sm min-w-0 wrap-break-word leading-snug align-top">
                         {it.displayName}
                       </td>
                       <td className="py-2 text-sm text-center tabular-nums">

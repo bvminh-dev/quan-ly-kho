@@ -235,14 +235,19 @@ export function OrderTable({
                 );
                 const balance = paidNGN - order.totalPrice;
                 const lowerState = order.state?.toLowerCase();
-                const stateCfg = ORDER_STATE_CONFIG[lowerState as keyof typeof ORDER_STATE_CONFIG];
+                const stateCfg =
+                  ORDER_STATE_CONFIG[
+                    lowerState as keyof typeof ORDER_STATE_CONFIG
+                  ];
+
                 const isLocked =
                   lowerState === "hoàn tác" ||
                   lowerState === "đã xong" ||
                   lowerState === "đã giao" ||
                   lowerState === "đã hoàn" ||
                   lowerState === "hoàn đơn";
-                const canRevert = !isLocked && paidNGN === 0;
+                const canRevert =
+                  lowerState === "chỉnh sửa" && !isLocked && paidNGN === 0;
                 const canConfirm =
                   lowerState === "báo giá" || lowerState === "chỉnh sửa";
                 const canAddPayment =
@@ -453,14 +458,17 @@ export function OrderTable({
         order={revertOrder}
       />
 
-      <Dialog open={!!editOrder} onOpenChange={(open) => !open && setEditOrder(null)}>
+      <Dialog
+        open={!!editOrder}
+        onOpenChange={(open) => !open && setEditOrder(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Đồng ý chỉnh sửa đơn</DialogTitle>
             <DialogDescription>
               Bạn có chắc muốn chỉnh sửa đơn hàng{" "}
-              <strong>#{editOrder?._id.slice(-5).toUpperCase()}</strong>? Những thay đổi
-              tiếp theo có thể ảnh hưởng tới kho và công nợ.
+              <strong>#{editOrder?._id.slice(-5).toUpperCase()}</strong>? Những
+              thay đổi tiếp theo có thể ảnh hưởng tới kho và công nợ.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -483,8 +491,8 @@ export function OrderTable({
             <DialogTitle>Đồng ý chốt đơn</DialogTitle>
             <DialogDescription>
               Bạn có chắc muốn chốt đơn hàng{" "}
-              <strong>#{confirmOrder?._id.slice(-5).toUpperCase()}</strong>? Sau khi
-              chốt, chỉ có thể chỉnh sửa thông qua nghiệp vụ chỉnh sửa đơn.
+              <strong>#{confirmOrder?._id.slice(-5).toUpperCase()}</strong>? Sau
+              khi chốt, chỉ có thể chỉnh sửa thông qua nghiệp vụ chỉnh sửa đơn.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -494,7 +502,9 @@ export function OrderTable({
             <Button
               onClick={handleConfirmOrder}
               className="cursor-pointer"
-              disabled={confirmOrderMutation.isPending || addHistoryMutation.isPending}
+              disabled={
+                confirmOrderMutation.isPending || addHistoryMutation.isPending
+              }
             >
               Đồng ý chốt đơn
             </Button>

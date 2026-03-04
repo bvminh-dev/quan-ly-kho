@@ -88,6 +88,7 @@ export function OrderBuilder({
 }: OrderBuilderProps) {
   const [selectedForSet, setSelectedForSet] = useState<Set<string>>(new Set());
   const [isCreatingSet, setIsCreatingSet] = useState(false);
+  const [editingQuantity, setEditingQuantity] = useState<Record<string, string>>({});
   const isProcessingRef = useRef(false);
   const ungroupingSetIdsRef = useRef<Set<string>>(new Set());
 
@@ -436,23 +437,95 @@ export function OrderBuilder({
                         Số lượng (max: {maxQuantity} {wh?.unitOfCalculation})
                       </Label>
                       <Input
-                        type="number"
-                        min={0}
-                        step="any"
-                        max={maxQuantity}
-                        value={item.quantity ?? ""}
-                        onChange={(e) =>
-                          onUpdateItem(item.tempId, {
-                            quantity: Math.min(
-                              parseFloat(e.target.value) || 0,
-                              maxQuantity,
-                            ),
-                          })
+                        type="text"
+                        inputMode={
+                          wh?.unitOfCalculation?.toLowerCase() === "pcs"
+                            ? "numeric"
+                            : "decimal"
                         }
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
+                        value={
+                          item.tempId in editingQuantity
+                            ? editingQuantity[item.tempId]
+                            : item.quantity === 0 || item.quantity == null
+                              ? ""
+                              : String(
+                                  wh?.unitOfCalculation?.toLowerCase() === "pcs"
+                                    ? Math.floor(item.quantity)
+                                    : item.quantity,
+                                )
+                        }
+                        onFocus={() =>
+                          setEditingQuantity((q) => ({
+                            ...q,
+                            [item.tempId]:
+                              item.quantity == null || item.quantity === 0
+                                ? ""
+                                : String(
+                                    wh?.unitOfCalculation?.toLowerCase() === "pcs"
+                                      ? Math.floor(item.quantity)
+                                      : item.quantity,
+                                  ),
+                          }))
+                        }
+                        onChange={(e) => {
+                          const isPcs =
+                            wh?.unitOfCalculation?.toLowerCase() === "pcs";
+                          const raw = isPcs
+                            ? e.target.value
+                            : e.target.value.replace(",", ".");
+                          const regex = isPcs ? /^\d*$/ : /^\d*\.?\d*$/;
+                          if (raw === "" || regex.test(raw)) {
+                            setEditingQuantity((q) => ({
+                              ...q,
+                              [item.tempId]: raw,
+                            }));
+                            const parsed = isPcs
+                              ? parseInt(raw, 10)
+                              : parseFloat(raw);
+                            if (!Number.isNaN(parsed)) {
+                              const val = isPcs
+                                ? Math.floor(parsed)
+                                : Math.round(parsed * 100) / 100;
+                              onUpdateItem(item.tempId, {
+                                quantity: Math.min(
+                                  Math.max(val, 0),
+                                  maxQuantity,
+                                ),
+                              });
+                            } else if (raw === "") {
+                              onUpdateItem(item.tempId, { quantity: 0 });
+                            }
                           }
+                        }}
+                        onBlur={() => {
+                          const raw = editingQuantity[item.tempId] ?? "";
+                          const isPcs =
+                            wh?.unitOfCalculation?.toLowerCase() === "pcs";
+                          const parsed = isPcs
+                            ? parseInt(raw, 10)
+                            : parseFloat(raw.replace(",", "."));
+                          const val = Number.isNaN(parsed)
+                            ? 0
+                            : isPcs
+                              ? Math.floor(parsed)
+                              : Math.round(parsed * 100) / 100;
+                          const final = Math.min(
+                            Math.max(val, 0),
+                            maxQuantity,
+                          );
+                          onUpdateItem(item.tempId, {
+                            quantity: isPcs
+                              ? Math.floor(final)
+                              : Math.round(final * 100) / 100,
+                          });
+                          setEditingQuantity((q) => {
+                            const next = { ...q };
+                            delete next[item.tempId];
+                            return next;
+                          });
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") e.preventDefault();
                         }}
                         className="h-8"
                       />
@@ -643,18 +716,105 @@ export function OrderBuilder({
                           <div className="flex flex-col gap-0.5">
                             <div className="flex items-center gap-1">
                               <Input
-                                type="number"
-                                min={wh?.unitOfCalculation?.toLowerCase() === 'pcs' ? 1 : 0.1}
-                                max={wh?.unitOfCalculation?.toLowerCase() === 'pcs' ? maxQty : 0.5}
-                                step={wh?.unitOfCalculation?.toLowerCase() === 'pcs' ? "any" : 0.1}
-                                value={item.quantity ?? ""}
+                                type="text"
+                                inputMode={
+                                  wh?.unitOfCalculation?.toLowerCase() ===
+                                  "pcs"
+                                    ? "numeric"
+                                    : "decimal"
+                                }
+                                value={
+                                  `${set.id}-${item.tempId}` in editingQuantity
+                                    ? editingQuantity[`${set.id}-${item.tempId}`]
+                                    : item.quantity == null || item.quantity === 0
+                                      ? ""
+                                      : String(
+                                          wh?.unitOfCalculation?.toLowerCase() ===
+                                          "pcs"
+                                            ? Math.floor(item.quantity)
+                                            : item.quantity,
+                                        )
+                                }
+                                onFocus={() =>
+                                  setEditingQuantity((q) => ({
+                                    ...q,
+                                    [`${set.id}-${item.tempId}`]:
+                                      item.quantity == null ||
+                                      item.quantity === 0
+                                        ? ""
+                                        : String(
+                                            wh?.unitOfCalculation?.toLowerCase() ===
+                                            "pcs"
+                                              ? Math.floor(item.quantity)
+                                              : item.quantity,
+                                          ),
+                                  }))
+                                }
                                 onChange={(e) => {
-                                  const val = parseFloat(e.target.value) || 0;
-                                  const isPcs = wh?.unitOfCalculation?.toLowerCase() === 'pcs';
+                                  const isPcs =
+                                    wh?.unitOfCalculation?.toLowerCase() ===
+                                    "pcs";
+                                  const raw = isPcs
+                                    ? e.target.value
+                                    : e.target.value.replace(",", ".");
+                                  const regex = isPcs ? /^\d*$/ : /^\d*\.?\d*$/;
+                                  if (raw === "" || regex.test(raw)) {
+                                    const key = `${set.id}-${item.tempId}`;
+                                    setEditingQuantity((prev) => ({
+                                      ...prev,
+                                      [key]: raw,
+                                    }));
+                                    const parsed = isPcs
+                                      ? parseInt(raw, 10)
+                                      : parseFloat(raw);
+                                    const minVal = isPcs ? 1 : 0.1;
+                                    const maxVal = isPcs ? maxQty : 0.5;
+                                    if (!Number.isNaN(parsed)) {
+                                      const val = isPcs
+                                        ? Math.floor(parsed)
+                                        : Math.round(parsed * 100) / 100;
+                                      onUpdateSetItem(set.id, item.tempId, {
+                                        quantity: Math.min(
+                                          Math.max(val, minVal),
+                                          maxVal,
+                                        ),
+                                      });
+                                    } else if (raw === "") {
+                                      onUpdateSetItem(set.id, item.tempId, {
+                                        quantity: minVal,
+                                      });
+                                    }
+                                  }
+                                }}
+                                onBlur={() => {
+                                  const key = `${set.id}-${item.tempId}`;
+                                  const raw = editingQuantity[key] ?? "";
+                                  const isPcs =
+                                    wh?.unitOfCalculation?.toLowerCase() ===
+                                    "pcs";
+                                  const parsed = isPcs
+                                    ? parseInt(raw, 10)
+                                    : parseFloat(raw.replace(",", "."));
                                   const minVal = isPcs ? 1 : 0.1;
                                   const maxVal = isPcs ? maxQty : 0.5;
+                                  const val = Number.isNaN(parsed)
+                                    ? minVal
+                                    : isPcs
+                                      ? Math.floor(parsed)
+                                      : Math.round(parsed * 100) / 100;
+                                  const final = Math.min(
+                                    Math.max(val, minVal),
+                                    maxVal,
+                                  );
                                   onUpdateSetItem(set.id, item.tempId, {
-                                    quantity: Math.min(Math.max(val, minVal), maxVal),
+                                    quantity: isPcs
+                                      ? Math.floor(final)
+                                      : Math.round(final * 100) / 100,
+                                  });
+                                  setEditingQuantity((q) => {
+                                    const next = { ...q };
+                                    delete next[key];
+                                    return next;
                                   });
                                 }}
                                 onKeyDown={(e) => {

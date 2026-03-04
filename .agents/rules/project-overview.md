@@ -335,3 +335,7 @@ nên là bộ fillter, sort hãy truyền đúng theo yêu cầu
 
 - Tất cả những hành động như Chỉnh sửa đơn hoặc Hoàn tác đơn hoặc Xóa luôn có xuất hiện Đồng ý chỉnh sửa đơn, hoàn tác đơn hoặc xóa hay không (tránh ấn nhầm)
 - Tất cả button khi click submit nhiều lần hoặc enter nhiều lần thì chặn cho tôi, không được spam hệ thống.
+- Tất cả những hành động như Chỉnh sửa đơn hoặc Hoàn tác đơn hoặc Xóa luôn có xuất hiện Đồng ý chỉnh sửa đơn, hoàn tác đơn hoặc xóa hay không (tránh ấn nhầm)
+- Tất cả button khi click submit nhiều lần hoặc enter nhiều lần thì chặn cho tôi, không được spam hệ thống.
+- Số trong hệ thống thì số tiền luôn làm tròn 2 chứ số sau dấu phẩy, còn lại thì khi có thập phân thì làm tròn 2 chữ số không phải số thập phân thì hiển thị số nguyên.
+- Pcs luôn là số nguyên, kg cho phép nhập số thập phân

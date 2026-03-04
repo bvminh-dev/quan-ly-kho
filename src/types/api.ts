@@ -371,6 +371,7 @@ export interface RevertOrderDto {
 
 export interface HistoryEnterMetadata {
   totalAmount?: number;
+  unitOfCalculation?: string;
   amountAvailable?: number;
   amountOccupied?: number;
   priceHigh?: number;

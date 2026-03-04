@@ -31,6 +31,7 @@ export function HistoryEnterDetailDialog({
   const formatMetadata = () => {
     if (!item) return null;
     const { type, metadata } = item;
+    const unitOfCalculation = metadata.unitOfCalculation ?? "";
     switch (type) {
       case "Tạo mới":
         return (
@@ -38,19 +39,27 @@ export function HistoryEnterDetailDialog({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <span className="text-muted-foreground">Tổng số lượng:</span>{" "}
-                <span className="font-medium">{formatNumber(metadata.totalAmount ?? 0)}</span>
+                <span className="font-medium">
+                  {formatNumber(metadata.totalAmount ?? 0)} {unitOfCalculation}
+                </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Giá cao:</span>{" "}
-                <span className="font-medium">{formatNumber(metadata.priceHigh ?? 0)}</span>
+                <span className="font-medium">
+                  {formatNumber(metadata.priceHigh ?? 0)}$
+                </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Giá thấp:</span>{" "}
-                <span className="font-medium">{formatNumber(metadata.priceLow ?? 0)}</span>
+                <span className="font-medium">
+                  {formatNumber(metadata.priceLow ?? 0)}$
+                </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Giảm giá:</span>{" "}
-                <span className="font-medium">{formatNumber(metadata.sale ?? 0)}</span>
+                <span className="font-medium">
+                  {formatNumber(metadata.sale ?? 0)}$
+                </span>
               </div>
             </div>
           </div>
@@ -59,7 +68,9 @@ export function HistoryEnterDetailDialog({
         return (
           <div>
             <span className="text-muted-foreground">Số lượng nhập thêm:</span>{" "}
-            <span className="font-medium">{formatNumber(metadata.quantity ?? 0)}</span>
+            <span className="font-medium">
+              {formatNumber(metadata.quantity ?? 0)}
+            </span>
           </div>
         );
       case "Hoàn đơn":
@@ -67,7 +78,9 @@ export function HistoryEnterDetailDialog({
           <div className="space-y-2">
             <div>
               <span className="text-muted-foreground">Số lượng hoàn:</span>{" "}
-              <span className="font-medium">{formatNumber(metadata.quantityRevert ?? 0)}</span>
+              <span className="font-medium">
+                {formatNumber(metadata.quantityRevert ?? 0)}
+              </span>
             </div>
             {metadata.orderId && (
               <div>
@@ -87,7 +100,9 @@ export function HistoryEnterDetailDialog({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <span className="text-muted-foreground">Giá cao cũ:</span>{" "}
-                <span className="font-medium">{formatNumber(metadata.priceHighOld ?? 0)}</span>
+                <span className="font-medium">
+                  {formatNumber(metadata.priceHighOld ?? 0)}
+                </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Giá cao mới:</span>{" "}
@@ -97,7 +112,9 @@ export function HistoryEnterDetailDialog({
               </div>
               <div>
                 <span className="text-muted-foreground">Giá thấp cũ:</span>{" "}
-                <span className="font-medium">{formatNumber(metadata.priceLowOld ?? 0)}</span>
+                <span className="font-medium">
+                  {formatNumber(metadata.priceLowOld ?? 0)}
+                </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Giá thấp mới:</span>{" "}
@@ -107,7 +124,9 @@ export function HistoryEnterDetailDialog({
               </div>
               <div>
                 <span className="text-muted-foreground">Sale cũ:</span>{" "}
-                <span className="font-medium">{formatNumber(metadata.saleOld ?? 0)}</span>
+                <span className="font-medium">
+                  {formatNumber(metadata.saleOld ?? 0)}
+                </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Sale mới:</span>{" "}
@@ -161,10 +180,16 @@ export function HistoryEnterDetailDialog({
                     {(() => {
                       const date = new Date(item.createdAt);
                       const day = String(date.getDate()).padStart(2, "0");
-                      const month = String(date.getMonth() + 1).padStart(2, "0");
+                      const month = String(date.getMonth() + 1).padStart(
+                        2,
+                        "0",
+                      );
                       const year = date.getFullYear();
                       const hours = String(date.getHours()).padStart(2, "0");
-                      const minutes = String(date.getMinutes()).padStart(2, "0");
+                      const minutes = String(date.getMinutes()).padStart(
+                        2,
+                        "0",
+                      );
                       return `${day}/${month}/${year} ${hours}:${minutes}`;
                     })()}
                   </span>
@@ -174,7 +199,9 @@ export function HistoryEnterDetailDialog({
               <Separator />
 
               <div>
-                <h4 className="text-sm font-semibold mb-3">Thông tin sản phẩm</h4>
+                <h4 className="text-sm font-semibold mb-3">
+                  Thông tin sản phẩm
+                </h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Item:</span>{" "}
@@ -210,7 +237,9 @@ export function HistoryEnterDetailDialog({
               <Separator />
 
               <div>
-                <h4 className="text-sm font-semibold mb-3">Chi tiết thay đổi</h4>
+                <h4 className="text-sm font-semibold mb-3">
+                  Chi tiết thay đổi
+                </h4>
                 {formatMetadata()}
               </div>
 
@@ -233,10 +262,16 @@ export function HistoryEnterDetailDialog({
                     {(() => {
                       const date = new Date(item.updatedAt);
                       const day = String(date.getDate()).padStart(2, "0");
-                      const month = String(date.getMonth() + 1).padStart(2, "0");
+                      const month = String(date.getMonth() + 1).padStart(
+                        2,
+                        "0",
+                      );
                       const year = date.getFullYear();
                       const hours = String(date.getHours()).padStart(2, "0");
-                      const minutes = String(date.getMinutes()).padStart(2, "0");
+                      const minutes = String(date.getMinutes()).padStart(
+                        2,
+                        "0",
+                      );
                       return `${day}/${month}/${year} ${hours}:${minutes}`;
                     })()}
                   </span>

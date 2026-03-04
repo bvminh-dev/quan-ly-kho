@@ -235,6 +235,7 @@ export function WarehouseTable({
       </Table>
 
       <AddStockDialog
+        key={addStockWarehouse?._id ?? "closed"}
         open={!!addStockWarehouse}
         onOpenChange={(open) => !open && setAddStockWarehouse(null)}
         warehouse={addStockWarehouse}

@@ -9,9 +9,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Fragment } from "react";
 import type { OrderDetail, WarehouseItem } from "@/types/api";
 import { getWarehouseDisplayName } from "@/features/warehouse/utils/sort-warehouse";
-import { formatNGN, formatNumber } from "@/utils/currency";
+import { formatNGN, formatNumber, formatUSD } from "@/utils/currency";
 import { ORDER_STATE_CONFIG } from "../constants/order-state-config";
 
 interface OrderDetailDialogProps {
@@ -31,14 +32,20 @@ export function OrderDetailDialog({
 
   const remaining = Math.max(0, -order.payment);
   const paid = order.totalPrice - remaining;
-  const lowerState = order.state?.toLowerCase() as keyof typeof ORDER_STATE_CONFIG | undefined;
+  const exchangeRate = order.exchangeRate || 1;
+  const totalUSD = order.totalPrice / exchangeRate;
+  const paidUSD = paid / exchangeRate;
+  const remainingUSD = remaining / exchangeRate;
+  const lowerState = order.state?.toLowerCase() as
+    | keyof typeof ORDER_STATE_CONFIG
+    | undefined;
   const stateCfg = lowerState ? ORDER_STATE_CONFIG[lowerState] : undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[85vh]">
+        <DialogHeader className="pr-10">
+          <DialogTitle className="flex flex-wrap items-center gap-2 sm:gap-3">
             Chi tiết đơn hàng
             <Badge
               className={
@@ -55,46 +62,52 @@ export function OrderDetailDialog({
         </DialogHeader>
 
         <ScrollArea className="max-h-[65vh]">
-          <div className="space-y-4 pr-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
+          <div className="space-y-4 pr-4 min-w-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+              <div className="min-w-0">
                 <span className="text-muted-foreground">ID: </span>
                 <span className="font-mono font-medium">
                   {order._id.slice(-5).toUpperCase()}
                 </span>
               </div>
-              <div>
+              <div className="min-w-0">
                 <span className="text-muted-foreground">Khách hàng: </span>
-                <span className="font-medium">{order.customer?.name}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Tổng tiền: </span>
-                <span className="font-medium">
-                  {formatNGN(order.totalPrice)}
+                <span className="font-medium wrap-break-word">
+                  {order.customer?.name}
                 </span>
               </div>
-              <div>
+              <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-1 min-w-0">
+                <span className="text-muted-foreground shrink-0">
+                  Tổng tiền:{" "}
+                </span>
+                <span className="font-medium tabular-nums break-all">
+                  {formatUSD(totalUSD)} / {formatNGN(order.totalPrice)}
+                </span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-1 min-w-0">
+                <span className="text-muted-foreground shrink-0">Đã trả: </span>
+                <span className="font-medium text-green-600 dark:text-green-500 tabular-nums break-all">
+                  {formatUSD(paidUSD)} / {formatNGN(paid)}
+                </span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-1 min-w-0">
+                <span className="text-muted-foreground shrink-0">
+                  Còn lại:{" "}
+                </span>
+                <span className="font-medium text-red-600 dark:text-red-500 tabular-nums break-all">
+                  {formatUSD(remainingUSD)} / {formatNGN(remaining)}
+                </span>
+              </div>
+              <div className="min-w-0">
                 <span className="text-muted-foreground">Tỷ giá: </span>
                 <span className="font-medium">
                   1 USD = {formatNumber(order.exchangeRate)} NGN
                 </span>
               </div>
-              <div>
-                <span className="text-muted-foreground">Đã trả: </span>
-                <span className="font-medium text-green-600">
-                  {formatNGN(paid)}
-                </span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Còn lại: </span>
-                <span className="font-medium text-red-600">
-                  {formatNGN(remaining)}
-                </span>
-              </div>
               {order.note && (
-                <div className="col-span-2">
+                <div className="col-span-2 min-w-0">
                   <span className="text-muted-foreground">Ghi chú: </span>
-                  <span>{order.note}</span>
+                  <span className="wrap-break-word">{order.note}</span>
                 </div>
               )}
             </div>
@@ -106,36 +119,51 @@ export function OrderDetailDialog({
               <div className="space-y-2">
                 {order.products.map((product, pIdx) => {
                   const isSet = product.isCalcSet && product.items.length > 1;
+                  const firstItem = product.items[0];
+                  const firstWh = firstItem
+                    ? warehouseMap[firstItem.id]
+                    : undefined;
+                  const setUnit =
+                    firstItem?.unitOfCalculation || firstWh?.unitOfCalculation;
                   return (
-                    <div
-                      key={pIdx}
-                      className={`border rounded-lg p-3 ${isSet ? "bg-muted/30" : ""}`}
-                    >
+                    <Fragment key={pIdx}>
                       {isSet && (
-                        <div className="text-sm font-medium mb-2">
-                          {product.nameSet} - Giá: {formatNGN(product.priceSet)}{" "}
-                          × {product.quantitySet}
-                          {product.saleSet > 0 &&
-                            ` (giảm ${formatNGN(product.saleSet)})`}
+                        <div className="font-medium py-1 text-sm min-w-0 wrap-break-word">
+                          {product.nameSet} — {formatUSD(product.priceSet)} ×{" "}
+                          {product.quantitySet}
+                          {setUnit && (
+                            <span className="text-muted-foreground font-normal ml-1">
+                              ({setUnit})
+                            </span>
+                          )}
+                          {product.saleSet > 0 && (
+                            <span className="text-red-600 dark:text-red-500 ml-2">
+                              Giảm {formatUSD(product.saleSet)}
+                            </span>
+                          )}
                         </div>
                       )}
                       {product.items.map((it, iIdx) => {
                         const wh = warehouseMap[it.id];
                         const name = wh ? getWarehouseDisplayName(wh) : it.id;
+                        const unit =
+                          it.unitOfCalculation || wh?.unitOfCalculation;
                         return (
                           <div
-                            key={iIdx}
-                            className="flex items-center justify-between text-sm py-1"
+                            key={`${pIdx}-${iIdx}`}
+                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5 sm:gap-2 text-sm py-0.5 min-w-0"
                           >
-                            <span className="truncate flex-1">{name}</span>
-                            <span className="text-muted-foreground ml-2">
-                              {it.quantity} × {formatNGN(it.price)}
-                              {it.sale > 0 && ` (-${formatNGN(it.sale)})`}
+                            <span className="min-w-0 wrap-break-word">
+                              {name}
+                            </span>
+                            <span className="text-muted-foreground tabular-nums shrink-0">
+                              {it.quantity} {unit} × {formatUSD(it.price)}
+                              {it.sale > 0 && ` (-${formatUSD(it.sale)})`}
                             </span>
                           </div>
                         );
                       })}
-                    </div>
+                    </Fragment>
                   );
                 })}
               </div>
@@ -152,12 +180,12 @@ export function OrderDetailDialog({
                     {order.history.map((h, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center justify-between text-sm border rounded-lg p-2"
+                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 text-sm py-1.5 min-w-0"
                       >
-                        <div>
+                        <div className="flex flex-wrap items-center gap-2 min-w-0">
                           <Badge
                             variant="outline"
-                            className={`text-xs mr-2 ${
+                            className={`text-xs ${
                               h.type === "khách trả"
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
                                 : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/20 dark:text-rose-400 dark:border-rose-800"
@@ -169,11 +197,9 @@ export function OrderDetailDialog({
                             {new Date(h.datePaid).toLocaleDateString("vi-VN")}
                           </span>
                         </div>
-                        <div className="text-right">
-                          <span className="font-medium">
-                            {formatNGN(h.moneyPaidNGN)}
-                          </span>
-                        </div>
+                        <span className="font-medium tabular-nums shrink-0">
+                          {formatNGN(h.moneyPaidNGN)}
+                        </span>
                       </div>
                     ))}
                   </div>

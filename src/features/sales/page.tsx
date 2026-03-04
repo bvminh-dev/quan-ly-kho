@@ -9,7 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAllCustomers, useCreateCustomer } from "@/features/customers/hooks/use-customers";
+import {
+  useAllCustomers,
+  useCreateCustomer,
+} from "@/features/customers/hooks/use-customers";
 import {
   useAddHistory,
   useConfirmOrder,
@@ -38,7 +41,7 @@ const normalizeSetName = (name: string) => name.trim().toLowerCase();
 
 const getNextSetName = (existingSets: OrderSet[]) => {
   const usedNames = new Set(
-    existingSets.map((set) => normalizeSetName(set.nameSet))
+    existingSets.map((set) => normalizeSetName(set.nameSet)),
   );
 
   let maxAutoSetNumber = 0;
@@ -82,7 +85,8 @@ export default function SalesPage() {
 
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [userExchangeRate, setUserExchangeRate] = useState<number | null>(null);
-  const exchangeRate = userExchangeRate ?? (liveRate ? Math.round(liveRate) : 1550);
+  const exchangeRate =
+    userExchangeRate ?? (liveRate ? Math.round(liveRate) : 1550);
   const setExchangeRate = setUserExchangeRate;
   const [priceType, setPriceType] = useState<"high" | "low">("high");
   const [standaloneItems, setStandaloneItems] = useState<SelectedItem[]>([]);
@@ -108,8 +112,7 @@ export default function SalesPage() {
 
   const handleSelectWarehouse = useCallback(
     (wh: WarehouseItem) => {
-      const price =
-        priceType === "high" ? wh.priceHigh : wh.priceLow;
+      const price = priceType === "high" ? wh.priceHigh : wh.priceLow;
       const sale = priceType === "high" ? wh.sale : 0;
 
       setStandaloneItems((prev) => [
@@ -127,7 +130,7 @@ export default function SalesPage() {
         },
       ]);
     },
-    [priceType]
+    [priceType],
   );
 
   const handleCustomerChange = useCallback(
@@ -147,7 +150,7 @@ export default function SalesPage() {
         setPaid(0);
       }
     },
-    [customers]
+    [customers],
   );
 
   const handleDeselectWarehouse = useCallback(
@@ -156,7 +159,7 @@ export default function SalesPage() {
       const returnedItems: SelectedItem[] = [];
       for (const set of sets) {
         const remaining = set.items.filter(
-          (i) => i.warehouseId !== warehouseId
+          (i) => i.warehouseId !== warehouseId,
         );
         if (remaining.length < 2) {
           returnedItems.push(
@@ -165,7 +168,7 @@ export default function SalesPage() {
               tempId: genTempId(),
               quantity: i.quantity ?? 1,
               orderIndex: getNextOrder(),
-            }))
+            })),
           );
         } else {
           updatedSets.push({ ...set, items: remaining });
@@ -181,18 +184,18 @@ export default function SalesPage() {
       });
       setSets(updatedSets);
     },
-    [sets]
+    [sets],
   );
 
   const handleUpdateItem = useCallback(
     (tempId: string, updates: Partial<SelectedItem>) => {
       setStandaloneItems((prev) =>
         prev.map((item) =>
-          item.tempId === tempId ? { ...item, ...updates } : item
-        )
+          item.tempId === tempId ? { ...item, ...updates } : item,
+        ),
       );
     },
-    []
+    [],
   );
 
   const handleRemoveItem = useCallback((tempId: string) => {
@@ -202,7 +205,7 @@ export default function SalesPage() {
   const handleCreateSet = useCallback(
     (tempIds: string[]) => {
       const itemsToGroup = standaloneItems.filter((i) =>
-        tempIds.includes(i.tempId)
+        tempIds.includes(i.tempId),
       );
       if (itemsToGroup.length < 2) return;
 
@@ -214,12 +217,12 @@ export default function SalesPage() {
         quantitySet: 1,
         items: itemsToGroup.map((item) => {
           const wh = warehouseMap[item.warehouseId];
-          const isKg = wh?.unitOfCalculation?.toLowerCase() !== 'pcs';
+          const isKg = wh?.unitOfCalculation?.toLowerCase() !== "pcs";
           let quantity = item.quantity > 0 ? item.quantity : 1;
 
-          // Nếu đơn vị là kg và số lượng > 0.5 thì chuyển về 0.5
-          if (isKg && quantity > 0.5) {
-            quantity = 0.5;
+          // Nếu đơn vị là kg và auto tạo set luôn về 0.1
+          if (isKg) {
+            quantity = 0.1;
           }
 
           return {
@@ -233,37 +236,40 @@ export default function SalesPage() {
       };
 
       setStandaloneItems((prev) =>
-        prev.filter((i) => !tempIds.includes(i.tempId))
+        prev.filter((i) => !tempIds.includes(i.tempId)),
       );
       setSets((prev) => [...prev, newSet]);
     },
-    [standaloneItems, sets, warehouseMap]
+    [standaloneItems, sets, warehouseMap],
   );
 
-  const handleUngroupSet = useCallback((setId: string) => {
-    if (ungroupedSetIdsRef.current.has(setId)) return;
-    ungroupedSetIdsRef.current.add(setId);
+  const handleUngroupSet = useCallback(
+    (setId: string) => {
+      if (ungroupedSetIdsRef.current.has(setId)) return;
+      ungroupedSetIdsRef.current.add(setId);
 
-    const extractedSet = sets.find((s) => s.id === setId);
-    if (!extractedSet) {
-      ungroupedSetIdsRef.current.delete(setId);
-      return;
-    }
+      const extractedSet = sets.find((s) => s.id === setId);
+      if (!extractedSet) {
+        ungroupedSetIdsRef.current.delete(setId);
+        return;
+      }
 
-    const cloned = extractedSet.items.map((i) => ({
-      ...i,
-      tempId: genTempId(),
-      quantity: i.quantity ?? 1,
-      orderIndex: getNextOrder(),
-    }));
+      const cloned = extractedSet.items.map((i) => ({
+        ...i,
+        tempId: genTempId(),
+        quantity: i.quantity ?? 1,
+        orderIndex: getNextOrder(),
+      }));
 
-    setSets((prev) => prev.filter((s) => s.id !== setId));
-    setStandaloneItems((prevItems) => {
-      const merged = [...prevItems, ...cloned];
-      merged.sort((a, b) => a.orderIndex - b.orderIndex);
-      return merged;
-    });
-  }, [sets]);
+      setSets((prev) => prev.filter((s) => s.id !== setId));
+      setStandaloneItems((prevItems) => {
+        const merged = [...prevItems, ...cloned];
+        merged.sort((a, b) => a.orderIndex - b.orderIndex);
+        return merged;
+      });
+    },
+    [sets],
+  );
 
   const handleUpdateSet = useCallback(
     (setId: string, updates: Partial<OrderSet>) => {
@@ -273,7 +279,7 @@ export default function SalesPage() {
           const hasDuplicate = prev.some(
             (set) =>
               set.id !== setId &&
-              normalizeSetName(set.nameSet) === normalizeSetName(nextName)
+              normalizeSetName(set.nameSet) === normalizeSetName(nextName),
           );
           if (hasDuplicate) {
             toast.error("Tên set đã tồn tại, vui lòng chọn tên khác");
@@ -284,7 +290,7 @@ export default function SalesPage() {
         return prev.map((s) => (s.id === setId ? { ...s, ...updates } : s));
       });
     },
-    []
+    [],
   );
 
   const handleUpdateSetItem = useCallback(
@@ -293,41 +299,44 @@ export default function SalesPage() {
         prev.map((s) =>
           s.id === setId
             ? {
-              ...s,
-              items: s.items.map((i) =>
-                i.tempId === tempId ? { ...i, ...updates } : i
-              ),
-            }
-            : s
-        )
+                ...s,
+                items: s.items.map((i) =>
+                  i.tempId === tempId ? { ...i, ...updates } : i,
+                ),
+              }
+            : s,
+        ),
       );
     },
-    []
+    [],
   );
 
-  const handleRemoveSetItem = useCallback((setId: string, tempId: string) => {
-    const set = sets.find((s) => s.id === setId);
-    if (!set) return;
-    const remaining = set.items.filter((i) => i.tempId !== tempId);
-    if (remaining.length < 2) {
-      const cloned = remaining.map((i) => ({
-        ...i,
-        tempId: genTempId(),
-        quantity: i.quantity ?? 1,
-        orderIndex: getNextOrder(),
-      }));
-      setSets((prev) => prev.filter((s) => s.id !== setId));
-      setStandaloneItems((items) => {
-        const merged = [...items, ...cloned];
-        merged.sort((a, b) => a.orderIndex - b.orderIndex);
-        return merged;
-      });
-    } else {
-      setSets((prev) =>
-        prev.map((s) => s.id === setId ? { ...s, items: remaining } : s)
-      );
-    }
-  }, [sets]);
+  const handleRemoveSetItem = useCallback(
+    (setId: string, tempId: string) => {
+      const set = sets.find((s) => s.id === setId);
+      if (!set) return;
+      const remaining = set.items.filter((i) => i.tempId !== tempId);
+      if (remaining.length < 2) {
+        const cloned = remaining.map((i) => ({
+          ...i,
+          tempId: genTempId(),
+          quantity: i.quantity ?? 1,
+          orderIndex: getNextOrder(),
+        }));
+        setSets((prev) => prev.filter((s) => s.id !== setId));
+        setStandaloneItems((items) => {
+          const merged = [...items, ...cloned];
+          merged.sort((a, b) => a.orderIndex - b.orderIndex);
+          return merged;
+        });
+      } else {
+        setSets((prev) =>
+          prev.map((s) => (s.id === setId ? { ...s, items: remaining } : s)),
+        );
+      }
+    },
+    [sets],
+  );
 
   const handlePriceTypeChange = useCallback(
     (type: "high" | "low") => {
@@ -341,13 +350,15 @@ export default function SalesPage() {
           // Giữ lại giá trị sale nếu đã được tùy chỉnh, nếu không thì chỉ cập nhật khi chọn giá cao
           const sale = item.customSale
             ? item.sale
-            : (type === "high" ? wh.sale : item.sale);
+            : type === "high"
+              ? wh.sale
+              : item.sale;
           return {
             ...item,
             price,
             sale,
           };
-        })
+        }),
       );
       // Cập nhật items trong sets
       setSets((prev) =>
@@ -361,17 +372,19 @@ export default function SalesPage() {
             // Giữ lại giá trị sale nếu đã được tùy chỉnh, nếu không thì chỉ cập nhật khi chọn giá cao
             const sale = item.customSale
               ? item.sale
-              : (type === "high" ? wh.sale : item.sale);
+              : type === "high"
+                ? wh.sale
+                : item.sale;
             return {
               ...item,
               price,
               sale,
             };
           }),
-        }))
+        })),
       );
     },
-    [warehouseMap]
+    [warehouseMap],
   );
 
   const buildOrderDto = (): CreateOrderDto | null => {
@@ -518,7 +531,9 @@ export default function SalesPage() {
   const handleCreateCust = async () => {
     if (!newCustName.trim()) return;
     try {
-      const result = await createCustomer.mutateAsync({ name: newCustName.trim() });
+      const result = await createCustomer.mutateAsync({
+        name: newCustName.trim(),
+      });
       const newCustomer = result.data;
       const newCustomerId = newCustomer._id;
       setNewCustName("");
@@ -548,13 +563,13 @@ export default function SalesPage() {
     <div className="flex flex-col gap-4 lg:h-full lg:overflow-hidden">
       <div className="space-y-1 shrink-0">
         <h1 className="text-2xl font-bold tracking-tight">Bán hàng</h1>
-        <p className="text-sm text-muted-foreground">
-          Tạo đơn hàng mới
-        </p>
+        <p className="text-sm text-muted-foreground">Tạo đơn hàng mới</p>
       </div>
 
       <div className="flex flex-col gap-4 flex-1 min-h-0">
-        <div className={`border rounded-lg bg-card shadow-sm overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${warehouseExpanded ? "max-h-[500px]" : "h-auto"}`}>
+        <div
+          className={`border rounded-lg bg-card shadow-sm overflow-hidden flex flex-col shrink-0 transition-all duration-300 ${warehouseExpanded ? "max-h-[500px]" : "h-auto"}`}
+        >
           <button
             type="button"
             onClick={() => setWarehouseExpanded((prev) => !prev)}

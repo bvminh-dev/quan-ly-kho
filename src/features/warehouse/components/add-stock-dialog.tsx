@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,12 +24,18 @@ import { z } from "zod/v4";
 import { useAddStock } from "../hooks/use-warehouses";
 import type { WarehouseItem } from "@/types/api";
 
-const schema = z.object({
-  quantity: z.number().min(0.01, "Số lượng phải lớn hơn 0"),
-  note: z.string().min(1, "Ghi chú là bắt buộc"),
-});
+const createSchema = (isKg: boolean) =>
+  z.object({
+    quantity: isKg
+      ? z.number().min(0.01, "Số lượng phải lớn hơn 0")
+      : z
+          .number()
+          .int("Số lượng phải là số nguyên")
+          .min(1, "Số lượng phải lớn hơn 0"),
+    note: z.string().min(1, "Ghi chú là bắt buộc"),
+  });
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof createSchema>>;
 
 interface AddStockDialogProps {
   open: boolean;
@@ -43,27 +49,73 @@ export function AddStockDialog({
   warehouse,
 }: AddStockDialogProps) {
   const addStock = useAddStock();
+  const isKg = warehouse?.unitOfCalculation?.toLowerCase() === "kg";
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(createSchema(isKg)),
     defaultValues: {
       quantity: 1,
       note: "",
     },
   });
 
-  useEffect(() => {
-    if (!open) {
-      form.reset();
+  const [quantityInput, setQuantityInput] = useState("1");
+
+  const roundKg = (v: number) => Math.round(v * 100) / 100;
+  const formatKg = (v: number) => (v === 0 ? "" : v.toFixed(2));
+
+  const handleQuantityKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    currentValue: number,
+    onChange: (value: number) => void
+  ) => {
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    e.preventDefault();
+    const step = 1;
+    const min = isKg ? 0 : 1;
+    let next =
+      e.key === "ArrowUp"
+        ? currentValue + step
+        : Math.max(min, currentValue - step);
+    if (isKg && next < 0.01) next = 0.01;
+    if (isKg) next = roundKg(next);
+    onChange(next);
+    setQuantityInput(
+      next === 0 ? "" : isKg ? formatKg(next) : String(Math.floor(next))
+    );
+  };
+
+  const handleQuantityChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    onChange: (value: number) => void
+  ) => {
+    let raw = e.target.value;
+    if (isKg) {
+      raw = raw.replace(",", ".");
+      const filtered = raw.replace(/[^\d.]/g, "").replace(/(\..*)\./g, "$1");
+      setQuantityInput(filtered);
+      if (filtered === "" || filtered === ".") {
+        onChange(0);
+        return;
+      }
+      const parsed = parseFloat(filtered);
+      if (!Number.isNaN(parsed) && parsed >= 0) {
+        onChange(parsed);
+      }
+    } else {
+      const filtered = raw.replace(/\D/g, "");
+      setQuantityInput(filtered || "");
+      const parsed = parseInt(filtered, 10);
+      onChange(Number.isNaN(parsed) ? 0 : parsed);
     }
-  }, [open, form]);
+  };
 
   const onSubmit = async (values: FormValues) => {
     if (!warehouse) return;
 
     await addStock.mutateAsync({
       id: warehouse._id,
-      quantity: values.quantity,
+      quantity: isKg ? roundKg(values.quantity) : values.quantity,
       note: values.note,
     });
     onOpenChange(false);
@@ -87,18 +139,22 @@ export function AddStockDialog({
                   <FormLabel>Số lượng thêm</FormLabel>
                   <FormControl>
                     <Input
-                      type="number"
-                      min={0}
-                      step="any"
-                      {...field}
-                      value={field.value ?? ""}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value === ""
-                            ? 0
-                            : parseFloat(e.target.value) || 0
-                        )
+                      type="text"
+                      inputMode={isKg ? "decimal" : "numeric"}
+                      placeholder={isKg ? "0.00" : "0"}
+                      value={quantityInput}
+                      onChange={(e) => handleQuantityChange(e, field.onChange)}
+                      onKeyDown={(e) =>
+                        handleQuantityKeyDown(e, field.value, field.onChange)
                       }
+                      onBlur={() => {
+                        const v = field.value;
+                        const rounded = isKg ? roundKg(v) : Math.floor(v);
+                        if (isKg && v !== rounded) field.onChange(rounded);
+                        const display =
+                          rounded === 0 ? "" : isKg ? formatKg(rounded) : String(rounded);
+                        setQuantityInput(display);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
