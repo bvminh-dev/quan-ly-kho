@@ -214,12 +214,22 @@ export function InvoiceDialog({
   const discountNGN = discountUSD * exchangeRate;
 
   const debtUSD = order?.debt ?? 0;
-  const paidUSD = order?.paid ?? 0;
   const debtNGN = debtUSD * exchangeRate;
-  const paidNGN = paidUSD * exchangeRate;
 
-  const totalUSD = subtotalUSD - discountUSD + debtUSD - paidUSD;
-  const totalNGN = totalUSD * exchangeRate;
+  const paidNGN = useMemo(() => {
+    const history = order?.history ?? [];
+    return history.reduce((sum, h) => {
+      const type = h.type?.toLowerCase();
+      const sign = type === "hoàn tiền" ? -1 : 1;
+      return sum + (h.moneyPaidNGN ?? 0) * sign;
+    }, 0);
+  }, [order?.history]);
+  const paidUSD = exchangeRate > 0 ? paidNGN / exchangeRate : 0;
+
+  const amountToPayNGN = order?.totalPrice ?? 0;
+  const amountToPayUSD = exchangeRate > 0 ? amountToPayNGN / exchangeRate : 0;
+  const balanceNGN = amountToPayNGN - paidNGN;
+  const balanceUSD = exchangeRate > 0 ? balanceNGN / exchangeRate : 0;
 
   if (!order) return null;
 
@@ -388,64 +398,117 @@ export function InvoiceDialog({
               </tbody>
             </table>
 
-            <div className="border-gray-200 pt-3 space-y-1.5">
-              <div className="flex justify-end gap-8 text-sm">
-                <span className="text-gray-500">Subtotal:</span>
-                <span className="w-32 text-right whitespace-nowrap tabular-nums">
-                  {formatUSD(subtotalUSD)}
-                </span>
-                <span className="w-36 text-right whitespace-nowrap tabular-nums">
-                  {formatNGN(subtotalNGN)}
-                </span>
+            <div
+              className="border-gray-200 pt-3 space-y-1.5 grid gap-y-1.5"
+              style={{
+                gridTemplateColumns: "1fr 5rem 7rem 7rem 8rem",
+              }}
+            >
+              <div className="col-span-3 text-right text-sm text-gray-500">
+                Subtotal:
+              </div>
+              <div className="text-right text-sm tabular-nums whitespace-nowrap">
+                {formatUSD(subtotalUSD)}
+              </div>
+              <div className="text-right text-sm tabular-nums whitespace-nowrap">
+                {formatNGN(subtotalNGN)}
               </div>
 
               {discountUSD > 0 && (
-                <div className="flex justify-end gap-8 text-sm">
-                  <span className="text-emerald-600 italic">Discount:</span>
-                  <span className="w-32 text-right whitespace-nowrap tabular-nums text-emerald-600">
+                <>
+                  <div className="col-span-3 text-right text-sm text-emerald-600 italic">
+                    Discount:
+                  </div>
+                  <div className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600">
                     -{formatUSD(discountUSD)}
-                  </span>
-                  <span className="w-36 text-right whitespace-nowrap tabular-nums text-emerald-600">
+                  </div>
+                  <div className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600">
                     -{formatNGN(discountNGN)}
-                  </span>
-                </div>
+                  </div>
+                </>
               )}
 
+              <div className="col-span-5 border-t-2 border-gray-300 pt-3 mt-1" />
+              <div className="col-span-3 text-right text-lg font-bold">
+                Total:
+              </div>
+              <div className="text-right text-lg font-bold tabular-nums whitespace-nowrap text-red-600">
+                {formatUSD(amountToPayUSD)}
+              </div>
+              <div className="text-right text-lg font-bold tabular-nums whitespace-nowrap text-red-600">
+                {formatNGN(amountToPayNGN)}
+              </div>
+
               {paidUSD !== 0 && (
-                <div className="flex justify-end gap-8 text-sm">
-                  <span className="text-emerald-600 italic">Paid:</span>
-                  <span className="w-32 text-right whitespace-nowrap tabular-nums text-emerald-600">
+                <>
+                  <div className="col-span-3 text-right text-sm text-emerald-600 italic">
+                    Paid:
+                  </div>
+                  <div className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600">
                     -{formatUSD(paidUSD)}
-                  </span>
-                  <span className="w-36 text-right whitespace-nowrap tabular-nums text-emerald-600">
+                  </div>
+                  <div className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600">
                     -{formatNGN(paidNGN)}
-                  </span>
-                </div>
+                  </div>
+                </>
               )}
 
               {debtUSD !== 0 && (
-                <div className="flex justify-end gap-8 text-sm">
-                  <span className="text-red-600 italic">Debt:</span>
-                  <span className="w-32 text-right whitespace-nowrap tabular-nums text-red-600">
+                <>
+                  <div className="col-span-3 text-right text-sm text-red-600 italic">
+                    Debt:
+                  </div>
+                  <div className="text-right text-sm tabular-nums whitespace-nowrap text-red-600">
                     +{formatUSD(Math.abs(debtUSD))}
-                  </span>
-                  <span className="w-36 text-right whitespace-nowrap tabular-nums text-red-600">
+                  </div>
+                  <div className="text-right text-sm tabular-nums whitespace-nowrap text-red-600">
                     +{formatNGN(Math.abs(debtNGN))}
-                  </span>
-                </div>
+                  </div>
+                </>
               )}
-            </div>
 
-            <div className="border-t-2 border-gray-300 mt-2 pt-3">
-              <div className="flex justify-end gap-8 text-lg font-bold">
-                <span>Total (USD):</span>
-                <span className="text-red-600 w-32 text-right whitespace-nowrap tabular-nums">
-                  {formatUSD(totalUSD)}
-                </span>
-                <span className="text-red-600 w-36 text-right whitespace-nowrap tabular-nums">
-                  {formatNGN(totalNGN)}
-                </span>
-              </div>
+              {(paidUSD !== 0 || debtUSD !== 0) && (
+                <>
+                  <div className="col-span-5 border-t border-gray-200 pt-2 mt-1" />
+                  <div className="col-span-3 text-right text-sm font-semibold">
+                    Balance:
+                  </div>
+                  {balanceUSD > 0 ? (
+                    <>
+                      <div className="text-right text-sm font-semibold tabular-nums whitespace-nowrap text-red-600">
+                        {formatUSD(balanceUSD)}
+                      </div>
+                      <div className="text-right text-sm font-semibold tabular-nums whitespace-nowrap text-red-600">
+                        {formatNGN(balanceNGN)}
+                      </div>
+                    </>
+                  ) : balanceUSD < 0 ? (
+                    <>
+                      <div className="text-right text-sm font-semibold text-emerald-600">
+                        <div>Overpaid</div>
+                        <div className="tabular-nums whitespace-nowrap">
+                          {formatUSD(Math.abs(balanceUSD))}
+                        </div>
+                      </div>
+                      <div className="text-right text-sm font-semibold text-emerald-600">
+                        <div>Overpaid</div>
+                        <div className="tabular-nums whitespace-nowrap">
+                          {formatNGN(Math.abs(balanceNGN))}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-right text-sm font-semibold text-emerald-600">
+                        Fully paid
+                      </div>
+                      <div className="text-right text-sm font-semibold text-emerald-600">
+                        Fully paid
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
             </div>
 
             {order.note && (
