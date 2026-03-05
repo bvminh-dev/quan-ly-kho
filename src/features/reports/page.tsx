@@ -47,17 +47,6 @@ const getPlaceholderByPeriod = (period: ReportPeriod) => {
   return "Chọn ngày";
 };
 
-const formatDateDisplayVi = (dateStr: string, period: ReportPeriod): string => {
-  if (!dateStr) return "-";
-  if (period === "year") return dateStr;
-  if (period === "month") {
-    const [y, m] = dateStr.split("-");
-    return m && y ? `${m}/${y}` : dateStr;
-  }
-  const [y, m, d] = dateStr.split("-");
-  return d && m && y ? `${d}/${m}/${y}` : dateStr;
-};
-
 const isYearInputValid = (value: string) => /^\d{4}$/.test(value);
 
 export default function ReportsPage() {
@@ -248,14 +237,14 @@ export default function ReportsPage() {
                     <Skeleton className="h-6 w-32" />
                   ) : (
                     <div className="text-lg font-semibold">
-                      {formatNGN(orderReport?.totalValueNGN ?? 0)}
+                      {formatUSD(orderReport?.totalValueUSD ?? 0)}
                     </div>
                   )}
                   {isLoadingOrders ? (
                     <Skeleton className="h-5 w-28" />
                   ) : (
                     <div className="text-sm text-muted-foreground">
-                      {formatUSD(orderReport?.totalValueUSD ?? 0)}
+                      {formatNGN(orderReport?.totalValueNGN ?? 0)}
                     </div>
                   )}
                 </CardContent>
@@ -272,14 +261,14 @@ export default function ReportsPage() {
                     <Skeleton className="h-6 w-32" />
                   ) : (
                     <div className="text-lg font-semibold">
-                      {formatNGN(orderReport?.totalCollectedNGN ?? 0)}
+                      {formatUSD(orderReport?.totalCollectedUSD ?? 0)}
                     </div>
                   )}
                   {isLoadingOrders ? (
                     <Skeleton className="h-5 w-28" />
                   ) : (
                     <div className="text-sm text-muted-foreground">
-                      {formatUSD(orderReport?.totalCollectedUSD ?? 0)}
+                      {formatNGN(orderReport?.totalCollectedNGN ?? 0)}
                     </div>
                   )}
                 </CardContent>
@@ -327,25 +316,25 @@ export default function ReportsPage() {
                           {row.customerName}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatNumber(row.totalOrders)}
+                          {formatNumber(row.totalOrders ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatNumber(row.totalOrdersKg)}
+                          {formatNumber(row.totalOrdersKg ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatNumber(row.totalOrdersPcs)}
+                          {formatNumber(row.totalOrdersPcs ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatNGN(row.totalPaidNGN)}
+                          {formatNGN(row.totalPaidNGN ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatUSD(row.totalPaidUSD)}
+                          {formatUSD(row.totalPaidUSD ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatNGN(row.totalDebtNGN)}
+                          {formatNGN(row.totalDebtNGN ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatUSD(row.totalDebtUSD)}
+                          {formatUSD(row.totalDebtUSD ?? 0)}
                         </TableCell>
                       </TableRow>
                     ))
@@ -396,28 +385,28 @@ export default function ReportsPage() {
                           {row.staffName}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatNumber(row.totalOrders)}
+                          {formatNumber(row.totalOrders ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {row.totalCustomers}
+                          {row.totalCustomers ?? 0}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatNumber(row.totalOrdersKg)}
+                          {formatNumber(row.totalOrdersKg ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatNumber(row.totalOrdersPcs)}
+                          {formatNumber(row.totalOrdersPcs ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatNGN(row.totalValueNGN)}
+                          {formatNGN(row.totalValueNGN ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatUSD(row.totalValueUSD)}
+                          {formatUSD(row.totalValueUSD ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatNGN(row.totalCollectedNGN)}
+                          {formatNGN(row.totalCollectedNGN ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatUSD(row.totalCollectedUSD)}
+                          {formatUSD(row.totalCollectedUSD ?? 0)}
                         </TableCell>
                       </TableRow>
                     ))

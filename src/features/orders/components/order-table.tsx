@@ -101,9 +101,9 @@ function computeOrderFinancials(order: OrderDetail) {
     lowerState === "báo giá"
       ? (order.paid ?? 0)
       : (order.history ?? []).reduce((acc, h) => {
-          const sign = h.type?.toLowerCase() === "hoàn tiền" ? -1 : 1;
-          return acc + sign * (h.moneyPaidDolar ?? 0);
-        }, 0);
+        const sign = h.type?.toLowerCase() === "hoàn tiền" ? -1 : 1;
+        return acc + sign * (h.moneyPaidDolar ?? 0);
+      }, 0);
   const paidNGN = paidUSD * exchangeRate;
 
   const debtUSD = order.debt ?? 0;
@@ -270,7 +270,7 @@ export function OrderTable({
                 const lowerState = order.state?.toLowerCase();
                 const stateCfg =
                   ORDER_STATE_CONFIG[
-                    lowerState as keyof typeof ORDER_STATE_CONFIG
+                  lowerState as keyof typeof ORDER_STATE_CONFIG
                   ];
 
                 const isLocked =
@@ -320,11 +320,9 @@ export function OrderTable({
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="font-medium">{formatUSD(totalUSD)}</div>
-                      <div className="text-xs text-muted-foreground">{formatNGN(totalNGN)}</div>
                     </TableCell>
                     <TableCell className="text-right text-green-600">
                       <div className="font-medium">{formatUSD(paidUSD)}</div>
-                      <div className="text-xs">{formatNGN(paidNGN)}</div>
                     </TableCell>
                     <TableCell className="text-right">
                       {remainingUSD === 0 ? (

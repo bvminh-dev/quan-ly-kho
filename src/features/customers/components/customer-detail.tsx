@@ -133,13 +133,12 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
           </CardHeader>
           <CardContent>
             <span
-              className={`text-2xl font-bold ${
-                customer.payment < 0
-                  ? "text-red-600"
-                  : customer.payment > 0
-                    ? "text-green-600"
-                    : ""
-              }`}
+              className={`text-2xl font-bold ${customer.payment < 0
+                ? "text-red-600"
+                : customer.payment > 0
+                  ? "text-green-600"
+                  : ""
+                }`}
             >
               {formatUSD(customer.payment)}
             </span>
@@ -198,10 +197,9 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                   key={state}
                   type="button"
                   onClick={() => toggleState(state)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-opacity cursor-pointer ${
-                    cfg?.className ||
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-opacity cursor-pointer ${cfg?.className ||
                     "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800"
-                  } ${active ? "opacity-100" : "opacity-35"}`}
+                    } ${active ? "opacity-100" : "opacity-35"}`}
                 >
                   <span
                     className={`size-1.5 rounded-full shrink-0 ${cfg?.dot || "bg-gray-500"}`}
@@ -219,13 +217,13 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                 <TableHead className="font-semibold">ID</TableHead>
                 <TableHead className="font-semibold">Trạng thái</TableHead>
                 <TableHead className="font-semibold text-right">
-                  Tổng tiền (USD / NGN)
+                  Tổng tiền
                 </TableHead>
                 <TableHead className="font-semibold text-right">
-                  Đã trả (USD / NGN)
+                  Đã trả
                 </TableHead>
                 <TableHead className="font-semibold text-right">
-                  Còn lại (USD / NGN)
+                  Còn lại
                 </TableHead>
                 <TableHead className="font-semibold text-right">
                   Tỷ giá
@@ -325,9 +323,6 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                           <span className="font-medium">
                             {formatUSD(totalUSD)}
                           </span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatNGN(totalUSD * order.exchangeRate)}
-                          </span>
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
@@ -335,9 +330,7 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                           <span className="font-medium text-green-600">
                             {formatUSD(paidUSD)}
                           </span>
-                          <span className="text-xs text-green-600">
-                            {formatNGN(paidNGN)}
-                          </span>
+
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
