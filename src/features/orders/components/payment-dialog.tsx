@@ -27,8 +27,8 @@ import { useAddHistory, useConfirmOrder } from "../hooks/use-orders";
 
 const schema = z.object({
   type: z.enum(["khách trả", "hoàn tiền"]),
-  exchangeRate: z.number().min(1),
-  moneyPaidNGN: z.number().min(0),
+  exchangeRate: z.number().gt(0, { message: "Tỷ giá phải lớn hơn 0" }),
+  moneyPaidNGN: z.number().gt(0, { message: "Số tiền NGN phải lớn hơn 0" }),
   moneyPaidDolar: z.number().min(0),
   paymentMethod: z.string().min(1),
   datePaid: z.string().min(1),
@@ -54,6 +54,7 @@ export function PaymentDialog({
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
+    mode: "onBlur",
     defaultValues: {
       type: "khách trả",
       exchangeRate:
@@ -86,6 +87,43 @@ export function PaymentDialog({
 
   const watchRate = form.watch("exchangeRate");
   const watchNGN = form.watch("moneyPaidNGN");
+  const formErrors = form.formState.errors;
+  const isFormValid = form.formState.isValid;
+
+  const handleExchangeRateChange = (value: string) => {
+    if (value === "") {
+      // Khi xóa hết, không set giá trị mới để tránh NaN
+      form.setValue("exchangeRate", 0, { shouldValidate: false });
+      return;
+    }
+    const numValue = parseFloat(value);
+    if (!Number.isNaN(numValue)) {
+      form.setValue("exchangeRate", numValue, { shouldValidate: false });
+      // Recalculate USD if NGN is already entered
+      if (watchNGN > 0 && numValue > 0) {
+        form.setValue("moneyPaidDolar", round2(watchNGN / numValue));
+      }
+    }
+  };
+
+  const handleExchangeRateBlur = () => {
+    const currentValue = form.getValues("exchangeRate");
+    // Nếu giá trị là 0 hoặc không hợp lệ, khôi phục về giá trị mặc định
+    if (currentValue === 0 || Number.isNaN(currentValue) || currentValue === undefined) {
+      const defaultValue = order?.exchangeRate || (liveRate ? Math.round(liveRate) : 1550);
+      form.setValue("exchangeRate", defaultValue, { shouldValidate: true });
+      // Recalculate USD if NGN is already entered
+      if (watchNGN > 0 && defaultValue > 0) {
+        form.setValue("moneyPaidDolar", round2(watchNGN / defaultValue));
+      }
+    } else {
+      form.trigger("exchangeRate");
+      // Recalculate USD if NGN is already entered
+      if (watchNGN > 0 && currentValue > 0) {
+        form.setValue("moneyPaidDolar", round2(watchNGN / currentValue));
+      }
+    }
+  };
 
   const totalUSD = order?.totalUsd ?? 0;
   const paidUSD = (order?.history ?? []).reduce((acc, h) => {
@@ -96,7 +134,7 @@ export function PaymentDialog({
   const remainingNGN = remainingUSD * (watchRate || 1);
 
   const handleNGNChange = (ngn: number) => {
-    form.setValue("moneyPaidNGN", ngn);
+    form.setValue("moneyPaidNGN", ngn, { shouldValidate: true });
     if (watchRate > 0) {
       form.setValue("moneyPaidDolar", round2(ngn / watchRate));
     }
@@ -201,12 +239,16 @@ export function PaymentDialog({
               type="number"
               min={0}
               step="any"
-              className="h-9"
-              {...form.register("exchangeRate", {
-                valueAsNumber: true,
-                setValueAs: (v) => (v === "" || Number.isNaN(Number(v)) ? 0 : parseFloat(String(v))),
-              })}
+              value={watchRate || ""}
+              onChange={(e) => handleExchangeRateChange(e.target.value)}
+              onBlur={handleExchangeRateBlur}
+              className={formErrors.exchangeRate ? "h-9 border-destructive" : "h-9"}
             />
+            {formErrors.exchangeRate && (
+              <p className="text-destructive text-sm">
+                {formErrors.exchangeRate.message as string}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -222,9 +264,13 @@ export function PaymentDialog({
                     e.target.value === "" ? 0 : parseFloat(e.target.value) || 0
                   )
                 }
-                className="h-9"
+                className={formErrors.moneyPaidNGN ? "h-9 border-destructive" : "h-9"}
               />
-
+              {formErrors.moneyPaidNGN && (
+                <p className="text-destructive text-sm">
+                  {formErrors.moneyPaidNGN.message as string}
+                </p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Số tiền (USD)</Label>
@@ -270,7 +316,7 @@ export function PaymentDialog({
             </Button>
             <Button
               type="submit"
-              disabled={addHistory.isPending}
+              disabled={addHistory.isPending || !isFormValid}
               className="cursor-pointer"
             >
               Lưu
