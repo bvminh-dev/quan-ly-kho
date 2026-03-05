@@ -283,13 +283,13 @@ export function InvoiceDialog({
                     Description
                   </th>
                   <th className="text-center py-2 text-sm font-semibold w-20">
-                    Qty
+                    Quantity
                   </th>
                   <th className="text-right py-2 text-sm font-semibold w-28">
                     Unit Price
                   </th>
                   <th className="text-right py-2 text-sm font-semibold w-28">
-                    Amount
+                    Amount (USD)
                   </th>
                   <th className="text-right py-2 text-sm font-semibold w-32">
                     Amount (NGN)
@@ -328,15 +328,10 @@ export function InvoiceDialog({
                                   rowSpan={itemCount}
                                   className="py-2 text-sm text-right tabular-nums align-middle"
                                 >
-                                  <div className="text-green-700 font-semibold">
-                                    Set:{" "}
+                                  <div className="font-semibold">
                                     {formatUSD(entry.product.priceSet ?? 0)}
                                   </div>
-                                  {salePerSet > 0 && (
-                                    <div className="text-red-500">
-                                      -{formatUSD(salePerSet)}
-                                    </div>
-                                  )}
+
                                 </td>
                                 <td
                                   rowSpan={itemCount}
@@ -374,9 +369,8 @@ export function InvoiceDialog({
                         {it.wh?.unitOfCalculation?.toLowerCase() || "pcs"}
                       </td>
                       <td
-                        className={`py-2 text-sm text-right tabular-nums ${
-                          it.customPrice || it.customSale ? "font-bold" : ""
-                        }`}
+                        className={`py-2 text-sm text-right tabular-nums ${it.customPrice || it.customSale ? "font-bold" : ""
+                          }`}
                       >
                         {formatUSD(it.price)}
                       </td>
@@ -414,10 +408,10 @@ export function InvoiceDialog({
                     Discount:
                   </div>
                   <div className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600">
-                    -{formatUSD(discountUSD)}
+                    {formatUSD(discountUSD)}
                   </div>
                   <div className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600">
-                    -{formatNGN(discountNGN)}
+                    {formatNGN(discountNGN)}
                   </div>
                 </>
               )}
@@ -433,35 +427,52 @@ export function InvoiceDialog({
                 {formatNGN(amountToPayNGN)}
               </div>
 
-              {paidUSD !== 0 && (
-                <>
-                  <div className="col-span-3 text-right text-sm text-emerald-600 italic">
-                    Paid:
-                  </div>
-                  <div className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600">
-                    -{formatUSD(paidUSD)}
-                  </div>
-                  <div className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600">
-                    -{formatNGN(paidNGN)}
-                  </div>
-                </>
-              )}
+              {order.history.length > 0
+                ? order.history.map((h, i) => (
+                  <Fragment key={`history-paid-${i}`}>
+                    <div className="col-span-2 text-right text-sm text-emerald-600 italic">
+                      Paid: {formatNGN(h.moneyPaidNGN)}
+                    </div>
+                    <div className="text-right text-sm text-emerald-600 italic">
+                      rate: {formatNumber(h.exchangeRate)}
+                    </div>
+                    <div className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600">
+                      {formatUSD(h.moneyPaidDolar)}
+                    </div>
+                    <div />
+                  </Fragment>
+                ))
+                : paidUSD !== 0 && (
+                  <>
+                    <div className="col-span-2 text-right text-sm text-emerald-600 italic">
+                      Paid: {formatNGN(paidNGN)}
+                    </div>
+                    <div className="text-right text-sm text-emerald-600 italic">
+                      rate: {formatNumber(exchangeRate)}
+                    </div>
+                    <div className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600">
+                      {formatUSD(paidUSD)}
+                    </div>
+                    <div />
+                  </>
+                )}
 
               {debtUSD !== 0 && (
                 <>
-                  <div className="col-span-3 text-right text-sm text-red-600 italic">
-                    Debt:
+                  <div className="col-span-2 text-right text-sm text-red-600 italic">
+                    Debt: {formatNGN(Math.abs(debtNGN))}
+                  </div>
+                  <div className="text-right text-sm text-red-600 italic">
+                    rate: {formatNumber(exchangeRate)}
                   </div>
                   <div className="text-right text-sm tabular-nums whitespace-nowrap text-red-600">
-                    +{formatUSD(Math.abs(debtUSD))}
+                    {formatUSD(Math.abs(debtUSD))}
                   </div>
-                  <div className="text-right text-sm tabular-nums whitespace-nowrap text-red-600">
-                    +{formatNGN(Math.abs(debtNGN))}
-                  </div>
+                  <div />
                 </>
               )}
 
-              {(paidUSD !== 0 || debtUSD !== 0) && (
+              {(paidUSD !== 0 || order.history.length > 0 || debtUSD !== 0) && (
                 <>
                   <div className="col-span-5 border-t border-gray-200 pt-2 mt-1" />
                   <div className="col-span-3 text-right text-sm font-semibold">
@@ -505,20 +516,6 @@ export function InvoiceDialog({
               )}
             </div>
 
-            {order.note && (
-              <div
-                className="mt-2 text-xs text-gray-500 max-w-xl"
-                style={{
-                  display: "-webkit-box",
-                  WebkitBoxOrient: "vertical",
-                  WebkitLineClamp: 2,
-                  overflow: "hidden",
-                }}
-              >
-                <span className="font-semibold mr-1">Ghi chú:</span>
-                <span>{order.note}</span>
-              </div>
-            )}
           </div>
         </div>
 
