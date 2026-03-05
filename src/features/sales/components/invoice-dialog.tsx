@@ -216,20 +216,14 @@ export function InvoiceDialog({
   const debtUSD = order?.debt ?? 0;
   const debtNGN = debtUSD * exchangeRate;
 
-  const paidNGN = useMemo(() => {
-    const history = order?.history ?? [];
-    return history.reduce((sum, h) => {
-      const type = h.type?.toLowerCase();
-      const sign = type === "hoàn tiền" ? -1 : 1;
-      return sum + (h.moneyPaidNGN ?? 0) * sign;
-    }, 0);
-  }, [order?.history]);
-  const paidUSD = exchangeRate > 0 ? paidNGN / exchangeRate : 0;
+  const paidUSD =
+    order?.history?.length == 0 ? (order?.paid ?? 0) : (order?.paidedUsd ?? 0);
+  const paidNGN = paidUSD * exchangeRate;
 
-  const amountToPayNGN = order?.totalPrice ?? 0;
-  const amountToPayUSD = exchangeRate > 0 ? amountToPayNGN / exchangeRate : 0;
-  const balanceNGN = amountToPayNGN - paidNGN;
-  const balanceUSD = exchangeRate > 0 ? balanceNGN / exchangeRate : 0;
+  const amountToPayUSD = subtotalUSD - discountUSD;
+  const amountToPayNGN = amountToPayUSD * exchangeRate;
+  const balanceUSD = amountToPayUSD + debtUSD - paidUSD;
+  const balanceNGN = balanceUSD * exchangeRate;
 
   if (!order) return null;
 

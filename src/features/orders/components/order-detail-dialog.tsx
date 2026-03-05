@@ -30,12 +30,13 @@ export function OrderDetailDialog({
 }: OrderDetailDialogProps) {
   if (!order) return null;
 
-  const remaining = Math.max(0, -order.payment);
-  const paid = order.totalPrice - remaining;
   const exchangeRate = order.exchangeRate || 1;
-  const totalUSD = order.totalPrice / exchangeRate;
-  const paidUSD = paid / exchangeRate;
-  const remainingUSD = remaining / exchangeRate;
+  const totalUSD = order.totalUsd ?? 0;
+  const paidedUSD = order.paidedUsd ?? 0;
+  const remainingUSD = Math.max(0, totalUSD - paidedUSD);
+  const totalNGN = totalUSD * exchangeRate;
+  const paidNGN = paidedUSD * exchangeRate;
+  const remainingNGN = remainingUSD * exchangeRate;
   const lowerState = order.state?.toLowerCase() as
     | keyof typeof ORDER_STATE_CONFIG
     | undefined;
@@ -81,13 +82,13 @@ export function OrderDetailDialog({
                   Tổng tiền:{" "}
                 </span>
                 <span className="font-medium tabular-nums break-all">
-                  {formatUSD(totalUSD)} / {formatNGN(order.totalPrice)}
+                  {formatUSD(totalUSD)} / {formatNGN(totalNGN)}
                 </span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-1 min-w-0">
                 <span className="text-muted-foreground shrink-0">Đã trả: </span>
                 <span className="font-medium text-green-600 dark:text-green-500 tabular-nums break-all">
-                  {formatUSD(paidUSD)} / {formatNGN(paid)}
+                  {formatUSD(paidedUSD)} / {formatNGN(paidNGN)}
                 </span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-1 min-w-0">
@@ -95,7 +96,7 @@ export function OrderDetailDialog({
                   Còn lại:{" "}
                 </span>
                 <span className="font-medium text-red-600 dark:text-red-500 tabular-nums break-all">
-                  {formatUSD(remainingUSD)} / {formatNGN(remaining)}
+                  {formatUSD(remainingUSD)} / {formatNGN(remainingNGN)}
                 </span>
               </div>
               <div className="min-w-0">
@@ -196,10 +197,14 @@ export function OrderDetailDialog({
                           <span className="text-muted-foreground">
                             {new Date(h.datePaid).toLocaleDateString("vi-VN")}
                           </span>
+                          <span className="text-muted-foreground text-xs">
+                            1 USD = {formatNumber(h.exchangeRate)} NGN
+                          </span>
                         </div>
-                        <span className="font-medium tabular-nums shrink-0">
-                          {formatNGN(h.moneyPaidNGN)}
-                        </span>
+                        <div className="text-right shrink-0">
+                          <div className="font-medium tabular-nums">{formatUSD(h.moneyPaidDolar)}</div>
+                          <div className="text-xs text-muted-foreground tabular-nums">{formatNGN(h.moneyPaidNGN)}</div>
+                        </div>
                       </div>
                     ))}
                   </div>

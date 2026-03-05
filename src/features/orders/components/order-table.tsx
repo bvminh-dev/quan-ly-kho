@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/table";
 import { InvoiceDialog } from "@/features/sales/components/invoice-dialog";
 import type { OrderDetail, PaginationMeta, WarehouseItem } from "@/types/api";
-import { formatNGN } from "@/utils/currency";
+import { formatNGN, formatUSD } from "@/utils/currency";
 import { quickSearchFilter } from "@/utils/search";
 import {
   CheckCircle2,
@@ -59,6 +59,58 @@ function getOrderCreatorName(createdBy: OrderDetail["createdBy"]) {
     return createdBy.name;
   }
   return "-";
+}
+
+function computeOrderFinancials(order: OrderDetail) {
+  const lowerState = order.state?.toLowerCase();
+  const exchangeRate = order.exchangeRate ?? 1;
+
+  let subtotalUSD = 0;
+  let discountUSD = 0;
+
+  for (const product of order.products ?? []) {
+    const qtySet = product.quantitySet ?? 0;
+    const hasSetMeta =
+      Boolean(product.nameSet?.trim()) ||
+      (product.priceSet ?? 0) > 0 ||
+      (product.saleSet ?? 0) > 0;
+    const isSet = qtySet > 0 && (hasSetMeta || product.items.length > 1);
+    const setQty = isSet ? Math.max(qtySet, 0) : 1;
+    const isCalcSet = Boolean(
+      isSet && ((product.priceSet ?? 0) > 0 || product.isCalcSet),
+    );
+
+    let itemsTotalUSD = 0;
+    let itemsDiscountUSD = 0;
+    for (const item of product.items) {
+      const qty = (item.quantity ?? 0) * setQty;
+      itemsTotalUSD += (item.price ?? 0) * qty;
+      itemsDiscountUSD += (item.sale ?? 0) * qty;
+    }
+
+    subtotalUSD += isCalcSet ? (product.priceSet ?? 0) * setQty : itemsTotalUSD;
+    discountUSD += isCalcSet
+      ? (product.saleSet ?? 0) * setQty
+      : itemsDiscountUSD;
+  }
+
+  const totalUSD = subtotalUSD - discountUSD;
+  const totalNGN = totalUSD * exchangeRate;
+
+  const paidUSD =
+    lowerState === "báo giá"
+      ? (order.paid ?? 0)
+      : (order.history ?? []).reduce((acc, h) => {
+          const sign = h.type?.toLowerCase() === "hoàn tiền" ? -1 : 1;
+          return acc + sign * (h.moneyPaidDolar ?? 0);
+        }, 0);
+  const paidNGN = paidUSD * exchangeRate;
+
+  const debtUSD = order.debt ?? 0;
+  const remainingUSD = totalUSD + debtUSD - paidUSD;
+  const remainingNGN = remainingUSD * exchangeRate;
+
+  return { totalUSD, totalNGN, paidUSD, paidNGN, remainingUSD, remainingNGN };
 }
 
 interface OrderTableProps {
@@ -139,28 +191,18 @@ export function OrderTable({
   const filteredOrders = useMemo(
     () =>
       quickSearchFilter(orders, search, (order) => {
-        const { paidNGN } = (order.history || []).reduce(
-          (acc, h) => {
-            const type = h.type?.toLowerCase();
-            const sign = type === "hoàn tiền" ? -1 : 1;
-            return {
-              paidNGN: acc.paidNGN + (h.moneyPaidNGN || 0) * sign,
-            };
-          },
-          { paidNGN: 0 },
-        );
-        const remaining = order.totalPrice - paidNGN;
-        const balance = paidNGN - order.totalPrice;
+        const { totalUSD, paidUSD, paidNGN, remainingUSD } =
+          computeOrderFinancials(order);
         const creatorName = getOrderCreatorName(order.createdBy);
         return [
           order._id,
           order.type,
           order.customer?.name,
           order.state,
-          order.totalPrice,
+          totalUSD,
+          paidUSD,
           paidNGN,
-          remaining,
-          balance,
+          remainingUSD,
           order.note,
           creatorName,
           order.createdAt,
@@ -223,17 +265,8 @@ export function OrderTable({
               </TableRow>
             ) : (
               filteredOrders.map((order) => {
-                const { paidNGN } = (order.history || []).reduce(
-                  (acc, h) => {
-                    const type = h.type?.toLowerCase();
-                    const sign = type === "hoàn tiền" ? -1 : 1;
-                    return {
-                      paidNGN: acc.paidNGN + (h.moneyPaidNGN || 0) * sign,
-                    };
-                  },
-                  { paidNGN: 0 },
-                );
-                const balance = paidNGN - order.totalPrice;
+                const { totalUSD, totalNGN, paidUSD, paidNGN, remainingUSD, remainingNGN } =
+                  computeOrderFinancials(order);
                 const lowerState = order.state?.toLowerCase();
                 const stateCfg =
                   ORDER_STATE_CONFIG[
@@ -247,7 +280,7 @@ export function OrderTable({
                   lowerState === "đã hoàn" ||
                   lowerState === "hoàn đơn";
                 const canRevert =
-                  lowerState === "chỉnh sửa" && !isLocked && paidNGN === 0;
+                  lowerState === "chỉnh sửa" && !isLocked && paidUSD === 0;
                 const canConfirm =
                   lowerState === "báo giá" || lowerState === "chỉnh sửa";
                 const canAddPayment =
@@ -285,26 +318,30 @@ export function OrderTable({
                           order.state.slice(1).toLowerCase()}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatNGN(order.totalPrice)}
+                    <TableCell className="text-right">
+                      <div className="font-medium">{formatUSD(totalUSD)}</div>
+                      <div className="text-xs text-muted-foreground">{formatNGN(totalNGN)}</div>
                     </TableCell>
                     <TableCell className="text-right text-green-600">
-                      {formatNGN(paidNGN)}
+                      <div className="font-medium">{formatUSD(paidUSD)}</div>
+                      <div className="text-xs">{formatNGN(paidNGN)}</div>
                     </TableCell>
                     <TableCell className="text-right">
-                      {balance === 0 ? (
-                        <span className="text-muted-foreground">
-                          {formatNGN(0)}
-                        </span>
+                      {remainingUSD === 0 ? (
+                        <div className="text-muted-foreground">
+                          <div className="font-medium">{formatUSD(0)}</div>
+                          <div className="text-xs">{formatNGN(0)}</div>
+                        </div>
+                      ) : remainingUSD > 0 ? (
+                        <div className="text-red-600">
+                          <div className="font-medium">-{formatUSD(remainingUSD)}</div>
+                          <div className="text-xs">-{formatNGN(remainingNGN)}</div>
+                        </div>
                       ) : (
-                        <span
-                          className={
-                            balance < 0 ? "text-red-600" : "text-green-600"
-                          }
-                        >
-                          {balance < 0 ? "-" : "+"}
-                          {formatNGN(Math.abs(balance))}
-                        </span>
+                        <div className="text-green-600">
+                          <div className="font-medium">+{formatUSD(Math.abs(remainingUSD))}</div>
+                          <div className="text-xs">+{formatNGN(Math.abs(remainingNGN))}</div>
+                        </div>
                       )}
                     </TableCell>
                     <TableCell className="max-w-[150px] truncate">

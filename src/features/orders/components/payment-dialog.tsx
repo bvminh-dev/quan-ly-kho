@@ -19,7 +19,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useExchangeRate } from "@/hooks/use-exchange-rate";
 import type { OrderDetail } from "@/types/api";
-import { round2, formatMoneyValue } from "@/utils/currency";
+import { round2, formatMoneyValue, formatUSD, formatNGN } from "@/utils/currency";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
@@ -87,6 +87,14 @@ export function PaymentDialog({
   const watchRate = form.watch("exchangeRate");
   const watchNGN = form.watch("moneyPaidNGN");
 
+  const totalUSD = order?.totalUsd ?? 0;
+  const paidUSD = (order?.history ?? []).reduce((acc, h) => {
+    const sign = h.type?.toLowerCase() === "hoàn tiền" ? -1 : 1;
+    return acc + sign * (h.moneyPaidDolar ?? 0);
+  }, 0);
+  const remainingUSD = totalUSD - paidUSD;
+  const remainingNGN = remainingUSD * (watchRate || 1);
+
   const handleNGNChange = (ngn: number) => {
     form.setValue("moneyPaidNGN", ngn);
     if (watchRate > 0) {
@@ -97,10 +105,13 @@ export function PaymentDialog({
   const handleQuickFill = (percent: number) => {
     if (!order) return;
     const type = form.getValues("type");
-    const remaining = Math.max(0, Math.abs(order.payment));
-    const refundable = Math.max(0, order.totalPrice - Math.abs(order.payment));
+    const rate = order.exchangeRate || 1;
+    const totalUSD = order.totalUsd ?? 0;
+    const paidedUSD = order.paidedUsd ?? 0;
+    const remainingNGN = Math.max(0, totalUSD - paidedUSD) * rate;
+    const refundableNGN = Math.max(0, paidedUSD - totalUSD) * rate;
     const baseAmount =
-      type.toLowerCase() === "khách trả" ? remaining : refundable;
+      type.toLowerCase() === "khách trả" ? remainingNGN : refundableNGN;
     const value = Math.round((baseAmount * percent) / 100);
     handleNGNChange(value);
   };
@@ -111,6 +122,38 @@ export function PaymentDialog({
         <DialogHeader>
           <DialogTitle>Ghi nhận thanh toán</DialogTitle>
         </DialogHeader>
+
+        {order && (
+          <div className={`rounded-lg px-4 py-3 text-sm border ${
+            remainingUSD > 0
+              ? "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800"
+              : remainingUSD < 0
+              ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800"
+              : "bg-muted border-border"
+          }`}>
+            <div className="flex items-center justify-between gap-4">
+              <span className={`font-medium ${
+                remainingUSD > 0 ? "text-red-700 dark:text-red-400"
+                : remainingUSD < 0 ? "text-green-700 dark:text-green-400"
+                : "text-muted-foreground"
+              }`}>
+                {remainingUSD > 0 ? "Khách còn nợ" : remainingUSD < 0 ? "Khách trả thừa" : "Đã thanh toán đủ"}
+              </span>
+              <div className="text-right">
+                <div className={`font-bold tabular-nums ${
+                  remainingUSD > 0 ? "text-red-700 dark:text-red-400"
+                  : remainingUSD < 0 ? "text-green-700 dark:text-green-400"
+                  : "text-muted-foreground"
+                }`}>
+                  {formatUSD(Math.abs(remainingUSD))}
+                </div>
+                <div className="text-xs text-muted-foreground tabular-nums">
+                  ≈ {formatNGN(Math.abs(remainingNGN))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">

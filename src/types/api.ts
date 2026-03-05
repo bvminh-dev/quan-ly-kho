@@ -303,6 +303,8 @@ export interface OrderDetail {
   exchangeRate: number;
   customer: OrderCustomerRef;
   totalPrice: number;
+  totalUsd: number;
+  paidedUsd: number;
   payment: number;
   debt?: number;
   paid?: number;
