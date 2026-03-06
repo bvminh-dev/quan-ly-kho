@@ -434,7 +434,7 @@ export interface UpdateHistoryEnterDto {
 
 export interface HistoryExportItem {
   _id: string;
-  warehouseId: string | { _id: string };
+  warehouseId: string | { _id: string; unitOfCalculation?: string };
   item: string;
   inches: number;
   quality: string;
