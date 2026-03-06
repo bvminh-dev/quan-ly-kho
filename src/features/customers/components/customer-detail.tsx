@@ -245,7 +245,7 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                 </TableRow>
               ) : (
                 filteredOrders.map((order) => {
-                  const totalUSD = order.totalUsd ?? 0;
+                  const totalUSD = (order.totalUsd ?? 0) + (order.debt ?? 0);
                   const { paidUSD, paidNGN } = (order.history ?? []).reduce(
                     (acc, h) => {
                       const sign =
