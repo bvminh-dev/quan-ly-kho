@@ -54,6 +54,8 @@ interface OrderBuilderProps {
   maxAvailableByWarehouseId?: Record<string, number>;
   hasRecordedPayment?: boolean;
   title?: string;
+  /** Chỉ cho phép sửa Paid khi đang ở trạng thái báo giá. Khi chỉnh sửa đơn ở trạng thái khác thì Paid bị khóa. */
+  canEditPaid?: boolean;
 }
 
 export function OrderBuilder({
@@ -85,6 +87,7 @@ export function OrderBuilder({
   maxAvailableByWarehouseId,
   hasRecordedPayment,
   title = "Tạo đơn hàng",
+  canEditPaid = true,
 }: OrderBuilderProps) {
   const [selectedForSet, setSelectedForSet] = useState<Set<string>>(new Set());
   const [isCreatingSet, setIsCreatingSet] = useState(false);
@@ -309,8 +312,14 @@ export function OrderBuilder({
                   e.preventDefault();
                 }
               }}
+              disabled={!canEditPaid}
               className="h-9"
             />
+            {!canEditPaid && (
+              <p className="text-[11px] text-muted-foreground">
+                Chỉ có thể sửa Paid khi đơn ở trạng thái báo giá
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">

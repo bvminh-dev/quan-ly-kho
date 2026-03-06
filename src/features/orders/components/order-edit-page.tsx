@@ -677,6 +677,7 @@ function OrderEditForm({
             maxAvailableByWarehouseId={maxAvailableByWarehouseId}
             hasRecordedPayment={hasRecordedPayment}
             title="Chỉnh sửa đơn hàng"
+            canEditPaid={order.state?.toLowerCase() === "báo giá"}
           />
         </div>
       </div>
