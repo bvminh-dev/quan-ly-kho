@@ -53,64 +53,13 @@ import {
 import { OrderDetailDialog } from "./order-detail-dialog";
 import { PaymentDialog } from "./payment-dialog";
 import { RevertOrderDialog } from "./revert-order-dialog";
+import { computeOrderFinancials } from "../utils/order-financials";
 
 function getOrderCreatorName(createdBy: OrderDetail["createdBy"]) {
   if (createdBy && typeof createdBy === "object") {
     return createdBy.name;
   }
   return "-";
-}
-
-function computeOrderFinancials(order: OrderDetail) {
-  const lowerState = order.state?.toLowerCase();
-  const exchangeRate = order.exchangeRate ?? 1;
-
-  let subtotalUSD = 0;
-  let discountUSD = 0;
-
-  for (const product of order.products ?? []) {
-    const qtySet = product.quantitySet ?? 0;
-    const hasSetMeta =
-      Boolean(product.nameSet?.trim()) ||
-      (product.priceSet ?? 0) > 0 ||
-      (product.saleSet ?? 0) > 0;
-    const isSet = qtySet > 0 && (hasSetMeta || product.items.length > 1);
-    const setQty = isSet ? Math.max(qtySet, 0) : 1;
-    const isCalcSet = Boolean(
-      isSet && ((product.priceSet ?? 0) > 0 || product.isCalcSet),
-    );
-
-    let itemsTotalUSD = 0;
-    let itemsDiscountUSD = 0;
-    for (const item of product.items) {
-      const qty = (item.quantity ?? 0) * setQty;
-      itemsTotalUSD += (item.price ?? 0) * qty;
-      itemsDiscountUSD += (item.sale ?? 0) * qty;
-    }
-
-    subtotalUSD += isCalcSet ? (product.priceSet ?? 0) * setQty : itemsTotalUSD;
-    discountUSD += isCalcSet
-      ? (product.saleSet ?? 0) * setQty
-      : itemsDiscountUSD;
-  }
-
-  const totalUSD = subtotalUSD - discountUSD;
-  const totalNGN = totalUSD * exchangeRate;
-
-  const paidUSD =
-    lowerState === "báo giá"
-      ? (order.paid ?? 0)
-      : (order.history ?? []).reduce((acc, h) => {
-        const sign = h.type?.toLowerCase() === "hoàn tiền" ? -1 : 1;
-        return acc + sign * (h.moneyPaidDolar ?? 0);
-      }, 0);
-  const paidNGN = paidUSD * exchangeRate;
-
-  const debtUSD = order.debt ?? 0;
-  const remainingUSD = totalUSD + debtUSD - paidUSD;
-  const remainingNGN = remainingUSD * exchangeRate;
-
-  return { totalUSD, totalNGN, paidUSD, paidNGN, remainingUSD, remainingNGN };
 }
 
 interface OrderTableProps {
@@ -319,9 +268,7 @@ export function OrderTable({
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="font-medium">
-                        {formatUSD(totalUSD + (order.debt ?? 0))}
-                      </div>
+                      <div className="font-medium">{formatUSD(totalUSD)}</div>
                     </TableCell>
                     <TableCell className="text-right text-green-600">
                       <div className="font-medium">{formatUSD(paidUSD)}</div>

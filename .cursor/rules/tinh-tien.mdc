@@ -1,0 +1,123 @@
+---
+alwaysApply: false
+description: Hướng dẫn cách tính tổng tiền, đã trả và còn lại cho đơn hàng
+---
+
+# Cách Tính Tổng Tiền, Đã Trả và Còn Lại
+
+Tài liệu này mô tả logic tính toán các giá trị tài chính cho đơn hàng, được triển khai trong hàm `computeOrderFinancials` tại [order-table.tsx](mdc:src/features/orders/components/order-table.tsx).
+
+## 1. Tính Tổng Tiền (Total)
+
+### Bước 1: Tính Subtotal và Discount từ Products
+
+Với mỗi product trong đơn hàng:
+
+1. **Xác định loại sản phẩm (Set hay Item đơn lẻ):**
+   - `qtySet`: Số lượng set của product
+   - `hasSetMeta`: Kiểm tra có thông tin set (nameSet, priceSet > 0, hoặc saleSet > 0)
+   - `isSet`: Là set nếu `qtySet > 0` VÀ (`hasSetMeta` HOẶC có nhiều hơn 1 item)
+   - `setQty`: Số lượng set thực tế = `max(qtySet, 0)` nếu là set, ngược lại = 1
+
+2. **Xác định cách tính (isCalcSet):**
+   - `isCalcSet = true` nếu là set VÀ (`priceSet > 0` HOẶC `product.isCalcSet = true`)
+   - Nếu `isCalcSet = true`: Tính theo giá set
+   - Nếu `isCalcSet = false`: Tính theo tổng các items
+
+3. **Tính giá trị từ items:**
+   ```typescript
+   itemsTotalUSD = Σ(item.price * item.quantity * setQty)
+   itemsDiscountUSD = Σ(item.sale * item.quantity * setQty)
+   ```
+
+4. **Cộng vào subtotal và discount:**
+   - Nếu `isCalcSet = true`:
+     - `subtotalUSD += priceSet * setQty`
+     - `discountUSD += saleSet * setQty`
+   - Nếu `isCalcSet = false`:
+     - `subtotalUSD += itemsTotalUSD`
+     - `discountUSD += itemsDiscountUSD`
+
+### Bước 2: Tính Tổng Tiền
+
+```typescript
+baseTotalUSD = subtotalUSD - discountUSD
+debtUSD = order.debt ?? 0
+totalUSD = baseTotalUSD + debtUSD
+totalNGN = totalUSD * exchangeRate
+```
+
+**Lưu ý:** 
+- `exchangeRate` mặc định = 1 nếu không có giá trị
+- Tổng tiền bao gồm cả công nợ ban đầu (`debtUSD`)
+
+## 2. Tính Đã Trả (Paid)
+
+Cách tính phụ thuộc vào trạng thái đơn hàng (`order.state`):
+
+### Trường hợp 1: Trạng thái "báo giá"
+
+```typescript
+paidUSD = order.paid ?? 0
+```
+
+### Trường hợp 2: Các trạng thái khác
+
+Tính từ lịch sử thanh toán (`order.history`):
+
+```typescript
+paidUSD = Σ(history.moneyPaidDolar * sign)
+```
+
+Trong đó:
+- `sign = -1` nếu `history.type.toLowerCase() === "hoàn tiền"` (hoàn tiền)
+- `sign = 1` cho các loại thanh toán khác (khách trả, v.v.)
+
+**Ví dụ:**
+- Khách trả $100 → `paidUSD += 100`
+- Hoàn tiền $20 → `paidUSD += -20`
+- Kết quả: `paidUSD = 80`
+
+### Chuyển đổi sang NGN
+
+```typescript
+paidNGN = paidUSD * exchangeRate
+```
+
+## 3. Tính Còn Lại (Remaining)
+
+```typescript
+remainingUSD = totalUSD - paidUSD
+remainingNGN = remainingUSD * exchangeRate
+```
+
+**Giải thích:**
+- `totalUSD`: Tổng tiền đã bao gồm công nợ (`baseTotalUSD + debtUSD`)
+- `remainingUSD`: Số tiền còn lại = Tổng tiền - Đã trả
+- Nếu `remainingUSD > 0`: Khách hàng còn nợ
+- Nếu `remainingUSD < 0`: Khách hàng đã trả thừa
+- Nếu `remainingUSD = 0`: Đã thanh toán đủ
+
+## Kết Quả Trả Về
+
+Hàm `computeOrderFinancials` trả về object:
+
+```typescript
+{
+  totalUSD: number,      // Tổng tiền USD
+  totalNGN: number,      // Tổng tiền NGN
+  paidUSD: number,       // Đã trả USD
+  paidNGN: number,       // Đã trả NGN
+  remainingUSD: number,  // Còn lại USD (có thể âm nếu trả thừa)
+  remainingNGN: number   // Còn lại NGN (có thể âm nếu trả thừa)
+}
+```
+
+## Lưu Ý Quan Trọng
+
+1. **Set vs Item:** Logic xử lý cả sản phẩm dạng set (combo) và item đơn lẻ
+2. **Exchange Rate:** Luôn có giá trị mặc định = 1 để tránh lỗi
+3. **Hoàn tiền:** Được tính là số âm trong lịch sử thanh toán
+4. **Công nợ:** Được cộng vào tổng tiền (`totalUSD = baseTotalUSD + debtUSD`)
+5. **Trạng thái "báo giá":** Sử dụng trường `order.paid` trực tiếp thay vì tính từ history
+6. **Tổng tiền:** Luôn bao gồm công nợ ban đầu, không chỉ tính từ products

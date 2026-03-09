@@ -24,6 +24,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
 import { useAddHistory, useConfirmOrder } from "../hooks/use-orders";
+import { computeOrderFinancials } from "../utils/order-financials";
 
 const schema = z.object({
   type: z.enum(["khách trả", "hoàn tiền"]),
@@ -125,12 +126,10 @@ export function PaymentDialog({
     }
   };
 
-  const totalUSD = order?.totalUsd ?? 0;
-  const paidUSD = (order?.history ?? []).reduce((acc, h) => {
-    const sign = h.type?.toLowerCase() === "hoàn tiền" ? -1 : 1;
-    return acc + sign * (h.moneyPaidDolar ?? 0);
-  }, 0);
-  const remainingUSD = totalUSD - paidUSD;
+  const financials = order ? computeOrderFinancials(order) : null;
+  const totalUSD = financials?.totalUSD ?? 0;
+  const paidUSD = financials?.paidUSD ?? 0;
+  const remainingUSD = financials?.remainingUSD ?? 0;
   const remainingNGN = remainingUSD * (watchRate || 1);
 
   const handleNGNChange = (ngn: number) => {
@@ -141,13 +140,11 @@ export function PaymentDialog({
   };
 
   const handleQuickFill = (percent: number) => {
-    if (!order) return;
+    if (!order || !financials) return;
     const type = form.getValues("type");
     const rate = order.exchangeRate || 1;
-    const totalUSD = order.totalUsd ?? 0;
-    const paidedUSD = order.paidedUsd ?? 0;
-    const remainingNGN = Math.max(0, totalUSD - paidedUSD) * rate;
-    const refundableNGN = Math.max(0, paidedUSD - totalUSD) * rate;
+    const remainingNGN = Math.max(0, financials.remainingUSD) * rate;
+    const refundableNGN = Math.max(0, -financials.remainingUSD) * rate;
     const baseAmount =
       type.toLowerCase() === "khách trả" ? remainingNGN : refundableNGN;
     const value = Math.round((baseAmount * percent) / 100);

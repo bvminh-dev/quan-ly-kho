@@ -14,6 +14,7 @@ import type { OrderDetail, WarehouseItem } from "@/types/api";
 import { getWarehouseDisplayName } from "@/features/warehouse/utils/sort-warehouse";
 import { formatNGN, formatNumber, formatUSD } from "@/utils/currency";
 import { ORDER_STATE_CONFIG } from "../constants/order-state-config";
+import { computeOrderFinancials } from "../utils/order-financials";
 
 interface OrderDetailDialogProps {
   open: boolean;
@@ -30,13 +31,8 @@ export function OrderDetailDialog({
 }: OrderDetailDialogProps) {
   if (!order) return null;
 
-  const exchangeRate = order.exchangeRate || 1;
-  const totalUSD = order.totalUsd ?? 0;
-  const paidedUSD = order.paidedUsd ?? 0;
-  const remainingUSD = Math.max(0, totalUSD - paidedUSD);
-  const totalNGN = totalUSD * exchangeRate;
-  const paidNGN = paidedUSD * exchangeRate;
-  const remainingNGN = remainingUSD * exchangeRate;
+  const { totalUSD, totalNGN, paidUSD, paidNGN, remainingUSD, remainingNGN } =
+    computeOrderFinancials(order);
   const lowerState = order.state?.toLowerCase() as
     | keyof typeof ORDER_STATE_CONFIG
     | undefined;
@@ -88,15 +84,36 @@ export function OrderDetailDialog({
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-1 min-w-0">
                 <span className="text-muted-foreground shrink-0">Đã trả: </span>
                 <span className="font-medium text-green-600 dark:text-green-500 tabular-nums break-all">
-                  {formatUSD(paidedUSD)} / {formatNGN(paidNGN)}
+                  {formatUSD(paidUSD)} / {formatNGN(paidNGN)}
                 </span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-1 min-w-0">
                 <span className="text-muted-foreground shrink-0">
                   Còn lại:{" "}
                 </span>
-                <span className="font-medium text-red-600 dark:text-red-500 tabular-nums break-all">
-                  {formatUSD(remainingUSD)} / {formatNGN(remainingNGN)}
+                <span
+                  className={`font-medium tabular-nums break-all ${
+                    remainingUSD === 0
+                      ? "text-muted-foreground"
+                      : remainingUSD > 0
+                        ? "text-red-600 dark:text-red-500"
+                        : "text-green-600 dark:text-green-500"
+                  }`}
+                >
+                  {remainingUSD === 0 ? (
+                    <>
+                      {formatUSD(0)} / {formatNGN(0)}
+                    </>
+                  ) : remainingUSD > 0 ? (
+                    <>
+                      -{formatUSD(remainingUSD)} / -{formatNGN(remainingNGN)}
+                    </>
+                  ) : (
+                    <>
+                      +{formatUSD(Math.abs(remainingUSD))} / +
+                      {formatNGN(Math.abs(remainingNGN))}
+                    </>
+                  )}
                 </span>
               </div>
               <div className="min-w-0">
