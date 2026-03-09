@@ -20,7 +20,8 @@ import { useMemo, useState } from "react";
 import { useCustomer } from "../hooks/use-customers";
 import { CustomerFormDialog } from "./customer-form-dialog";
 import { ORDER_STATE_CONFIG } from "@/features/orders/constants/order-state-config";
-import { formatNGN, formatNumber, formatUSD } from "@/utils/currency";
+import { computeOrderFinancials } from "@/features/orders/utils/order-financials";
+import { formatNGN, formatUSD } from "@/utils/currency";
 
 interface CustomerDetailProps {
   customerId: string;
@@ -225,9 +226,6 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                 <TableHead className="font-semibold text-right">
                   Còn lại
                 </TableHead>
-                <TableHead className="font-semibold text-right">
-                  Tỷ giá
-                </TableHead>
                 <TableHead className="font-semibold">Ngày tạo</TableHead>
               </TableRow>
             </TableHeader>
@@ -235,7 +233,7 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
               {filteredOrders.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={6}
                     className="h-24 text-center text-muted-foreground"
                   >
                     {customerOrders.length === 0
@@ -245,50 +243,41 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                 </TableRow>
               ) : (
                 filteredOrders.map((order) => {
-                  const totalUSD = (order.totalUsd ?? 0) + (order.debt ?? 0);
-                  const { paidUSD, paidNGN } = (order.history ?? []).reduce(
-                    (acc, h) => {
-                      const sign =
-                        h.type?.toLowerCase() === "hoàn tiền" ? -1 : 1;
-                      return {
-                        paidUSD: acc.paidUSD + sign * (h.moneyPaidDolar ?? 0),
-                        paidNGN: acc.paidNGN + sign * (h.moneyPaidNGN ?? 0),
-                      };
-                    },
-                    { paidUSD: 0, paidNGN: 0 },
-                  );
-
-                  const rawRemainingUSD = totalUSD - paidUSD;
-                  const rawRemainingNGN = rawRemainingUSD * order.exchangeRate;
+                  const {
+                    totalUSD,
+                    paidUSD,
+                    remainingUSD,
+                    remainingNGN,
+                  } = computeOrderFinancials(order);
 
                   const remainingUSDSign =
-                    rawRemainingUSD === 0
+                    remainingUSD === 0
                       ? ""
-                      : rawRemainingUSD > 0
+                      : remainingUSD > 0
                         ? "-"
                         : "+";
                   const remainingNGNSign =
-                    rawRemainingNGN === 0
+                    remainingNGN === 0
                       ? ""
-                      : rawRemainingNGN > 0
+                      : remainingNGN > 0
                         ? "-"
                         : "+";
 
                   const remainingUSDClass =
-                    rawRemainingUSD === 0
+                    remainingUSD === 0
                       ? "text-muted-foreground"
-                      : rawRemainingUSD > 0
+                      : remainingUSD > 0
                         ? "text-red-600"
                         : "text-green-600";
                   const remainingNGNClass =
-                    rawRemainingNGN === 0
+                    remainingNGN === 0
                       ? "text-muted-foreground"
-                      : rawRemainingNGN > 0
+                      : remainingNGN > 0
                         ? "text-red-600"
                         : "text-green-600";
 
-                  const remainingUSD = Math.abs(rawRemainingUSD);
-                  const remainingNGN = Math.abs(rawRemainingNGN);
+                  const remainingUSDAbs = Math.abs(remainingUSD);
+                  const remainingNGNAbs = Math.abs(remainingNGN);
                   const lowerState = order.state?.toLowerCase() as
                     | keyof typeof ORDER_STATE_CONFIG
                     | undefined;
@@ -337,18 +326,13 @@ export function CustomerDetail({ customerId }: CustomerDetailProps) {
                         <div className="flex flex-col items-end">
                           <span className={`font-medium ${remainingUSDClass}`}>
                             {remainingUSDSign}
-                            {formatUSD(remainingUSD)}
+                            {formatUSD(remainingUSDAbs)}
                           </span>
                           <span className={`text-xs ${remainingNGNClass}`}>
                             {remainingNGNSign}
-                            {formatNGN(remainingNGN)}
+                            {formatNGN(remainingNGNAbs)}
                           </span>
                         </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className="font-medium">
-                          1 USD = {formatNumber(order.exchangeRate)} NGN
-                        </span>
                       </TableCell>
                       <TableCell>
                         {new Date(order.createdAt).toLocaleDateString("vi-VN")}

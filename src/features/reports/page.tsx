@@ -240,13 +240,7 @@ export default function ReportsPage() {
                       {formatUSD(orderReport?.totalValueUSD ?? 0)}
                     </div>
                   )}
-                  {isLoadingOrders ? (
-                    <Skeleton className="h-5 w-28" />
-                  ) : (
-                    <div className="text-sm text-muted-foreground">
-                      {formatNGN(orderReport?.totalValueNGN ?? 0)}
-                    </div>
-                  )}
+                  
                 </CardContent>
               </Card>
 
@@ -286,7 +280,6 @@ export default function ReportsPage() {
                     <TableHead className="text-right">Kg</TableHead>
                     <TableHead className="text-right">Pcs</TableHead>
                     <TableHead className="text-right">Tổng tiền (USD)</TableHead>
-                    <TableHead className="text-right">Tổng tiền (NGN)</TableHead>
                     <TableHead className="text-right">Đã trả (USD)</TableHead>
                     <TableHead className="text-right">Đã trả (NGN)</TableHead>
                   </TableRow>
@@ -328,9 +321,6 @@ export default function ReportsPage() {
                           {formatUSD(row.totalValueUSD ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatNGN(row.totalValueNGN ?? 0)}
-                        </TableCell>
-                        <TableCell className="text-right">
                           {formatUSD(row.totalCollectedUSD ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
@@ -354,7 +344,6 @@ export default function ReportsPage() {
                     <TableHead className="text-right">Khách hàng</TableHead>
                     <TableHead className="text-right">Kg</TableHead>
                     <TableHead className="text-right">Pcs</TableHead>
-                    <TableHead className="text-right">Giá trị (NGN)</TableHead>
                     <TableHead className="text-right">Giá trị (USD)</TableHead>
                     <TableHead className="text-right">Thu về (NGN)</TableHead>
                     <TableHead className="text-right">Thu về (USD)</TableHead>
@@ -395,9 +384,6 @@ export default function ReportsPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           {formatNumber(row.totalOrdersPcs ?? 0)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatNGN(row.totalValueNGN ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
                           {formatUSD(row.totalValueUSD ?? 0)}

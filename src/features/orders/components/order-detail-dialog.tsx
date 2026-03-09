@@ -102,7 +102,7 @@ export function OrderDetailDialog({
                 >
                   {remainingUSD === 0 ? (
                     <>
-                      {formatUSD(0)} / {formatNGN(0)}
+                      Fully paid
                     </>
                   ) : remainingUSD > 0 ? (
                     <>

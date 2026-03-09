@@ -5,7 +5,7 @@ description: Hướng dẫn cách tính tổng tiền, đã trả và còn lại
 
 # Cách Tính Tổng Tiền, Đã Trả và Còn Lại
 
-Tài liệu này mô tả logic tính toán các giá trị tài chính cho đơn hàng, được triển khai trong hàm `computeOrderFinancials` tại [order-table.tsx](mdc:src/features/orders/components/order-table.tsx).
+Tài liệu này mô tả logic tính toán các giá trị tài chính cho đơn hàng, được triển khai trong hàm `computeOrderFinancials` tại [order-financials.ts](mdc:src/features/orders/utils/order-financials.ts).
 
 ## 1. Tính Tổng Tiền (Total)
 
@@ -59,6 +59,7 @@ Cách tính phụ thuộc vào trạng thái đơn hàng (`order.state`):
 
 ```typescript
 paidUSD = order.paid ?? 0
+paidNGN = paidUSD * exchangeRate
 ```
 
 ### Trường hợp 2: Các trạng thái khác
@@ -66,23 +67,24 @@ paidUSD = order.paid ?? 0
 Tính từ lịch sử thanh toán (`order.history`):
 
 ```typescript
-paidUSD = Σ(history.moneyPaidDolar * sign)
+paidUSD = Σ(moneyPaidDolar của 'khách trả') - Σ(moneyPaidDolar của 'hoàn tiền')
+paidNGN = Σ(moneyPaidNGN của 'khách trả') - Σ(moneyPaidNGN của 'hoàn tiền')
 ```
 
-Trong đó:
-- `sign = -1` nếu `history.type.toLowerCase() === "hoàn tiền"` (hoàn tiền)
-- `sign = 1` cho các loại thanh toán khác (khách trả, v.v.)
+**Chi tiết:**
+- Với mỗi bản ghi trong `history`:
+  - Nếu `type.toLowerCase() === "hoàn tiền"`: trừ đi (`sign = -1`)
+  - Nếu `type.toLowerCase() === "khách trả"`: cộng vào (`sign = 1`)
+- `paidUSD` và `paidNGN` được tính độc lập từ các trường tương ứng trong history
 
 **Ví dụ:**
-- Khách trả $100 → `paidUSD += 100`
-- Hoàn tiền $20 → `paidUSD += -20`
-- Kết quả: `paidUSD = 80`
+- Khách trả $100 (tỷ giá 25000) → `paidUSD += 100`, `paidNGN += 2500000`
+- Hoàn tiền $20 (tỷ giá 26000) → `paidUSD += -20`, `paidNGN += -520000`
+- Kết quả: `paidUSD = 80`, `paidNGN = 1980000`
 
-### Chuyển đổi sang NGN
-
-```typescript
-paidNGN = paidUSD * exchangeRate
-```
+**Lưu ý quan trọng:**
+- `paidNGN` được tính trực tiếp từ `moneyPaidNGN` trong history, **KHÔNG** nhân `paidUSD` với tỷ giá của order
+- Mỗi lần thanh toán có tỷ giá riêng tại thời điểm đó (`h.exchangeRate`), nên phải dùng `moneyPaidNGN` đã được lưu sẵn
 
 ## 3. Tính Còn Lại (Remaining)
 
@@ -104,10 +106,10 @@ Hàm `computeOrderFinancials` trả về object:
 
 ```typescript
 {
-  totalUSD: number,      // Tổng tiền USD
-  totalNGN: number,      // Tổng tiền NGN
+  totalUSD: number,      // Tổng tiền USD (bao gồm công nợ)
+  totalNGN: number,      // Tổng tiền NGN (bao gồm công nợ)
   paidUSD: number,       // Đã trả USD
-  paidNGN: number,       // Đã trả NGN
+  paidNGN: number,       // Đã trả NGN (tính từ moneyPaidNGN trong history)
   remainingUSD: number,  // Còn lại USD (có thể âm nếu trả thừa)
   remainingNGN: number   // Còn lại NGN (có thể âm nếu trả thừa)
 }
@@ -121,3 +123,4 @@ Hàm `computeOrderFinancials` trả về object:
 4. **Công nợ:** Được cộng vào tổng tiền (`totalUSD = baseTotalUSD + debtUSD`)
 5. **Trạng thái "báo giá":** Sử dụng trường `order.paid` trực tiếp thay vì tính từ history
 6. **Tổng tiền:** Luôn bao gồm công nợ ban đầu, không chỉ tính từ products
+7. **Đã trả NGN:** Tính trực tiếp từ `moneyPaidNGN` trong history, không nhân `paidUSD` với tỷ giá của order. Mỗi lần thanh toán có tỷ giá riêng tại thời điểm đó.

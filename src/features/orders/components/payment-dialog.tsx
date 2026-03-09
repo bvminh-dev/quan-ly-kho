@@ -182,9 +182,6 @@ export function PaymentDialog({
                 }`}>
                   {formatUSD(Math.abs(remainingUSD))}
                 </div>
-                <div className="text-xs text-muted-foreground tabular-nums">
-                  ≈ {formatNGN(Math.abs(remainingNGN))}
-                </div>
               </div>
             </div>
           </div>

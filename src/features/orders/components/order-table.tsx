@@ -276,18 +276,15 @@ export function OrderTable({
                     <TableCell className="text-right">
                       {remainingUSD === 0 ? (
                         <div className="text-muted-foreground">
-                          <div className="font-medium">{formatUSD(0)}</div>
-                          <div className="text-xs">{formatNGN(0)}</div>
+                          <div className="font-medium">Fully paid</div>
                         </div>
                       ) : remainingUSD > 0 ? (
                         <div className="text-red-600">
                           <div className="font-medium">-{formatUSD(remainingUSD)}</div>
-                          <div className="text-xs">-{formatNGN(remainingNGN)}</div>
                         </div>
                       ) : (
                         <div className="text-green-600">
                           <div className="font-medium">+{formatUSD(Math.abs(remainingUSD))}</div>
-                          <div className="text-xs">+{formatNGN(Math.abs(remainingNGN))}</div>
                         </div>
                       )}
                     </TableCell>
