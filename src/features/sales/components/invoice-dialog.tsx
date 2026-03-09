@@ -45,35 +45,65 @@ export function InvoiceDialog({
     const node = invoiceRef.current;
     if (!node) return null;
 
-    if (typeof document !== "undefined" && document.fonts?.ready) {
+    // Clone node and place offscreen in body — free from any parent constraints
+    const clone = node.cloneNode(true) as HTMLDivElement;
+    clone.style.position = "absolute";
+    clone.style.left = "-99999px";
+    clone.style.top = "0";
+    clone.style.width = "auto";
+    clone.style.minWidth = "900px";
+    clone.style.maxWidth = "none";
+    clone.style.overflow = "visible";
+
+    // Remove overflow constraints from table wrapper inside clone
+    const tableWrapper = clone.querySelector("div.overflow-x-auto") as HTMLElement | null;
+    if (tableWrapper) {
+      tableWrapper.style.overflow = "visible";
+    }
+
+    document.body.appendChild(clone);
+
+    // Wait for fonts
+    if (document.fonts?.ready) {
       await document.fonts.ready;
     }
 
+    // Wait for layout to settle
     await new Promise<void>((resolve) => {
-      requestAnimationFrame(() => resolve());
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => resolve());
+      });
     });
+    await new Promise<void>((resolve) => setTimeout(resolve, 50));
 
-    const width = Math.ceil(node.scrollWidth);
-    const height = Math.ceil(node.scrollHeight);
+    const width = Math.ceil(clone.scrollWidth);
+    const height = Math.ceil(clone.scrollHeight);
 
-    // Keep canvas size under browser limits to avoid export failures.
+    // Keep canvas size under browser limits
     const maxPixels = 16_000_000;
     const area = Math.max(width * height, 1);
     const safeRatio = Math.min(2, Math.sqrt(maxPixels / area));
     const pixelRatio = Math.max(1, safeRatio);
 
-    return await toPng(node, {
-      backgroundColor: "#ffffff",
-      cacheBust: true,
-      pixelRatio,
-      width,
-      height,
-      canvasWidth: Math.ceil(width * pixelRatio),
-      canvasHeight: Math.ceil(height * pixelRatio),
-      style: {
-        transform: "none",
-      },
-    });
+    try {
+      return await toPng(clone, {
+        backgroundColor: "#ffffff",
+        cacheBust: true,
+        pixelRatio,
+        width,
+        height,
+        canvasWidth: Math.ceil(width * pixelRatio),
+        canvasHeight: Math.ceil(height * pixelRatio),
+        style: {
+          transform: "none",
+          position: "static",
+          left: "auto",
+          top: "auto",
+        },
+      });
+    } finally {
+      document.body.removeChild(clone);
+    }
   }, []);
 
   const handleCopy = async () => {
@@ -214,7 +244,6 @@ export function InvoiceDialog({
   const discountNGN = discountUSD * exchangeRate;
 
   const debtUSD = order?.debt ?? 0;
-  const debtNGN = debtUSD * exchangeRate;
 
   const paidUSD =
     order?.history?.length == 0 ? (order?.paid ?? 0) : (order?.paidedUsd ?? 0);
@@ -251,10 +280,10 @@ export function InvoiceDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 min-w-0 overflow-auto px-6 flex justify-center">
+        <div className="flex-1 min-w-0 overflow-auto px-6">
           <div
             ref={invoiceRef}
-            className="bg-white text-gray-900 p-8 shrink-0 max-w-4xl mx-auto"
+            className="bg-white text-gray-900 p-8 shrink-0 max-w-4xl mx-auto w-full"
             style={{ fontFamily: "Arial, sans-serif" }}
           >
             <div className="flex justify-between items-start mb-6">
@@ -276,33 +305,31 @@ export function InvoiceDialog({
               </div>
             </div>
 
-            <table className="w-full border-collapse mb-6 table-fixed">
-              <thead>
-                <tr className="border-y-2 border-indigo-600">
-                  <th className="text-left py-2 text-sm font-semibold min-w-0">
-                    Description
-                  </th>
-                  <th className="text-center py-2 text-sm font-semibold w-20">
-                    Quantity
-                  </th>
-                  <th className="text-right py-2 text-sm font-semibold w-28">
-                    Unit Price
-                  </th>
-                  <th className="text-right py-2 text-sm font-semibold w-28">
-                    Amount (USD)
-                  </th>
-                  <th className="text-right py-2 text-sm font-semibold w-32">
-                    Amount (NGN)
-                  </th>
-                </tr>
-              </thead>
+            <div className="overflow-x-auto mb-6">
+              <table className="w-full border-collapse table-auto min-w-[800px]">
+                <thead>
+                  <tr className="border-y-2 border-indigo-600">
+                    <th className="text-left py-2 text-sm font-semibold min-w-[200px]">
+                      Description
+                    </th>
+                    <th className="text-center py-2 text-sm font-semibold min-w-[100px]">
+                      Quantity
+                    </th>
+                    <th className="text-right py-2 text-sm font-semibold min-w-[120px]">
+                      Unit Price
+                    </th>
+                    <th className="text-right py-2 text-sm font-semibold min-w-[140px]">
+                      Amount (USD)
+                    </th>
+                    <th className="text-right py-2 text-sm font-semibold min-w-[150px]">
+                      Amount (NGN)
+                    </th>
+                  </tr>
+                </thead>
               <tbody>
                 {calculatedProducts.map((entry, idx) => {
                   if (entry.isSet) {
                     const colors = getSetColors(entry.setVisualIndex);
-                    const salePerSet = entry.isCalcSet
-                      ? (entry.product.saleSet ?? 0)
-                      : 0;
                     const itemCount = entry.items.length;
 
                     return (
@@ -315,7 +342,7 @@ export function InvoiceDialog({
                               borderLeft: `4px solid ${colors.borderColor}`,
                             }}
                           >
-                            <td className="py-2 pl-3 text-sm min-w-0 wrap-break-word leading-snug align-top">
+                            <td className="py-2 pl-3 text-sm min-w-0 wrap-break-word leading-snug align-top" style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>
                               {it.displayName}
                             </td>
                             <td className="py-2 text-sm text-center tabular-nums">
@@ -361,7 +388,7 @@ export function InvoiceDialog({
                       key={`single-row-${idx}-${itemIdx}`}
                       className="border-b border-gray-100"
                     >
-                      <td className="py-2 text-sm min-w-0 wrap-break-word leading-snug align-top">
+                      <td className="py-2 text-sm min-w-0 wrap-break-word leading-snug align-top" style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>
                         {it.displayName}
                       </td>
                       <td className="py-2 text-sm text-center tabular-nums">
@@ -384,7 +411,8 @@ export function InvoiceDialog({
                   ));
                 })}
               </tbody>
-            </table>
+              </table>
+            </div>
 
             <div
               className="border-gray-200 pt-3 space-y-1.5 grid gap-y-1.5"
@@ -427,6 +455,18 @@ export function InvoiceDialog({
                 {formatNGN(amountToPayNGN)}
               </div>
 
+              {debtUSD !== 0 && (
+                <>
+                  <div className="col-span-3 text-right text-sm font-semibold text-red-600">
+                    Debt:
+                  </div>
+                  <div className="text-right text-sm font-semibold tabular-nums whitespace-nowrap text-red-600">
+                    {formatUSD(Math.abs(debtUSD))}
+                  </div>
+                  <div />
+                </>
+              )}
+
               {order.history.length > 0
                 ? order.history.map((h, i) => (
                   <Fragment key={`history-paid-${i}`}>
@@ -457,22 +497,7 @@ export function InvoiceDialog({
                   </>
                 )}
 
-              {debtUSD !== 0 && (
-                <>
-                  <div className="col-span-2 text-right text-sm text-red-600 italic">
-                    Debt: {formatNGN(Math.abs(debtNGN))}
-                  </div>
-                  <div className="text-right text-sm text-red-600 italic">
-                    rate: {formatNumber(exchangeRate)}
-                  </div>
-                  <div className="text-right text-sm tabular-nums whitespace-nowrap text-red-600">
-                    {formatUSD(Math.abs(debtUSD))}
-                  </div>
-                  <div />
-                </>
-              )}
-
-              {(paidUSD !== 0 || order.history.length > 0 || debtUSD !== 0) && (
+              {(paidUSD !== 0 || order.history.length > 0 || debtUSD !== 0 || balanceUSD === 0) && (
                 <>
                   <div className="col-span-5 border-t border-gray-200 pt-2 mt-1" />
                   <div className="col-span-3 text-right text-sm font-semibold">
