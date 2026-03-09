@@ -282,13 +282,13 @@ export default function ReportsPage() {
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead>Khách hàng</TableHead>
-                    <TableHead className="text-right">Tổng số đơn hàng</TableHead>
+                    <TableHead className="text-right">Tổng đơn hàng</TableHead>
                     <TableHead className="text-right">Kg</TableHead>
                     <TableHead className="text-right">Pcs</TableHead>
-                    <TableHead className="text-right">Đã trả (NGN)</TableHead>
+                    <TableHead className="text-right">Tổng tiền (USD)</TableHead>
+                    <TableHead className="text-right">Tổng tiền (NGN)</TableHead>
                     <TableHead className="text-right">Đã trả (USD)</TableHead>
-                    <TableHead className="text-right">Nợ (NGN)</TableHead>
-                    <TableHead className="text-right">Nợ (USD)</TableHead>
+                    <TableHead className="text-right">Đã trả (NGN)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -325,16 +325,16 @@ export default function ReportsPage() {
                           {formatNumber(row.totalOrdersPcs ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatNGN(row.totalPaidNGN ?? 0)}
+                          {formatUSD(row.totalValueUSD ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatUSD(row.totalPaidUSD ?? 0)}
+                          {formatNGN(row.totalValueNGN ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatNGN(row.totalDebtNGN ?? 0)}
+                          {formatUSD(row.totalCollectedUSD ?? 0)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatUSD(row.totalDebtUSD ?? 0)}
+                          {formatNGN(row.totalCollectedNGN ?? 0)}
                         </TableCell>
                       </TableRow>
                     ))

@@ -434,7 +434,7 @@ export interface UpdateHistoryEnterDto {
 
 export interface HistoryExportItem {
   _id: string;
-  warehouseId: string | { _id: string };
+  warehouseId: string | { _id: string; unitOfCalculation?: string };
   item: string;
   inches: number;
   quality: string;
@@ -518,13 +518,15 @@ export interface DashboardOrderReport {
 export interface DashboardCustomerReportItem {
   customerId: string;
   customerName: string;
-  totalOrders: number;
-  totalOrdersKg: number;
-  totalOrdersPcs: number;
-  totalPaidNGN: number;
-  totalPaidUSD: number;
-  totalDebtNGN: number;
-  totalDebtUSD: number;
+  totalOrders?: number;
+  totalOrdersKg?: number;
+  totalOrdersPcs?: number;
+  totalValueUSD: number;
+  totalValueNGN: number;
+  totalCollectedUSD: number;
+  totalCollectedNGN: number;
+  totalDebtUSD?: number;
+  totalDebtNGN?: number;
 }
 
 export interface DashboardStaffReportItem {

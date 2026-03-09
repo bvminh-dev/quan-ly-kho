@@ -319,7 +319,9 @@ export function OrderTable({
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="font-medium">{formatUSD(totalUSD)}</div>
+                      <div className="font-medium">
+                        {formatUSD(totalUSD + (order.debt ?? 0))}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right text-green-600">
                       <div className="font-medium">{formatUSD(paidUSD)}</div>

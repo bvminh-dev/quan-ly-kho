@@ -69,7 +69,7 @@ export function HistoryEnterDetailDialog({
           <div>
             <span className="text-muted-foreground">Số lượng nhập thêm:</span>{" "}
             <span className="font-medium">
-              {formatNumber(metadata.quantity ?? 0)}
+              {formatNumber(metadata.quantity ?? 0)} {unitOfCalculation}
             </span>
           </div>
         );
