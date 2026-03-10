@@ -6,14 +6,14 @@ import { QUERY_KEYS } from "@/config";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/utils/api-error";
 import type {
-  PaginationParams,
+  OrderListParams,
   CreateOrderDto,
   UpdateOrderDto,
   AddHistoryDto,
   RevertOrderDto,
 } from "@/types/api";
 
-export function useOrders(params: PaginationParams) {
+export function useOrders(params: OrderListParams) {
   return useQuery({
     queryKey: [...QUERY_KEYS.ORDERS, params],
     queryFn: () => orderService.getAll(params),

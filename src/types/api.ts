@@ -22,6 +22,12 @@ export interface PaginationParams {
   sort?: string;
 }
 
+export interface OrderListParams extends PaginationParams {
+  state?: string;
+  createdFrom?: string;
+  createdTo?: string;
+}
+
 export interface PermissionItem {
   _id: string;
   name: string;

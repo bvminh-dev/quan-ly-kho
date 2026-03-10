@@ -6,13 +6,13 @@ import type {
   CreateOrderDto,
   OrderDetail,
   PaginatedData,
-  PaginationParams,
+  OrderListParams,
   RevertOrderDto,
   UpdateOrderDto,
 } from "@/types/api";
 
 export const orderService = {
-  getAll: async (params: PaginationParams) => {
+  getAll: async (params: OrderListParams) => {
     const { data } = await axiosInstance.get<
       ApiResponse<PaginatedData<OrderDetail>>
     >(ORDER_ROUTES.BASE, { params });
