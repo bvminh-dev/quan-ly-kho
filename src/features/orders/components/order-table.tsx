@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/table";
 import { InvoiceDialog } from "@/features/sales/components/invoice-dialog";
 import type { OrderDetail, PaginationMeta, WarehouseItem } from "@/types/api";
-import { formatNGN, formatUSD } from "@/utils/currency";
+import { formatUSD } from "@/utils/currency";
 import { quickSearchFilter } from "@/utils/search";
 import {
   CheckCircle2,
@@ -214,12 +214,12 @@ export function OrderTable({
               </TableRow>
             ) : (
               filteredOrders.map((order) => {
-                const { totalUSD, totalNGN, paidUSD, paidNGN, remainingUSD, remainingNGN } =
+                const { totalUSD, paidUSD, remainingUSD } =
                   computeOrderFinancials(order);
                 const lowerState = order.state?.toLowerCase();
                 const stateCfg =
                   ORDER_STATE_CONFIG[
-                  lowerState as keyof typeof ORDER_STATE_CONFIG
+                    lowerState as keyof typeof ORDER_STATE_CONFIG
                   ];
 
                 const isLocked =
@@ -228,8 +228,8 @@ export function OrderTable({
                   lowerState === "đã giao" ||
                   lowerState === "đã hoàn" ||
                   lowerState === "hoàn đơn";
-                const canRevert =
-                  lowerState === "chỉnh sửa" && !isLocked && paidUSD === 0;
+                const isDelivered = lowerState === "đã giao";
+                const canRevert = !isLocked;
                 const canConfirm =
                   lowerState === "báo giá" || lowerState === "chỉnh sửa";
                 const canAddPayment =
@@ -337,62 +337,68 @@ export function OrderTable({
                             <FileText className="h-4 w-4 mr-2" />
                             Xem hóa đơn
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              if (!canConfirm) return;
-                              setConfirmOrder(order);
-                            }}
-                            disabled={!canConfirm}
-                            className="cursor-pointer"
-                          >
-                            <CheckCircle2 className="h-4 w-4 mr-2" />
-                            Chốt đơn
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              if (!canAddPayment) return;
-                              setPaymentOrder(order);
-                            }}
-                            disabled={!canAddPayment}
-                            className="cursor-pointer"
-                          >
-                            <CreditCard className="h-4 w-4 mr-2" />
-                            Ghi nhận thanh toán
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              if (!canDeliver) return;
-                              setDeliverOrder(order);
-                              setDeliverNote("");
-                            }}
-                            disabled={!canDeliver}
-                            className="cursor-pointer"
-                          >
-                            <Truck className="h-4 w-4 mr-2" />
-                            Đã giao
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              if (!canRevert) return;
-                              setRevertOrder(order);
-                            }}
-                            disabled={!canRevert}
-                            className="cursor-pointer"
-                          >
-                            <RotateCcw className="h-4 w-4 mr-2" />
-                            Hoàn đơn
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              if (isLocked) return;
-                              setEditOrder(order);
-                            }}
-                            disabled={isLocked}
-                            className="cursor-pointer"
-                          >
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Chỉnh sửa
-                          </DropdownMenuItem>
+                          {canAddPayment && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                if (!canAddPayment) return;
+                                setPaymentOrder(order);
+                              }}
+                              disabled={!canAddPayment}
+                              className="cursor-pointer"
+                            >
+                              <CreditCard className="h-4 w-4 mr-2" />
+                              Ghi nhận thanh toán
+                            </DropdownMenuItem>
+                          )}
+                          {!isDelivered && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  if (!canConfirm) return;
+                                  setConfirmOrder(order);
+                                }}
+                                disabled={!canConfirm}
+                                className="cursor-pointer"
+                              >
+                                <CheckCircle2 className="h-4 w-4 mr-2" />
+                                Chốt đơn
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  if (!canDeliver) return;
+                                  setDeliverOrder(order);
+                                  setDeliverNote("");
+                                }}
+                                disabled={!canDeliver}
+                                className="cursor-pointer"
+                              >
+                                <Truck className="h-4 w-4 mr-2" />
+                                Đã giao
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  if (!canRevert) return;
+                                  setRevertOrder(order);
+                                }}
+                                disabled={!canRevert}
+                                className="cursor-pointer"
+                              >
+                                <RotateCcw className="h-4 w-4 mr-2" />
+                                Hoàn đơn
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  if (isLocked) return;
+                                  setEditOrder(order);
+                                }}
+                                disabled={isLocked}
+                                className="cursor-pointer"
+                              >
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Chỉnh sửa
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -505,9 +511,6 @@ export function OrderTable({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Chuyển đơn hàng sang Đã giao</DialogTitle>
-            <DialogDescription>
-              Nhập ghi chú cho lần cập nhật trạng thái này nếu cần.
-            </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
             <Label>Ghi chú</Label>

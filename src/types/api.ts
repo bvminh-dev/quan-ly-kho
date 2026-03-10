@@ -451,6 +451,7 @@ export interface HistoryExportItem {
   stateOrder: "Khách trả" | "Hoàn đơn";
   paymentOrder: number;
   note?: string;
+  unitOfCalculation?: string;
   createdBy: string;
   updatedBy: string;
   isDeleted: boolean;

@@ -128,32 +128,6 @@ export function HistoryExportDetailDialog({
               <Separator />
 
               <div>
-                <h4 className="text-sm font-semibold mb-3">Thông tin giá</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Giá cao:</span>{" "}
-                    <span className="font-medium">
-                      {formatNumber(item.priceHigh)}$
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Giá thấp:</span>{" "}
-                    <span className="font-medium">
-                      {formatNumber(item.priceLow)}$
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Giảm giá:</span>{" "}
-                    <span className="font-medium">
-                      {formatNumber(item.sale)}$
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div>
                 <h4 className="text-sm font-semibold mb-3">Thông tin đơn hàng</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
@@ -184,17 +158,6 @@ export function HistoryExportDetailDialog({
                     <span className="text-muted-foreground">Giá sale:</span>{" "}
                     <span className="font-medium">
                       {formatNumber(item.saleOrder)}$
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Thanh toán:</span>{" "}
-                    <span
-                      className={`font-medium ${
-                        item.paymentOrder >= 0 ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {item.paymentOrder >= 0 ? "+" : ""}
-                      {formatNumber(item.paymentOrder)}$
                     </span>
                   </div>
                 </div>

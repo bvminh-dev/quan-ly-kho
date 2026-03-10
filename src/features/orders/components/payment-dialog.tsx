@@ -22,6 +22,7 @@ import type { OrderDetail } from "@/types/api";
 import { round2, formatMoneyValue, formatUSD, formatNGN } from "@/utils/currency";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 import { z } from "zod/v4";
 import { useAddHistory, useConfirmOrder } from "../hooks/use-orders";
 import { computeOrderFinancials } from "../utils/order-financials";
@@ -52,12 +53,14 @@ export function PaymentDialog({
   const addHistory = useAddHistory();
   const confirmOrder = useConfirmOrder();
   const { data: liveRate } = useExchangeRate();
+  const lowerState = order?.state?.toLowerCase();
+  const isDelivered = lowerState === "đã giao";
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     mode: "onBlur",
     defaultValues: {
-      type: "khách trả",
+      type: isDelivered ? "hoàn tiền" : "khách trả",
       exchangeRate:
         order?.exchangeRate || (liveRate ? Math.round(liveRate) : 1550),
       moneyPaidNGN: 0,
@@ -67,6 +70,23 @@ export function PaymentDialog({
       note: "",
     },
   });
+
+  useEffect(() => {
+    if (!order) return;
+
+    const baseType = lowerState === "đã giao" ? "hoàn tiền" : "khách trả";
+
+    form.reset({
+      type: baseType,
+      exchangeRate:
+        order.exchangeRate || (liveRate ? Math.round(liveRate) : 1550),
+      moneyPaidNGN: 0,
+      moneyPaidDolar: 0,
+      paymentMethod: "Chuyển khoản",
+      datePaid: new Date().toISOString().slice(0, 16),
+      note: "",
+    });
+  }, [order, lowerState, liveRate, form]);
 
   const onSubmit = async (values: FormValues) => {
     if (!order) return;
@@ -193,6 +213,7 @@ export function PaymentDialog({
               <Label className="text-xs">Loại</Label>
               <Select
                 value={form.watch("type")}
+                disabled={isDelivered}
                 onValueChange={(v) => {
                   form.setValue("type", v as "khách trả" | "hoàn tiền");
                   handleNGNChange(0);
@@ -202,7 +223,9 @@ export function PaymentDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="khách trả">Khách trả</SelectItem>
+                  {!isDelivered && (
+                    <SelectItem value="khách trả">Khách trả</SelectItem>
+                  )}
                   <SelectItem value="hoàn tiền">Hoàn tiền</SelectItem>
                 </SelectContent>
               </Select>

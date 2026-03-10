@@ -470,13 +470,13 @@ export function InvoiceDialog({
               {order.history.length > 0
                 ? order.history.map((h, i) => (
                   <Fragment key={`history-paid-${i}`}>
-                    <div className="col-span-2 text-right text-sm text-emerald-600 italic">
-                      Paid: {formatNGN(h.moneyPaidNGN)}
+                    <div className={`col-span-2 text-right text-sm ${h.type === "khách trả" ? "text-emerald-600" : "text-red-600"} italic`}>
+                      {h.type === "khách trả" ? "Paid" : "Refund"}: {formatNGN(h.moneyPaidNGN)}
                     </div>
-                    <div className="text-right text-sm text-emerald-600 italic">
+                    <div className={`text-right text-sm ${h.type === "khách trả" ? "text-emerald-600" : "text-red-600"}`}>
                       rate: {formatNumber(h.exchangeRate)}
                     </div>
-                    <div className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600">
+                    <div className={`text-right text-sm tabular-nums whitespace-nowrap ${h.type === "khách trả" ? "text-emerald-600" : "text-red-600"}`}>
                       {formatUSD(h.moneyPaidDolar)}
                     </div>
                     <div />

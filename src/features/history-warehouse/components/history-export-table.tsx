@@ -64,6 +64,7 @@ export function HistoryExportTable({
         item.quantityOrder,
         item.stateOrder,
         item.note,
+        item.unitOfCalculation,
       ]),
     [items, search],
   );
@@ -99,8 +100,8 @@ export function HistoryExportTable({
               <TableHead className="font-semibold">Style</TableHead>
               <TableHead className="font-semibold">Color</TableHead>
               <TableHead className="font-semibold">Đơn hàng</TableHead>
-              <TableHead className="font-semibold">Loại</TableHead>
               <TableHead className="font-semibold text-right">SL</TableHead>
+              <TableHead className="font-semibold">Đơn vị</TableHead>
               <TableHead className="font-semibold">Trạng thái</TableHead>
               <TableHead className="font-semibold">Ghi chú</TableHead>
               <TableHead className="font-semibold text-center">
@@ -109,10 +110,10 @@ export function HistoryExportTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredItems.length === 0 ? (
+                {filteredItems.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={12}
+                  colSpan={13}
                   className="h-24 text-center text-muted-foreground"
                 >
                   Không có dữ liệu
@@ -152,13 +153,11 @@ export function HistoryExportTable({
                       ? item.orderId.slice(-5).toUpperCase()
                       : item.orderId._id?.slice(-5).toUpperCase() || "-"}
                   </TableCell>
-                  <TableCell>
-                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-                      {item.type}
-                    </span>
-                  </TableCell>
                   <TableCell className="text-right">
                     {item.quantityOrder}
+                  </TableCell>
+                  <TableCell>
+                    {item.unitOfCalculation || "-"}
                   </TableCell>
                   <TableCell>
                     <span

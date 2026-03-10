@@ -119,11 +119,7 @@ export function HistoryExportFormDialog({
             </div>
             <div>
               <span className="text-muted-foreground">Số lượng:</span>{" "}
-              <span className="font-medium">{item.quantityOrder}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Thanh toán:</span>{" "}
-              <span className="font-medium">{formatNumber(item.paymentOrder)}</span>
+              <span className="font-medium">{item.quantityOrder} {item.unitOfCalculation || "-"}</span>
             </div>
           </div>
         </div>
