@@ -110,17 +110,49 @@ export function InvoiceDialog({
     try {
       const dataUrl = await generateImage();
       if (!dataUrl) return;
-      if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
-        throw new Error("Clipboard API unavailable");
+
+      const tryClipboardWrite = async (): Promise<boolean> => {
+        if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
+          if (process.env.NODE_ENV === "development") {
+            console.warn("[Invoice copy] Clipboard API không có sẵn");
+          }
+          return false;
+        }
+        try {
+          const res = await fetch(dataUrl);
+          const blob = await res.blob();
+          // Safari/mobile: wrap in Promise for better compatibility
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              "image/png": Promise.resolve(blob),
+            }),
+          ]);
+          return true;
+        } catch (err) {
+          // NotAllowedError / SecurityError = trình duyệt chặn (chính sách, không có user gesture, v.v.)
+          if (process.env.NODE_ENV === "development") {
+            console.warn("[Invoice copy] Clipboard bị chặn:", err);
+          }
+          return false;
+        }
+      };
+
+      const copied = await tryClipboardWrite();
+      if (copied) {
+        toast.success("Đã copy ảnh hóa đơn");
+        return;
       }
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
-      await navigator.clipboard.write([
-        new ClipboardItem({ "image/png": blob }),
-      ]);
-      toast.success("Đã copy ảnh hóa đơn");
+
+      // Fallback: trên điện thoại nhiều trình duyệt không hỗ trợ copy ảnh → tải xuống
+      const link = document.createElement("a");
+      link.download = `invoice-${order?._id?.slice(-5) || "unknown"}.png`;
+      link.href = dataUrl;
+      link.click();
+      toast.success(
+        "Trên thiết bị này không hỗ trợ copy ảnh. Đã tải ảnh xuống thay thế."
+      );
     } catch {
-      toast.error("Không thể copy ảnh");
+      toast.error("Không thể copy hoặc tải ảnh");
     }
   };
 

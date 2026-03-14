@@ -42,6 +42,8 @@ interface WarehouseTableProps {
   isLoading: boolean;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
+  /** When true, paginate and compute total/pages from filtered list (client-side) */
+  clientSidePagination?: boolean;
 }
 
 export function WarehouseTable({
@@ -50,6 +52,7 @@ export function WarehouseTable({
   isLoading,
   onPageChange,
   onPageSizeChange,
+  clientSidePagination = false,
 }: WarehouseTableProps) {
   const [search, setSearch] = useState("");
 
@@ -71,7 +74,27 @@ export function WarehouseTable({
     [sortedItems, search],
   );
 
-  // Calculate totals by unit
+  const { displayItems, paginationMeta } = useMemo(() => {
+    if (clientSidePagination) {
+      const total = filteredItems.length;
+      const pages = Math.max(1, Math.ceil(total / meta.pageSize));
+      const start = (meta.current - 1) * meta.pageSize;
+      return {
+        displayItems: filteredItems.slice(start, start + meta.pageSize),
+        paginationMeta: {
+          ...meta,
+          total,
+          pages,
+        },
+      };
+    }
+    return {
+      displayItems: filteredItems,
+      paginationMeta: meta,
+    };
+  }, [clientSidePagination, filteredItems, meta]);
+
+  // Calculate totals by unit (from full filtered list, not just current page)
   const totals = useMemo(() => {
     const result = {
       stockKg: 0,
@@ -165,7 +188,7 @@ export function WarehouseTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredItems.length === 0 ? (
+          {displayItems.length === 0 ? (
             <TableRow>
               <TableCell
                 colSpan={10}
@@ -175,7 +198,7 @@ export function WarehouseTable({
               </TableCell>
             </TableRow>
           ) : (
-            filteredItems.map((item) => (
+            displayItems.map((item) => (
               <TableRow key={item._id} className="hover:bg-muted/30">
                 <TableCell className="font-mono font-medium">
                   {item._id.slice(-5).toUpperCase()}
@@ -242,10 +265,10 @@ export function WarehouseTable({
       />
 
       <DataTablePagination
-        current={meta.current}
-        pageSize={meta.pageSize}
-        total={meta.total}
-        pages={meta.pages}
+        current={paginationMeta.current}
+        pageSize={paginationMeta.pageSize}
+        total={paginationMeta.total}
+        pages={paginationMeta.pages}
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
       />
