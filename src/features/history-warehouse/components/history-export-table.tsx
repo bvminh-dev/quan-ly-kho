@@ -57,9 +57,6 @@ export function HistoryExportTable({
         item.quality,
         item.style,
         item.color,
-        typeof item.orderId === "string"
-          ? item.orderId
-          : item.orderId._id,
         item.type,
         item.quantityOrder,
         item.stateOrder,

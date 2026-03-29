@@ -36,6 +36,7 @@ export function quickSearchFilter<T>(
     if (!fields.length) return false;
 
     const haystack = normalizeText(fields.join(" "));
+    console.log(haystack);
     if (!haystack) return false;
 
     return tokens.every((token) => haystack.includes(token));

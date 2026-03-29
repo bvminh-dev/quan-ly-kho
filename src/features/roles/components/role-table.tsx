@@ -59,7 +59,6 @@ export function RoleTable({
   const filteredRoles = useMemo(
     () =>
       quickSearchFilter(roles, search, (role) => [
-        role._id,
         role.name,
         role.description,
         role.permissions?.length,

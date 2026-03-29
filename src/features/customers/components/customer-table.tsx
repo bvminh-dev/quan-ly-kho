@@ -69,7 +69,6 @@ export function CustomerTable({
   const filteredCustomers = useMemo(
     () =>
       quickSearchFilter(customers, search, (customer) => [
-        customer._id,
         customer.name,
         customer.payment,
         customer.note,

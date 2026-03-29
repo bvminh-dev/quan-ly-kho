@@ -81,7 +81,6 @@ export function UserTable({
   const filteredUsers = useMemo(
     () =>
       quickSearchFilter(users, search, (user) => [
-        user._id,
         user.name,
         user.email,
         getRoleName(user.role),

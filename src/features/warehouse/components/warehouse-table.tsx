@@ -60,7 +60,6 @@ export function WarehouseTable({
   const filteredItems = useMemo(
     () =>
       quickSearchFilter(sortedItems, search, (item) => [
-        item._id,
         item.inches,
         item.item,
         item.quality,

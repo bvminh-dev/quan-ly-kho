@@ -144,7 +144,6 @@ export function OrderTable({
           computeOrderFinancials(order);
         const creatorName = getOrderCreatorName(order.createdBy);
         return [
-          order._id,
           order.type,
           order.customer?.name,
           order.state,

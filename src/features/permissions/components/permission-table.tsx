@@ -70,7 +70,6 @@ export function PermissionTable({
   const filteredPermissions = useMemo(
     () =>
       quickSearchFilter(permissions, search, (perm) => [
-        perm._id,
         perm.name,
         perm.apiPath,
         perm.method,
