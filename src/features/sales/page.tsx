@@ -19,7 +19,6 @@ import {
   useCreateOrder,
 } from "@/features/orders/hooks/use-orders";
 import { useAllWarehouses } from "@/features/warehouse/hooks/use-warehouses";
-import { useExchangeRate } from "@/hooks/use-exchange-rate";
 import type { CreateOrderDto, OrderDetail, WarehouseItem } from "@/types/api";
 import { ChevronDown, ChevronRight, Warehouse } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -70,7 +69,6 @@ export default function SalesPage() {
   const confirmOrder = useConfirmOrder();
   const addHistory = useAddHistory();
   const createCustomer = useCreateCustomer();
-  const { data: liveRate } = useExchangeRate();
 
   const warehouseItems = whData?.data?.items ?? [];
   const customers = custData?.data?.items ?? [];
@@ -84,9 +82,8 @@ export default function SalesPage() {
   }, [warehouseItems]);
 
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
-  const [userExchangeRate, setUserExchangeRate] = useState<number | null>(null);
-  const exchangeRate =
-    userExchangeRate ?? (liveRate ? Math.round(liveRate) : 1550);
+  const [userExchangeRate, setUserExchangeRate] = useState<number>(0);
+  const exchangeRate = userExchangeRate;
   const setExchangeRate = setUserExchangeRate;
   const [priceType, setPriceType] = useState<"high" | "low">("high");
   const [standaloneItems, setStandaloneItems] = useState<SelectedItem[]>([]);
@@ -212,7 +209,7 @@ export default function SalesPage() {
       const newSet: OrderSet = {
         id: genSetId(),
         nameSet: getNextSetName(sets),
-        priceSet: 0,
+        priceSet: Math.max(...itemsToGroup.map((i) => i.price || 0)),
         saleSet: 0,
         quantitySet: 1,
         items: itemsToGroup.map((item) => {
@@ -396,6 +393,10 @@ export default function SalesPage() {
       toast.error("Vui lòng chọn sản phẩm");
       return null;
     }
+    if (exchangeRate <= 0) {
+      toast.error("Tỷ giá phải lớn hơn 0");
+      return null;
+    }
     for (const item of standaloneItems) {
       if (!item.quantity || item.quantity <= 0) {
         toast.error("Vui lòng nhập số lượng cho tất cả sản phẩm");
@@ -511,6 +512,7 @@ export default function SalesPage() {
             paymentMethod: "Chuyển khoản",
             datePaid: new Date().toISOString(),
             note: "Tự động ghi nhận khi chốt đơn từ màn hình bán hàng",
+            paymentType: "auto"
           },
         });
       }

@@ -120,6 +120,7 @@ export function OrderTable({
         paymentMethod: "Chuyển khoản",
         datePaid: new Date().toISOString(),
         note: "Tự động ghi nhận khi chốt đơn từ danh sách đơn hàng",
+        paymentType: "auto"
       },
     });
   };

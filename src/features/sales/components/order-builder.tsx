@@ -94,6 +94,8 @@ export function OrderBuilder({
   const [editingQuantity, setEditingQuantity] = useState<Record<string, string>>({});
   const isProcessingRef = useRef(false);
   const ungroupingSetIdsRef = useRef<Set<string>>(new Set());
+  // Lưu số lượng ban đầu của đơn hàng để fix bug getMaxQuantity
+  const initialOrderQuantityRef = useRef<Record<string, number> | null>(null);
 
   const orderQuantityByWarehouseId = useMemo(() => {
     const totals: Record<string, number> = {};
@@ -107,8 +109,13 @@ export function OrderBuilder({
           (totals[item.warehouseId] ?? 0) + (item.quantity ?? 0) * setMultiplier;
       }
     }
+    // Chỉ lưu số lượng ban đầu khi đang chỉnh sửa (có maxAvailableByWarehouseId có dữ liệu)
+    const hasMaxAvailable = maxAvailableByWarehouseId && Object.keys(maxAvailableByWarehouseId).length > 0;
+    if (initialOrderQuantityRef.current === null && hasMaxAvailable) {
+      initialOrderQuantityRef.current = { ...totals };
+    }
     return totals;
-  }, [standaloneItems, sets]);
+  }, [standaloneItems, sets, maxAvailableByWarehouseId]);
 
   const getMaxQuantity = useCallback(
     (warehouseId: string) => {
@@ -117,18 +124,19 @@ export function OrderBuilder({
         hasRecordedPayment ?? ((paid || 0) !== 0 || (debt || 0) !== 0);
       if (!hasRecordedMoney) return warehouseQuantity;
       const fromMap = maxAvailableByWarehouseId?.[warehouseId];
-      const fromCurrentOrder = warehouseQuantity + (orderQuantityByWarehouseId[warehouseId] ?? 0);
+      // Sử dụng số lượng BAN ĐẦU của đơn hàng thay vì số lượng hiện tại
+      const initialQuantity = initialOrderQuantityRef.current?.[warehouseId] ?? 0;
+      const fromInitialOrder = warehouseQuantity + initialQuantity;
       if (typeof fromMap === "number") {
-        return Math.max(fromMap, fromCurrentOrder);
+        return Math.max(fromMap, fromInitialOrder);
       }
-      return fromCurrentOrder;
+      return fromInitialOrder;
     },
     [
       maxAvailableByWarehouseId,
       warehouseMap,
       paid,
       debt,
-      orderQuantityByWarehouseId,
       hasRecordedPayment,
     ],
   );
@@ -425,7 +433,7 @@ export function OrderBuilder({
                         onChange={() => toggleSelectForSet(item.tempId)}
                         className="rounded cursor-pointer"
                       />
-                      <span className="text-sm font-medium truncate max-w-[250px]">
+                      <span className="text-sm font-medium truncate max-w-fit">
                         {getWarehouseDisplayName(item.warehouse)}
                       </span>
                     </div>

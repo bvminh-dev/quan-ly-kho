@@ -320,12 +320,13 @@ function OrderEditForm({
       );
       if (itemsToGroup.length < 2) return;
 
+      const maxPrice = Math.max(...itemsToGroup.map((i) => i.price));
       setSets((prev) => [
         ...prev,
         {
           id: genSetId(),
           nameSet: getNextSetName(),
-          priceSet: 0,
+          priceSet: maxPrice,
           saleSet: 0,
           quantitySet: 1,
           items: itemsToGroup.map((item) => ({

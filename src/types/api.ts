@@ -290,6 +290,7 @@ export interface OrderHistoryDto {
   paymentMethod: string;
   datePaid: string;
   note: string;
+  paymentType?: string;
 }
 
 export interface OrderCustomerRef {
@@ -371,6 +372,7 @@ export interface AddHistoryDto {
   paymentMethod: string;
   datePaid: string;
   note?: string;
+  paymentType?: string;
 }
 
 export interface RevertOrderDto {

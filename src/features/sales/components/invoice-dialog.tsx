@@ -449,19 +449,9 @@ export function InvoiceDialog({
             <div
               className="border-gray-200 pt-3 space-y-1.5 grid gap-y-1.5"
               style={{
-                gridTemplateColumns: "1fr 5rem 7rem 7rem 8rem",
+                gridTemplateColumns: "1fr 6rem 7.5rem 9rem 9.5rem",
               }}
             >
-              <div className="col-span-3 text-right text-sm text-gray-500">
-                Subtotal:
-              </div>
-              <div className="text-right text-sm tabular-nums whitespace-nowrap">
-                {formatUSD(subtotalUSD)}
-              </div>
-              <div className="text-right text-sm tabular-nums whitespace-nowrap">
-                {formatNGN(subtotalNGN)}
-              </div>
-
               {discountUSD > 0 && (
                 <>
                   <div className="col-span-3 text-right text-sm text-emerald-600 italic">
@@ -502,12 +492,13 @@ export function InvoiceDialog({
               {order.history.length > 0
                 ? order.history.map((h, i) => (
                   <Fragment key={`history-paid-${i}`}>
-                    <div className={`col-span-2 text-right text-sm ${h.type === "khách trả" ? "text-emerald-600" : "text-red-600"} italic`}>
-                      {h.type === "khách trả" ? "Paid" : "Refund"}: {formatNGN(h.moneyPaidNGN)}
+                    <div className={`${h.paymentType === "auto" ? 'col-span-3' : 'col-span-2'} text-right text-sm ${h.type === "khách trả" ? "text-emerald-600" : "text-red-600"} italic`}>
+                      {h.type === "khách trả" ? h.paymentType === "auto" ? "Overpaid last order" : "Paid" : "Refund"}:{h.paymentType === "auto" ? "" : ` ${formatNGN(h.moneyPaidNGN)}`}
                     </div>
-                    <div className={`text-right text-sm ${h.type === "khách trả" ? "text-emerald-600" : "text-red-600"}`}>
+                    {h.paymentType === "auto" ? <></> : <div className={`text-right text-sm ${h.type === "khách trả" ? "text-emerald-600" : "text-red-600"}`}>
                       rate: {formatNumber(h.exchangeRate)}
-                    </div>
+                    </div>}
+                    
                     <div className={`text-right text-sm tabular-nums whitespace-nowrap ${h.type === "khách trả" ? "text-emerald-600" : "text-red-600"}`}>
                       {formatUSD(h.moneyPaidDolar)}
                     </div>
@@ -532,27 +523,27 @@ export function InvoiceDialog({
               {(paidUSD !== 0 || order.history.length > 0 || debtUSD !== 0 || balanceUSD === 0) && (
                 <>
                   <div className="col-span-5 border-t border-gray-200 pt-2 mt-1" />
-                  <div className="col-span-3 text-right text-sm font-semibold">
+                  <div className="col-span-3 text-right text-xl font-bold">
                     Balance:
                   </div>
                   {balanceUSD > 0 ? (
                     <>
-                      <div className="text-right text-sm font-semibold tabular-nums whitespace-nowrap text-red-600">
+                      <div className="text-right text-xl font-bold tabular-nums whitespace-nowrap text-red-600">
                         {formatUSD(balanceUSD)}
                       </div>
-                      <div className="text-right text-sm font-semibold tabular-nums whitespace-nowrap text-red-600">
+                      <div className="text-right text-xl font-bold tabular-nums whitespace-nowrap text-red-600">
                         {formatNGN(balanceNGN)}
                       </div>
                     </>
                   ) : balanceUSD < 0 ? (
                     <>
-                      <div className="text-right text-sm font-semibold text-emerald-600">
+                      <div className="text-right text-xl font-bold text-emerald-600">
                         <div>Overpaid</div>
                         <div className="tabular-nums whitespace-nowrap">
                           {formatUSD(Math.abs(balanceUSD))}
                         </div>
                       </div>
-                      <div className="text-right text-sm font-semibold text-emerald-600">
+                      <div className="text-right text-xl font-bold text-emerald-600">
                         <div>Overpaid</div>
                         <div className="tabular-nums whitespace-nowrap">
                           {formatNGN(Math.abs(balanceNGN))}
@@ -561,10 +552,10 @@ export function InvoiceDialog({
                     </>
                   ) : (
                     <>
-                      <div className="text-right text-sm font-semibold text-emerald-600">
+                      <div className="text-right text-xl font-bold text-emerald-600">
                         Fully paid
                       </div>
-                      <div className="text-right text-sm font-semibold text-emerald-600">
+                      <div className="text-right text-xl font-bold text-emerald-600">
                         Fully paid
                       </div>
                     </>
