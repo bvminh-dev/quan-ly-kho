@@ -358,207 +358,209 @@ export function InvoiceDialog({
                     </th>
                   </tr>
                 </thead>
-              <tbody>
-                {calculatedProducts.map((entry, idx) => {
-                  if (entry.isSet) {
-                    const colors = getSetColors(entry.setVisualIndex);
-                    const itemCount = entry.items.length;
+                <tbody>
+                  {calculatedProducts.map((entry, idx) => {
+                    if (entry.isSet) {
+                      const colors = getSetColors(entry.setVisualIndex);
+                      const itemCount = entry.items.length;
 
-                    return (
-                      <Fragment key={`set-group-${idx}`}>
-                        {entry.items.map((it, itemIdx) => (
-                          <tr
-                            key={`set-item-${idx}-${itemIdx}`}
-                            className="border-b border-gray-100"
-                            style={{
-                              borderLeft: `4px solid ${colors.borderColor}`,
-                            }}
-                          >
-                            <td className="py-2 pl-3 text-sm min-w-0 wrap-break-word leading-snug align-top" style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>
-                              {it.displayName}
-                            </td>
-                            <td className="py-2 text-sm text-center tabular-nums">
-                              {formatNumber(it.qty)}{" "}
-                              {it.wh?.unitOfCalculation?.toLowerCase() || "pcs"}
-                            </td>
-                            {itemIdx === 0 && (
-                              <>
-                                <td
-                                  rowSpan={itemCount}
-                                  className="py-2 text-sm text-right tabular-nums align-middle"
-                                >
-                                  <div className="font-semibold">
-                                    {formatUSD(entry.product.priceSet ?? 0)}
-                                  </div>
+                      return (
+                        <Fragment key={`set-group-${idx}`}>
+                          {entry.items.map((it, itemIdx) => (
+                            <tr
+                              key={`set-item-${idx}-${itemIdx}`}
+                              className="border-b border-gray-100"
+                              style={{
+                                borderLeft: `4px solid ${colors.borderColor}`,
+                              }}
+                            >
+                              <td className="py-2 pl-3 text-sm min-w-0 wrap-break-word leading-snug align-top" style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>
+                                {it.displayName}
+                              </td>
+                              <td className="py-2 text-sm text-center tabular-nums">
+                                {formatNumber(it.qty)}{" "}
+                                {it.wh?.unitOfCalculation?.toLowerCase() || "pcs"}
+                              </td>
+                              {itemIdx === 0 && (
+                                <>
+                                  <td
+                                    rowSpan={itemCount}
+                                    className="py-2 text-sm text-right tabular-nums align-middle"
+                                  >
+                                    <div className="font-semibold">
+                                      {formatUSD(entry.product.priceSet ?? 0)}
+                                    </div>
 
-                                </td>
-                                <td
-                                  rowSpan={itemCount}
-                                  className="py-2 text-sm text-right tabular-nums font-semibold align-middle"
-                                >
-                                  <div>{formatUSD(entry.setTotalUSD)}</div>
-                                  <div className="text-xs text-gray-500 font-normal">
-                                    x{formatNumber(entry.setQty)} set
-                                  </div>
-                                </td>
-                                <td
-                                  rowSpan={itemCount}
-                                  className="py-2 text-sm text-right tabular-nums font-semibold align-middle"
-                                >
-                                  {formatNGN(entry.setTotalNGN)}
-                                </td>
-                              </>
-                            )}
-                          </tr>
-                        ))}
-                      </Fragment>
-                    );
-                  }
+                                  </td>
+                                  <td
+                                    rowSpan={itemCount}
+                                    className="py-2 text-sm text-right tabular-nums font-semibold align-middle"
+                                  >
+                                    <div>{formatUSD(entry.setTotalUSD)}</div>
+                                    <div className="text-xs text-gray-500 font-normal">
+                                      x{formatNumber(entry.setQty)} set
+                                    </div>
+                                  </td>
+                                  <td
+                                    rowSpan={itemCount}
+                                    className="py-2 text-sm text-right tabular-nums font-semibold align-middle"
+                                  >
+                                    {formatNGN(entry.setTotalNGN)}
+                                  </td>
+                                </>
+                              )}
+                            </tr>
+                          ))}
+                        </Fragment>
+                      );
+                    }
 
-                  return entry.items.map((it, itemIdx) => (
-                    <tr
-                      key={`single-row-${idx}-${itemIdx}`}
-                      className="border-b border-gray-100"
-                    >
-                      <td className="py-2 text-sm min-w-0 wrap-break-word leading-snug align-top" style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>
-                        {it.displayName}
-                      </td>
-                      <td className="py-2 text-sm text-center tabular-nums">
-                        {formatNumber(it.qty)}{" "}
-                        {it.wh?.unitOfCalculation?.toLowerCase() || "pcs"}
-                      </td>
-                      <td
-                        className={`py-2 text-sm text-right tabular-nums ${it.customPrice || it.customSale ? "font-bold" : ""
-                          }`}
+                    return entry.items.map((it, itemIdx) => (
+                      <tr
+                        key={`single-row-${idx}-${itemIdx}`}
+                        className="border-b border-gray-100"
                       >
-                        {formatUSD(it.price)}
+                        <td className="py-2 text-sm min-w-0 wrap-break-word leading-snug align-top" style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}>
+                          {it.displayName}
+                        </td>
+                        <td className="py-2 text-sm text-center tabular-nums">
+                          {formatNumber(it.qty)}{" "}
+                          {it.wh?.unitOfCalculation?.toLowerCase() || "pcs"}
+                        </td>
+                        <td
+                          className={`py-2 text-sm text-right tabular-nums ${it.customPrice || it.customSale ? "font-bold" : ""
+                            }`}
+                        >
+                          {formatUSD(it.price)}
+                        </td>
+                        <td className="py-2 text-sm text-right tabular-nums">
+                          {formatUSD(it.totalUSD)}
+                        </td>
+                        <td className="py-2 text-sm text-right tabular-nums">
+                          {formatNGN(it.totalNGN)}
+                        </td>
+                      </tr>
+                    ));
+                  })}
+
+                  {discountUSD > 0 && (
+                    <tr>
+                      <td colSpan={3} className="text-right text-sm text-emerald-600 italic py-1">
+                        Discount:
                       </td>
-                      <td className="py-2 text-sm text-right tabular-nums">
-                        {formatUSD(it.totalUSD)}
+                      <td className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600 py-1">
+                        {formatUSD(discountUSD)}
                       </td>
-                      <td className="py-2 text-sm text-right tabular-nums">
-                        {formatNGN(it.totalNGN)}
+                      <td className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600 py-1">
+                        {formatNGN(discountNGN)}
                       </td>
                     </tr>
-                  ));
-                })}
-              </tbody>
-              </table>
-            </div>
+                  )}
 
-            <div
-              className="border-gray-200 pt-3 space-y-1.5 grid gap-y-1.5"
-              style={{
-                gridTemplateColumns: "1fr 6rem 7.5rem 9rem 9.5rem",
-              }}
-            >
-              {discountUSD > 0 && (
-                <>
-                  <div className="col-span-3 text-right text-sm text-emerald-600 italic">
-                    Discount:
-                  </div>
-                  <div className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600">
-                    {formatUSD(discountUSD)}
-                  </div>
-                  <div className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600">
-                    {formatNGN(discountNGN)}
-                  </div>
-                </>
-              )}
+                  <tr>
+                    <td colSpan={5} className="border-t-2 border-gray-300 pt-3" />
+                  </tr>
+                  <tr>
+                    <td colSpan={3} className="text-right text-lg font-bold">
+                      Total:
+                    </td>
+                    <td className="text-right text-lg font-bold tabular-nums whitespace-nowrap text-red-600">
+                      {formatUSD(amountToPayUSD)}
+                    </td>
+                    <td className="text-right text-lg font-bold tabular-nums whitespace-nowrap text-red-600">
+                      {formatNGN(amountToPayNGN)}
+                    </td>
+                  </tr>
 
-              <div className="col-span-5 border-t-2 border-gray-300 pt-3 mt-1" />
-              <div className="col-span-3 text-right text-lg font-bold">
-                Total:
-              </div>
-              <div className="text-right text-lg font-bold tabular-nums whitespace-nowrap text-red-600">
-                {formatUSD(amountToPayUSD)}
-              </div>
-              <div className="text-right text-lg font-bold tabular-nums whitespace-nowrap text-red-600">
-                {formatNGN(amountToPayNGN)}
-              </div>
+                  {debtUSD !== 0 && (
+                    <tr>
+                      <td colSpan={3} className="text-right text-sm font-semibold text-red-600 py-1">
+                        Debt:
+                      </td>
+                      <td className="text-right text-sm font-semibold tabular-nums whitespace-nowrap text-red-600 py-1">
+                        {formatUSD(Math.abs(debtUSD))}
+                      </td>
+                      <td className="py-1" />
+                    </tr>
+                  )}
 
-              {debtUSD !== 0 && (
-                <>
-                  <div className="col-span-3 text-right text-sm font-semibold text-red-600">
-                    Debt:
-                  </div>
-                  <div className="text-right text-sm font-semibold tabular-nums whitespace-nowrap text-red-600">
-                    {formatUSD(Math.abs(debtUSD))}
-                  </div>
-                  <div />
-                </>
-              )}
+                  {order.history.length > 0
+                    ? order.history.map((h, i) => (
+                      <tr key={`history-paid-${i}`}>
+                        <td colSpan={h.paymentType === "auto" ? 3 : 2} className={`text-right text-sm ${h.type === "khách trả" ? "text-emerald-600" : "text-red-600"} italic py-1`}>
+                          {h.type === "khách trả" ? h.paymentType === "auto" ? "Overpaid last order" : "Paid" : "Refund"}:{h.paymentType === "auto" ? "" : ` ${formatNGN(h.moneyPaidNGN)}`}
+                        </td>
+                        {h.paymentType === "auto" ? null : (
+                          <td className={`text-right text-sm ${h.type === "khách trả" ? "text-emerald-600" : "text-red-600"} py-1`}>
+                            rate: {formatNumber(h.exchangeRate)}
+                          </td>
+                        )}
+                        <td className={`text-right text-sm tabular-nums whitespace-nowrap ${h.type === "khách trả" ? "text-emerald-600" : "text-red-600"} py-1`}>
+                          {formatUSD(h.moneyPaidDolar)}
+                        </td>
+                        <td className="py-1" />
+                      </tr>
+                    ))
+                    : paidUSD !== 0 && (
+                      <tr>
+                        <td colSpan={3} className="text-right text-sm text-emerald-600 italic py-1">
+                          Overpaid last order:
+                        </td>
+                        <td className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600 py-1">
+                          {formatUSD(paidUSD)}
+                        </td>
+                        <td className="py-1" />
+                      </tr>
+                    )}
 
-              {order.history.length > 0
-                ? order.history.map((h, i) => (
-                  <Fragment key={`history-paid-${i}`}>
-                    <div className={`${h.paymentType === "auto" ? 'col-span-3' : 'col-span-2'} text-right text-sm ${h.type === "khách trả" ? "text-emerald-600" : "text-red-600"} italic`}>
-                      {h.type === "khách trả" ? h.paymentType === "auto" ? "Overpaid last order" : "Paid" : "Refund"}:{h.paymentType === "auto" ? "" : ` ${formatNGN(h.moneyPaidNGN)}`}
-                    </div>
-                    {h.paymentType === "auto" ? <></> : <div className={`text-right text-sm ${h.type === "khách trả" ? "text-emerald-600" : "text-red-600"}`}>
-                      rate: {formatNumber(h.exchangeRate)}
-                    </div>}
-                    
-                    <div className={`text-right text-sm tabular-nums whitespace-nowrap ${h.type === "khách trả" ? "text-emerald-600" : "text-red-600"}`}>
-                      {formatUSD(h.moneyPaidDolar)}
-                    </div>
-                    <div />
-                  </Fragment>
-                ))
-                : paidUSD !== 0 && (
-                  <>
-                    <div className="col-span-3 text-right text-sm text-emerald-600 italic">
-                      Overpaid last order:
-                    </div>
-                    <div className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600">
-                      {formatUSD(paidUSD)}
-                    </div>
-                    <div />
-                  </>
-                )}
-
-              {(paidUSD !== 0 || order.history.length > 0 || debtUSD !== 0 || balanceUSD === 0) && (
-                <>
-                  <div className="col-span-5 border-t border-gray-200 pt-2 mt-1" />
-                  <div className="col-span-3 text-right text-xl font-bold">
-                    Balance:
-                  </div>
-                  {balanceUSD > 0 ? (
+                  {(paidUSD !== 0 || order.history.length > 0 || debtUSD !== 0 || balanceUSD === 0) && (
                     <>
-                      <div className="text-right text-xl font-bold tabular-nums whitespace-nowrap text-red-600">
-                        {formatUSD(balanceUSD)}
-                      </div>
-                      <div className="text-right text-xl font-bold tabular-nums whitespace-nowrap text-red-600">
-                        {formatNGN(balanceNGN)}
-                      </div>
-                    </>
-                  ) : balanceUSD < 0 ? (
-                    <>
-                      <div className="text-right text-xl font-bold text-emerald-600">
-                        <div>Overpaid</div>
-                        <div className="tabular-nums whitespace-nowrap">
-                          {formatUSD(Math.abs(balanceUSD))}
-                        </div>
-                      </div>
-                      <div className="text-right text-xl font-bold text-emerald-600">
-                        <div>Overpaid</div>
-                        <div className="tabular-nums whitespace-nowrap">
-                          {formatNGN(Math.abs(balanceNGN))}
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="text-right text-xl font-bold text-emerald-600">
-                        Fully paid
-                      </div>
-                      <div className="text-right text-xl font-bold text-emerald-600">
-                        Fully paid
-                      </div>
+                      <tr>
+                        <td colSpan={5} className="border-t border-gray-200 pt-2" />
+                      </tr>
+                      <tr>
+                        <td colSpan={3} className="text-right text-xl font-bold">
+                          Balance:
+                        </td>
+                        {balanceUSD > 0 ? (
+                          <>
+                            <td className="text-right text-xl font-bold tabular-nums whitespace-nowrap text-red-600">
+                              {formatUSD(balanceUSD)}
+                            </td>
+                            <td className="text-right text-xl font-bold tabular-nums whitespace-nowrap text-red-600">
+                              {formatNGN(balanceNGN)}
+                            </td>
+                          </>
+                        ) : balanceUSD < 0 ? (
+                          <>
+                            <td className="text-right text-xl font-bold text-emerald-600">
+                              <div>Overpaid</div>
+                              <div className="tabular-nums whitespace-nowrap">
+                                {formatUSD(Math.abs(balanceUSD))}
+                              </div>
+                            </td>
+                            <td className="text-right text-xl font-bold text-emerald-600">
+                              <div>Overpaid</div>
+                              <div className="tabular-nums whitespace-nowrap">
+                                {formatNGN(Math.abs(balanceNGN))}
+                              </div>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="text-right text-xl font-bold text-emerald-600">
+                              Fully paid
+                            </td>
+                            <td className="text-right text-xl font-bold text-emerald-600">
+                              Fully paid
+                            </td>
+                          </>
+                        )}
+                      </tr>
                     </>
                   )}
-                </>
-              )}
+                </tbody>
+              </table>
             </div>
 
           </div>
