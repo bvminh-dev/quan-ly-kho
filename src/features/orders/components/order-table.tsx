@@ -109,6 +109,7 @@ export function OrderTable({
 
     const paidAmountUSD = orderToConfirm.paid ?? 0;
     if (paidAmountUSD <= 0) return;
+    if (orderToConfirm.state === "chỉnh sửa") return;
 
     await addHistoryMutation.mutateAsync({
       id: orderToConfirm._id,
