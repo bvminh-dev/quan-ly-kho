@@ -507,11 +507,8 @@ export function InvoiceDialog({
                 ))
                 : paidUSD !== 0 && (
                   <>
-                    <div className="col-span-2 text-right text-sm text-emerald-600 italic">
-                      Paid: {formatNGN(paidNGN)}
-                    </div>
-                    <div className="text-right text-sm text-emerald-600 italic">
-                      rate: {formatNumber(exchangeRate)}
+                    <div className="col-span-3 text-right text-sm text-emerald-600 italic">
+                      Overpaid last order:
                     </div>
                     <div className="text-right text-sm tabular-nums whitespace-nowrap text-emerald-600">
                       {formatUSD(paidUSD)}
