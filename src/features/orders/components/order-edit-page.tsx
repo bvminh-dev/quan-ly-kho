@@ -12,19 +12,21 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   useAllCustomers,
-  useCreateCustomer,
 } from "@/features/customers/hooks/use-customers";
+import { customerService } from "@/services/customer.service";
 import { useOrder, useUpdateOrder } from "@/features/orders/hooks/use-orders";
 import { OrderBuilder } from "@/features/sales/components/order-builder";
 import { WarehousePicker } from "@/features/sales/components/warehouse-picker";
 import type { OrderSet, SelectedItem } from "@/features/sales/types";
 import { useAllWarehouses } from "@/features/warehouse/hooks/use-warehouses";
 import { useExchangeRate } from "@/hooks/use-exchange-rate";
+import { QUERY_KEYS } from "@/config";
 import type { CustomerItem, OrderDetail, WarehouseItem } from "@/types/api";
 import { ChevronDown, ChevronRight, Warehouse } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 let tempIdCounter = 1000;
 const genTempId = () => `edit-temp-${++tempIdCounter}-${Date.now()}`;
@@ -173,10 +175,37 @@ function OrderEditForm({
   defaultExchangeRate,
 }: OrderEditFormProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const ungroupedSetIdsRef = useRef<Set<string>>(new Set());
   const updateOrder = useUpdateOrder();
-  const createCustomer = useCreateCustomer();
+
+  // Tạo mutation riêng để kiểm soát việc cập nhật cache
+  const createCustomerMutation = useMutation({
+    mutationFn: (dto: { name: string }) => customerService.create(dto),
+    onSuccess: (result) => {
+      const newCustomer = result.data;
+      // Cập nhật cache ngay lập tức
+      queryClient.setQueryData(
+        [...QUERY_KEYS.CUSTOMERS, "all"],
+        (old: any) => {
+          if (!old?.data?.items) return old;
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              items: [...old.data.items, newCustomer],
+              meta: {
+                ...old.data.meta,
+                total: (old.data.meta?.total || 0) + 1,
+              },
+            },
+          };
+        },
+      );
+      toast.success("Tạo khách hàng thành công");
+    },
+  });
 
   const [warehouseExpanded, setWarehouseExpanded] = useState(true);
   const [createCustOpen, setCreateCustOpen] = useState(false);
@@ -596,10 +625,29 @@ function OrderEditForm({
   const handleCreateCust = async () => {
     if (!newCustName.trim()) return;
     try {
-      const result = await createCustomer.mutateAsync({
+      const result = await createCustomerMutation.mutateAsync({
         name: newCustName.trim(),
       });
-      setSelectedCustomerId(result.data._id);
+      const newCustomer = result.data;
+      const newCustomerId = newCustomer._id;
+
+      // Tự động chọn khách hàng mới
+      setSelectedCustomerId(newCustomerId);
+
+      // Cập nhật debt/paid
+      const balance = newCustomer.payment ?? 0;
+      if (balance < 0) {
+        setDebt(Math.abs(balance));
+        setPaid(0);
+      } else if (balance > 0) {
+        setDebt(0);
+        setPaid(balance);
+      } else {
+        setDebt(0);
+        setPaid(0);
+      }
+
+      // Đóng dialog và reset form
       setNewCustName("");
       setCreateCustOpen(false);
     } catch {
@@ -679,6 +727,7 @@ function OrderEditForm({
             hasRecordedPayment={hasRecordedPayment}
             title="Chỉnh sửa đơn hàng"
             canEditPaid={order.state?.toLowerCase() === "báo giá"}
+            canEditCustomer={false}
           />
         </div>
       </div>
@@ -708,7 +757,7 @@ function OrderEditForm({
               </Button>
               <Button
                 onClick={handleCreateCust}
-                disabled={createCustomer.isPending}
+                disabled={createCustomerMutation.isPending}
                 className="cursor-pointer"
               >
                 Tạo

@@ -229,7 +229,7 @@ export default function ReportsPage() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium">
-                    Tổng giá trị đơn
+                    Tổng giá trị hàng đã bán
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-1">

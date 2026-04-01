@@ -237,7 +237,8 @@ export function OrderTable({
                   lowerState !== "báo giá" &&
                   lowerState !== "chỉnh sửa" &&
                   lowerState !== "hoàn tác" &&
-                  lowerState !== "hoàn đơn";
+                  lowerState !== "hoàn đơn" &&
+                  !(isDelivered && !order.latestOrder);
                 const canDeliver =
                   lowerState !== "đã giao" &&
                   lowerState !== "hoàn đơn" &&

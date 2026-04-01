@@ -11,19 +11,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   useAllCustomers,
-  useCreateCustomer,
 } from "@/features/customers/hooks/use-customers";
+import { customerService } from "@/services/customer.service";
 import {
   useAddHistory,
   useConfirmOrder,
   useCreateOrder,
 } from "@/features/orders/hooks/use-orders";
 import { useAllWarehouses } from "@/features/warehouse/hooks/use-warehouses";
+import { QUERY_KEYS } from "@/config";
 import type { CreateOrderDto, OrderDetail, WarehouseItem } from "@/types/api";
 import { ChevronDown, ChevronRight, Warehouse } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { InvoiceDialog } from "./components/invoice-dialog";
 import { OrderBuilder } from "./components/order-builder";
 import { WarehousePicker } from "./components/warehouse-picker";
@@ -60,6 +62,7 @@ const getNextSetName = (existingSets: OrderSet[]) => {
 
 export default function SalesPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const ungroupedSetIdsRef = useRef<Set<string>>(new Set());
 
@@ -68,7 +71,33 @@ export default function SalesPage() {
   const createOrder = useCreateOrder();
   const confirmOrder = useConfirmOrder();
   const addHistory = useAddHistory();
-  const createCustomer = useCreateCustomer();
+
+  // Tạo mutation riêng để kiểm soát việc cập nhật cache
+  const createCustomerMutation = useMutation({
+    mutationFn: (dto: { name: string }) => customerService.create(dto),
+    onSuccess: (result) => {
+      const newCustomer = result.data;
+      // Cập nhật cache ngay lập tức
+      queryClient.setQueryData(
+        [...QUERY_KEYS.CUSTOMERS, "all"],
+        (old: any) => {
+          if (!old?.data?.items) return old;
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              items: [...old.data.items, newCustomer],
+              meta: {
+                ...old.data.meta,
+                total: (old.data.meta?.total || 0) + 1,
+              },
+            },
+          };
+        },
+      );
+      toast.success("Tạo khách hàng thành công");
+    },
+  });
 
   const warehouseItems = whData?.data?.items ?? [];
   const customers = custData?.data?.items ?? [];
@@ -533,15 +562,16 @@ export default function SalesPage() {
   const handleCreateCust = async () => {
     if (!newCustName.trim()) return;
     try {
-      const result = await createCustomer.mutateAsync({
+      const result = await createCustomerMutation.mutateAsync({
         name: newCustName.trim(),
       });
       const newCustomer = result.data;
       const newCustomerId = newCustomer._id;
-      setNewCustName("");
-      setCreateCustOpen(false);
-      // Tự động chọn khách hàng mới và cập nhật debt/paid
+
+      // Tự động chọn khách hàng mới
       setSelectedCustomerId(newCustomerId);
+
+      // Cập nhật debt/paid
       const balance = newCustomer.payment ?? 0;
       if (balance < 0) {
         setDebt(Math.abs(balance));
@@ -553,13 +583,17 @@ export default function SalesPage() {
         setDebt(0);
         setPaid(0);
       }
+
+      // Đóng dialog và reset form
+      setNewCustName("");
+      setCreateCustOpen(false);
     } catch {
       // handled by hook
     }
   };
 
   const isSaving =
-    createOrder.isPending || confirmOrder.isPending || addHistory.isPending;
+    createOrder.isPending || confirmOrder.isPending || addHistory.isPending || createCustomerMutation.isPending;
 
   return (
     <div className="flex flex-col gap-4 lg:h-full lg:overflow-hidden">
@@ -644,7 +678,7 @@ export default function SalesPage() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (!createCustomer.isPending && newCustName.trim()) {
+              if (!createCustomerMutation.isPending && newCustName.trim()) {
                 handleCreateCust();
               }
             }}
@@ -656,7 +690,7 @@ export default function SalesPage() {
                   value={newCustName}
                   onChange={(e) => setNewCustName(e.target.value)}
                   placeholder="Nhập tên khách hàng"
-                  disabled={createCustomer.isPending}
+                  disabled={createCustomerMutation.isPending}
                 />
               </div>
               <div className="flex justify-end gap-2">
@@ -664,17 +698,17 @@ export default function SalesPage() {
                   type="button"
                   variant="outline"
                   onClick={() => setCreateCustOpen(false)}
-                  disabled={createCustomer.isPending}
+                  disabled={createCustomerMutation.isPending}
                   className="cursor-pointer"
                 >
                   Hủy
                 </Button>
                 <Button
                   type="submit"
-                  disabled={createCustomer.isPending || !newCustName.trim()}
+                  disabled={createCustomerMutation.isPending || !newCustName.trim()}
                   className="cursor-pointer"
                 >
-                  {createCustomer.isPending ? "Đang tạo..." : "Tạo"}
+                  {createCustomerMutation.isPending ? "Đang tạo..." : "Tạo"}
                 </Button>
               </div>
             </div>

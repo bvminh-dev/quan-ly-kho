@@ -321,6 +321,7 @@ export interface OrderDetail {
   createdBy: string | OrderCreatorRef;
   updatedBy: string;
   isDeleted: boolean;
+  latestOrder: boolean;
   createdAt: string;
   updatedAt: string;
 }

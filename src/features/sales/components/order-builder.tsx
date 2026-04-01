@@ -4,19 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Separator } from "@/components/ui/separator";
 import { getWarehouseDisplayName } from "@/features/warehouse/utils/sort-warehouse";
 import { cn } from "@/lib/utils";
 import type { CustomerItem, WarehouseItem } from "@/types/api";
 import { formatNGN, formatUSD } from "@/utils/currency";
-import { Layers, Package, Plus, Trash2, Ungroup } from "lucide-react";
+import { Layers, Package, Trash2, Ungroup } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { OrderSet, SelectedItem } from "../types";
 import { SET_COLORS } from "../types";
@@ -26,6 +20,8 @@ interface OrderBuilderProps {
   selectedCustomerId: string;
   onCustomerChange: (id: string) => void;
   onCreateCustomer: () => void;
+  /** Callback khi khách hàng mới được tạo thành công, nhận customer object */
+  onCustomerCreated?: (customer: CustomerItem) => void;
   exchangeRate: number;
   onExchangeRateChange: (rate: number) => void;
   priceType: "high" | "low";
@@ -56,6 +52,8 @@ interface OrderBuilderProps {
   title?: string;
   /** Chỉ cho phép sửa Paid khi đang ở trạng thái báo giá. Khi chỉnh sửa đơn ở trạng thái khác thì Paid bị khóa. */
   canEditPaid?: boolean;
+  /** Chỉ cho phép sửa khách hàng khi tạo mới. Khi chỉnh sửa đơn thì khách hàng bị khóa. */
+  canEditCustomer?: boolean;
 }
 
 export function OrderBuilder({
@@ -63,6 +61,7 @@ export function OrderBuilder({
   selectedCustomerId,
   onCustomerChange,
   onCreateCustomer,
+  onCustomerCreated,
   exchangeRate,
   onExchangeRateChange,
   priceType,
@@ -88,6 +87,7 @@ export function OrderBuilder({
   hasRecordedPayment,
   title = "Tạo đơn hàng",
   canEditPaid = true,
+  canEditCustomer = true,
 }: OrderBuilderProps) {
   const [selectedForSet, setSelectedForSet] = useState<Set<string>>(new Set());
   const [isCreatingSet, setIsCreatingSet] = useState(false);
@@ -253,33 +253,19 @@ export function OrderBuilder({
         <div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
           <div className="space-y-1.5 sm:col-span-2">
             <Label className="text-xs">Khách hàng</Label>
-            <div className="flex gap-2">
-              <Select
-                value={selectedCustomerId}
-                onValueChange={onCustomerChange}
-              >
-                <SelectTrigger className="h-9 flex-1">
-                  <SelectValue placeholder="Chọn khách hàng" />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.map((c) => (
-                    <SelectItem key={c._id} value={c._id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                className="h-9 w-9 shrink-0 cursor-pointer"
-                onClick={onCreateCustomer}
-                disabled={isSaving}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
+            <SearchableSelect
+              value={selectedCustomerId}
+              onValueChange={onCustomerChange}
+              options={customers.map((c) => ({ _id: c._id, name: c.name }))}
+              placeholder="Chọn khách hàng"
+              disabled={!canEditCustomer || isSaving}
+              onAddNew={canEditCustomer ? () => onCreateCustomer() : undefined}
+            />
+            {!canEditCustomer && (
+              <p className="text-[11px] text-muted-foreground">
+                Không thể thay đổi khách hàng khi chỉnh sửa đơn hàng
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">
