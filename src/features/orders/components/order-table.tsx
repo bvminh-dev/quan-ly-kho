@@ -90,6 +90,7 @@ export function OrderTable({
   const [confirmOrder, setConfirmOrder] = useState<OrderDetail | null>(null);
   const [deliverOrder, setDeliverOrder] = useState<OrderDetail | null>(null);
   const [deliverNote, setDeliverNote] = useState("");
+  const [deliverStep, setDeliverStep] = useState<"confirm" | "note">("confirm");
   const confirmOrderMutation = useConfirmOrder();
   const addHistoryMutation = useAddHistory();
   const deliverOrderMutation = useDeliverOrder();
@@ -368,8 +369,13 @@ export function OrderTable({
                               <DropdownMenuItem
                                 onClick={() => {
                                   if (!canDeliver) return;
+                                  const { remainingUSD } =
+                                    computeOrderFinancials(order);
                                   setDeliverOrder(order);
                                   setDeliverNote("");
+                                  setDeliverStep(
+                                    remainingUSD === 0 ? "note" : "confirm",
+                                  );
                                 }}
                                 disabled={!canDeliver}
                                 className="cursor-pointer"
@@ -507,38 +513,91 @@ export function OrderTable({
           if (!open) {
             setDeliverOrder(null);
             setDeliverNote("");
+            setDeliverStep("confirm");
           }
         }}
       >
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Chuyển đơn hàng sang Đã giao</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label>Ghi chú</Label>
-            <Input
-              value={deliverNote}
-              onChange={(e) => setDeliverNote(e.target.value)}
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setDeliverOrder(null);
-                setDeliverNote("");
-              }}
-            >
-              Hủy
-            </Button>
-            <Button
-              onClick={handleDeliverOrder}
-              className="cursor-pointer"
-              disabled={deliverOrderMutation.isPending}
-            >
-              Xác nhận Đã giao
-            </Button>
-          </DialogFooter>
+          {deliverStep === "confirm" && deliverOrder && (() => {
+            const { remainingUSD, remainingNGN } =
+              computeOrderFinancials(deliverOrder);
+            const isOverpaid = remainingUSD < 0;
+            const absUSD = Math.abs(remainingUSD);
+            const absNGN = Math.abs(remainingNGN);
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Xác nhận giao hàng</DialogTitle>
+                  <DialogDescription asChild>
+                    <div className="space-y-2">
+                      {isOverpaid ? (
+                        <p className="text-green-600 font-medium text-base">
+                          Khách chuyển dư {formatUSD(absUSD)} (~{Math.round(absNGN).toLocaleString()} naira).
+                          Bạn có muốn giao hàng không?
+                        </p>
+                      ) : (
+                        <p className="text-red-600 font-medium text-base">
+                          Đơn hàng này còn thiếu {formatUSD(absUSD)} (~{Math.round(absNGN).toLocaleString()} naira).
+                          Bạn có muốn giao hàng không?
+                        </p>
+                      )}
+                    </div>
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setDeliverOrder(null);
+                      setDeliverNote("");
+                      setDeliverStep("confirm");
+                    }}
+                  >
+                    Hủy
+                  </Button>
+                  <Button
+                    onClick={() => setDeliverStep("note")}
+                    className="cursor-pointer"
+                  >
+                    Đồng ý
+                  </Button>
+                </DialogFooter>
+              </>
+            );
+          })()}
+          {deliverStep === "note" && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Chuyển đơn hàng sang Đã giao</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2">
+                <Label>Ghi chú</Label>
+                <Input
+                  value={deliverNote}
+                  onChange={(e) => setDeliverNote(e.target.value)}
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setDeliverOrder(null);
+                    setDeliverNote("");
+                    setDeliverStep("confirm");
+                  }}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  onClick={handleDeliverOrder}
+                  className="cursor-pointer"
+                  disabled={deliverOrderMutation.isPending}
+                >
+                  Xác nhận Đã giao
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </>
