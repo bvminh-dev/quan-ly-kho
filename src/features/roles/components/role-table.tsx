@@ -62,6 +62,8 @@ export function RoleTable({
         role.name,
         role.description,
         role.permissions?.length,
+        role.isViewAllUser ? "có" : "không",
+        role.viewAllUserApis?.length || 0,
         role.isActive ? "active" : "inactive",
         role.createdAt,
       ]),
@@ -104,6 +106,8 @@ export function RoleTable({
               <TableHead className="font-semibold">Tên vai trò</TableHead>
               <TableHead className="font-semibold">Mô tả</TableHead>
               <TableHead className="font-semibold">Số quyền</TableHead>
+              <TableHead className="font-semibold">Xem all user</TableHead>
+              <TableHead className="font-semibold">Số API</TableHead>
               <TableHead className="font-semibold">Trạng thái</TableHead>
               <TableHead className="font-semibold">Ngày tạo</TableHead>
               <TableHead className="w-[70px]" />
@@ -112,7 +116,7 @@ export function RoleTable({
           <TableBody>
             {filteredRoles.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={9} className="h-24 text-center">
                   Không có dữ liệu
                 </TableCell>
               </TableRow>
@@ -130,6 +134,27 @@ export function RoleTable({
                     <Badge variant="outline" className="font-medium bg-primary/5 text-primary border-primary/20">
                       {role.permissions?.length || 0} quyền
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      className={
+                        role.isViewAllUser
+                          ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20"
+                          : "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20 hover:bg-gray-500/20"
+                      }
+                      variant="outline"
+                    >
+                      {role.isViewAllUser ? "Có" : "Không"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {role.isViewAllUser ? (
+                      <Badge variant="outline" className="font-medium bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20">
+                        {role.viewAllUserApis?.length || 0} API
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge

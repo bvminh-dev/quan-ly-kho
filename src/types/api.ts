@@ -119,11 +119,19 @@ export interface ResetPasswordDto {
   newPassword: string;
 }
 
+export interface ViewAllUserApi {
+  _id: string;
+  apiPath: string;
+  method: string;
+}
+
 export interface RoleItem {
   _id: string;
   name: string;
   description: string;
   permissions: string[];
+  isViewAllUser: boolean;
+  viewAllUserApis: ViewAllUserApi[];
   createdBy: string;
   updatedBy: string;
   isActive: boolean;
@@ -136,6 +144,8 @@ export interface CreateRoleDto {
   name: string;
   description?: string;
   permissions?: string[];
+  isViewAllUser?: boolean;
+  viewAllUserApis?: ViewAllUserApi[];
   isActive?: boolean;
 }
 
@@ -143,6 +153,8 @@ export interface UpdateRoleDto {
   name?: string;
   description?: string;
   permissions?: string[];
+  isViewAllUser?: boolean;
+  viewAllUserApis?: ViewAllUserApi[];
   isActive?: boolean;
 }
 
