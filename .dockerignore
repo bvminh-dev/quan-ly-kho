@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.gitignore
+.env.local
+.env.development
+.vscode
+.cursor
+.shared
+.agents
+README.md
+Dockerfile
+docker-compose.yml
+.dockerignore
+*.md
