@@ -24,11 +24,18 @@ export type UpdatePermissionFormValues = z.infer<typeof updatePermissionSchema>;
 export const HTTP_METHODS = ["GET", "POST", "PATCH", "PUT", "DELETE"] as const;
 
 export const MODULES = [
-  "users",
-  "roles",
-  "permissions",
-  "auth",
-  "products",
-  "warehouses",
-  "orders",
+    "auth",
+    "users",
+    "roles",
+    "permissions",
+    "warehouses",
+    "orders",
+    "customers",
+    "history-warehouse",
+    "dashboard",
+    "catalog-items",
+    "catalog-colors",
+    "catalog-inchs",
+    "catalog-styles",
+    "catalog-qualitys"
 ] as const;
