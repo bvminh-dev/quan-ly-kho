@@ -74,7 +74,7 @@ export const navigationConfig: NavigationItem[] = [
     title: "Bán hàng",
     url: "/dashboard/sales",
     icon: ShoppingCart,
-    module: "dashboard",
+    module: "orders",
     adminOnly: false,
     showInDashboard: true,
     description: "Quản lý bán hàng",
@@ -87,7 +87,7 @@ export const navigationConfig: NavigationItem[] = [
     title: "Đơn hàng",
     url: "/dashboard/orders",
     icon: ClipboardList,
-    module: "dashboard",
+    module: "orders",
     adminOnly: false,
     showInDashboard: true,
     description: "Quản lý đơn hàng",
@@ -147,35 +147,35 @@ export const navigationConfig: NavigationItem[] = [
         title: "Inch",
         url: "/dashboard/settings/inchs",
         icon: Ruler,
-        module: null,
+        module: "catalog-inchs",
         adminOnly: false,
       },
       {
         title: "Loại sản phẩm",
         url: "/dashboard/settings/items",
         icon: Layers,
-        module: null,
+        module: "catalog-items",
         adminOnly: false,
       },
       {
         title: "Chất lượng",
         url: "/dashboard/settings/qualitys",
         icon: Sparkles,
-        module: null,
+        module: "catalog-qualitys",
         adminOnly: false,
       },
       {
         title: "Kiểu",
         url: "/dashboard/settings/styles",
         icon: Wand2,
-        module: null,
+        module: "catalog-styles",
         adminOnly: false,
       },
       {
         title: "Màu",
         url: "/dashboard/settings/colors",
         icon: Palette,
-        module: null,
+        module: "catalog-colors",
         adminOnly: false,
       },
       {
@@ -207,8 +207,14 @@ export function getMenuItems(isAdmin: boolean): NavigationItem[] {
   return navigationConfig.filter((item) => !item.adminOnly || isAdmin);
 }
 
-export function getDashboardCards(isAdmin: boolean): NavigationItem[] {
+export function getDashboardCards(
+  isAdmin: boolean,
+  canAccessModule?: (module: string) => boolean,
+): NavigationItem[] {
   return navigationConfig.filter(
-    (item) => item.showInDashboard === true && (!item.adminOnly || isAdmin),
+    (item) =>
+      item.showInDashboard === true &&
+      (!item.adminOnly || isAdmin) &&
+      (!item.module || isAdmin || (canAccessModule && canAccessModule(item.module))),
   );
 }

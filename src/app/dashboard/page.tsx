@@ -7,10 +7,10 @@ import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
-  const { isAdmin, user } = useAccessControl();
+  const { isAdmin, user, canAccessModule } = useAccessControl();
   const router = useRouter();
 
-  const cards = getDashboardCards(isAdmin);
+  const cards = getDashboardCards(isAdmin, canAccessModule);
 
   return (
     <div className="space-y-8">
