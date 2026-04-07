@@ -173,11 +173,11 @@ export function WarehouseTable({
         <TableHeader>
           <TableRow className="bg-muted/50">
             <TableHead className="font-semibold">Id</TableHead>
-            <TableHead className="font-semibold">Inch</TableHead>
-            <TableHead className="font-semibold">Item</TableHead>
-            <TableHead className="font-semibold">Quality</TableHead>
-            <TableHead className="font-semibold">Style</TableHead>
-            <TableHead className="font-semibold">Color</TableHead>
+            <TableHead className="font-semibold text-left">Color</TableHead>
+            <TableHead className="font-semibold text-left">Style</TableHead>
+            <TableHead className="font-semibold text-left">Item</TableHead>
+            <TableHead className="font-semibold text-left">Quality</TableHead>
+            <TableHead className="font-semibold text-left">Inch</TableHead>
             <TableHead className="font-semibold text-right">Tồn kho</TableHead>
             <TableHead className="font-semibold text-right">Chờ giao</TableHead>
             <TableHead className="font-semibold">Đơn vị</TableHead>
@@ -202,13 +202,11 @@ export function WarehouseTable({
                 <TableCell className="font-mono font-medium">
                   {item._id.slice(-5).toUpperCase()}
                 </TableCell>
-                <TableCell className="font-medium">
-                  {item.inches}&quot;
-                </TableCell>
-                <TableCell>{item.item}</TableCell>
-                <TableCell>{item.quality}</TableCell>
-                <TableCell>{item.style}</TableCell>
-                <TableCell>{item.color}</TableCell>
+                <TableCell className="font-medium">{item.color}</TableCell>
+                <TableCell className="font-medium">{item.style}</TableCell>
+                <TableCell className="font-medium">{item.item}</TableCell>
+                <TableCell className="font-medium">{item.quality}</TableCell>
+                <TableCell className="font-medium">{item.inches}&quot;</TableCell>
                 <TableCell className="text-right font-medium text-green-600">
                   {formatNumber(item.amountAvailable)}
                 </TableCell>
