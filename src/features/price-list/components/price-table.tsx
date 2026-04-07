@@ -109,11 +109,11 @@ export function PriceTable({
         <TableHeader>
           <TableRow className="bg-muted/50">
             <TableHead className="font-semibold">Id</TableHead>
-            <TableHead className="font-semibold">Color</TableHead>
-            <TableHead className="font-semibold">Style</TableHead>
+            <TableHead className="font-semibold">Inch</TableHead>
             <TableHead className="font-semibold">Item</TableHead>
             <TableHead className="font-semibold">Quality</TableHead>
-            <TableHead className="font-semibold">Inch</TableHead>
+            <TableHead className="font-semibold">Style</TableHead>
+            <TableHead className="font-semibold">Color</TableHead>
             <TableHead className="font-semibold text-right">Giá cao ($)</TableHead>
             <TableHead className="font-semibold text-right">Giá thấp ($)</TableHead>
             <TableHead className="font-semibold text-right">Giảm giá ($)</TableHead>
@@ -131,11 +131,11 @@ export function PriceTable({
             filteredItems.map((item) => (
               <TableRow key={item._id} className="hover:bg-muted/30">
                 <TableCell className="font-mono font-medium">{item._id.slice(-5).toUpperCase()}</TableCell>
-                <TableCell className="font-medium">{item.color}</TableCell>
-                <TableCell className="font-medium">{item.style}</TableCell>
-                <TableCell className="font-medium">{item.item}</TableCell>
-                <TableCell className="font-medium">{item.quality}</TableCell>
                 <TableCell className="font-medium">{item.inches}&quot;</TableCell>
+                <TableCell>{item.item}</TableCell>
+                <TableCell>{item.quality}</TableCell>
+                <TableCell>{item.style}</TableCell>
+                <TableCell>{item.color}</TableCell>
                 <TableCell className="text-right">
                   {editingId === item._id ? (
                     <Input

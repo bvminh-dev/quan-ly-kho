@@ -19,7 +19,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useExchangeRate } from "@/hooks/use-exchange-rate";
 import type { OrderDetail } from "@/types/api";
-import { round2, formatMoneyValue, formatUSD, formatNGN } from "@/utils/currency";
+import { round2, formatMoneyValue, formatUSD, formatNGN, formatDot, parseDot } from "@/utils/currency";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useEffect } from "react";
@@ -272,15 +272,13 @@ export function PaymentDialog({
             <div className="space-y-1.5">
               <Label className="text-xs">Số tiền (NGN)</Label>
               <Input
-                type="number"
-                min={0}
-                step="any"
-                value={watchNGN ?? ""}
-                onChange={(e) =>
-                  handleNGNChange(
-                    e.target.value === "" ? 0 : parseFloat(e.target.value) || 0
-                  )
-                }
+                type="text"
+                value={watchNGN === 0 ? "" : formatDot(watchNGN)}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const num = parseDot(raw);
+                  handleNGNChange(num);
+                }}
                 className={formErrors.moneyPaidNGN ? "h-9 border-destructive" : "h-9"}
               />
               {formErrors.moneyPaidNGN && (

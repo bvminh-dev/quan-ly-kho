@@ -39,3 +39,24 @@ export const formatMoneyValue = (value: number): string =>
   formatNumberWithSeparators(value, 2);
 
 export const formatNumber = (value: number) => formatNumberSmart(value);
+
+// Format with dot as thousand separator and comma as decimal separator (vi-VN style)
+export const formatDot = (value: number): string => {
+  if (value === undefined || value === null) return "";
+  return value.toLocaleString("vi-VN", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+};
+
+export const parseDot = (value: string): number => {
+  if (!value) return 0;
+  // Remove all dots (thousands) and replace comma with dot (decimal)
+  // Also strip any non-numeric/separator characters to be safe
+  const normalized = value
+    .replace(/\./g, "")
+    .replace(",", ".")
+    .replace(/[^0-9.]/g, "");
+  const parsed = parseFloat(normalized);
+  return isNaN(parsed) ? 0 : parsed;
+};
