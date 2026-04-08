@@ -235,9 +235,9 @@ function OrderEditForm({
   const [paid, setPaid] = useState(() => order.paid ?? 0);
   const hasRecordedPayment = useMemo(() => {
     if ((order.payment ?? 0) !== 0) return true;
-    if ((order.paid ?? 0) !== 0 || (order.debt ?? 0) !== 0) return true;
+    
     return (order.history ?? []).some(
-      (h) => (h.moneyPaidDolar ?? 0) !== 0 || (h.moneyPaidNGN ?? 0) !== 0,
+      (h) => ((h.moneyPaidDolar ?? 0) !== 0 || (h.moneyPaidNGN ?? 0) !== 0) && h.paymentType !== "auto",
     );
   }, [order]);
 

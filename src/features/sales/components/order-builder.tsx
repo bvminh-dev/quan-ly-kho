@@ -119,9 +119,10 @@ export function OrderBuilder({
 
   const getMaxQuantity = useCallback(
     (warehouseId: string) => {
+     console.log("hasRecordedPayment", hasRecordedPayment)
       const warehouseQuantity = warehouseMap[warehouseId]?.amountAvailable ?? 999;
       const hasRecordedMoney =
-        hasRecordedPayment ?? ((paid || 0) !== 0 || (debt || 0) !== 0);
+        hasRecordedPayment;
       if (!hasRecordedMoney) return warehouseQuantity;
       const fromMap = maxAvailableByWarehouseId?.[warehouseId];
       // Sử dụng số lượng BAN ĐẦU của đơn hàng thay vì số lượng hiện tại
