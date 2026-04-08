@@ -31,7 +31,7 @@ function buildCatalogService(type: CatalogType) {
     getAll: async (params?: { current?: number; pageSize?: number; sort?: string }) => {
       const { data } = await axiosInstance.get<ApiResponse<PaginatedData<CatalogItem>>>(
         BASE_MAP[type],
-        { params: { current: 1, pageSize: 999, ...params } }
+        { params: { current: 1, pageSize: 9999, ...params } }
       );
       return data;
     },

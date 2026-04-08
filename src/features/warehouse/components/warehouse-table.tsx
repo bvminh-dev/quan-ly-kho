@@ -55,6 +55,22 @@ export function WarehouseTable({
   clientSidePagination = false,
 }: WarehouseTableProps) {
   const [search, setSearch] = useState("");
+  const [searchPage, setSearchPage] = useState(1);
+
+  const isSearching = search.trim().length > 0;
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setSearchPage(1); // Reset to page 1 when search changes
+  };
+
+  const handlePageChange = (page: number) => {
+    if (isSearching && clientSidePagination) {
+      setSearchPage(page);
+    } else {
+      onPageChange(page);
+    }
+  };
 
   const sortedItems = useMemo(() => sortWarehouseItems(items), [items]);
   const filteredItems = useMemo(
@@ -77,11 +93,13 @@ export function WarehouseTable({
     if (clientSidePagination) {
       const total = filteredItems.length;
       const pages = Math.max(1, Math.ceil(total / meta.pageSize));
-      const start = (meta.current - 1) * meta.pageSize;
+      const currentPage = isSearching ? searchPage : meta.current;
+      const start = (currentPage - 1) * meta.pageSize;
       return {
         displayItems: filteredItems.slice(start, start + meta.pageSize),
         paginationMeta: {
           ...meta,
+          current: currentPage,
           total,
           pages,
         },
@@ -91,7 +109,7 @@ export function WarehouseTable({
       displayItems: filteredItems,
       paginationMeta: meta,
     };
-  }, [clientSidePagination, filteredItems, meta]);
+  }, [clientSidePagination, filteredItems, meta, isSearching, searchPage]);
 
   // Calculate totals by unit (from full filtered list, not just current page)
   const totals = useMemo(() => {
@@ -145,7 +163,7 @@ export function WarehouseTable({
         <Input
           placeholder="Tìm nhanh theo mọi cột..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           className="max-w-xs"
         />
         <div className="flex items-center gap-4 text-sm flex-wrap">
@@ -268,7 +286,7 @@ export function WarehouseTable({
         pageSize={paginationMeta.pageSize}
         total={paginationMeta.total}
         pages={paginationMeta.pages}
-        onPageChange={onPageChange}
+        onPageChange={handlePageChange}
         onPageSizeChange={onPageSizeChange}
       />
 

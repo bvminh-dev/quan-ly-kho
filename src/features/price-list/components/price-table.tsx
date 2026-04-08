@@ -37,6 +37,7 @@ export function PriceTable({
   onPageSizeChange,
 }: PriceTableProps) {
   const [search, setSearch] = useState("");
+  const [searchPage, setSearchPage] = useState(1);
 
   const sortedItems = useMemo(() => sortWarehouseItems(items), [items]);
   const filteredItems = useMemo(
@@ -53,6 +54,33 @@ export function PriceTable({
       ]),
     [sortedItems, search],
   );
+
+  // Khi search thay đổi, reset về page 1
+  const isSearching = search.trim().length > 0;
+  const filteredTotal = filteredItems.length;
+  const filteredPages = Math.ceil(filteredTotal / meta.pageSize) || 1;
+
+  // Paginate filtered items for client-side display
+  const paginatedFilteredItems = useMemo(() => {
+    if (!isSearching) return filteredItems;
+    const start = (searchPage - 1) * meta.pageSize;
+    const end = start + meta.pageSize;
+    return filteredItems.slice(start, end);
+  }, [filteredItems, searchPage, meta.pageSize, isSearching]);
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setSearchPage(1); // Reset to page 1 when search changes
+  };
+
+  const handlePageChange = (page: number) => {
+    if (isSearching) {
+      setSearchPage(page);
+    } else {
+      onPageChange(page);
+    }
+  };
+
   const { isAdmin } = useAccessControl();
   const updateWarehouse = useUpdateWarehouse();
 
@@ -101,7 +129,7 @@ export function PriceTable({
         <Input
           placeholder="Tìm nhanh theo mọi cột..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           className="max-w-xs"
         />
       </div>
@@ -128,7 +156,7 @@ export function PriceTable({
               </TableCell>
             </TableRow>
           ) : (
-            filteredItems.map((item) => (
+            paginatedFilteredItems.map((item) => (
               <TableRow key={item._id} className="hover:bg-muted/30">
                 <TableCell className="font-mono font-medium">{item._id.slice(-5).toUpperCase()}</TableCell>
                 <TableCell className="font-medium">{item.inches}&quot;</TableCell>
@@ -243,11 +271,11 @@ export function PriceTable({
       </Table>
 
       <DataTablePagination
-        current={meta.current}
+        current={isSearching ? searchPage : meta.current}
         pageSize={meta.pageSize}
-        total={meta.total}
-        pages={meta.pages}
-        onPageChange={onPageChange}
+        total={isSearching ? filteredTotal : meta.total}
+        pages={isSearching ? filteredPages : meta.pages}
+        onPageChange={handlePageChange}
         onPageSizeChange={onPageSizeChange}
       />
     </div>

@@ -139,7 +139,7 @@ export default function SalesPage() {
   const handleSelectWarehouse = useCallback(
     (wh: WarehouseItem) => {
       const price = priceType === "high" ? wh.priceHigh : wh.priceLow;
-      const sale = priceType === "high" ? wh.sale : 0;
+      const sale = wh.sale;
 
       setStandaloneItems((prev) => [
         ...prev,
